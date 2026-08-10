@@ -1,0 +1,625 @@
+lighting_all_off:
+  name: Lighting – All off
+  description: Switches off every controllable Red Queen light currently reporting on.
+  fields: {}
+
+lighting_room_off:
+  name: Lighting – Room off
+  description: Switches off every controllable light in one Red Queen room.
+  fields:
+    room_id:
+      name: Red Queen room ID
+      description: Stable room ID, for example house.eg.kitchen.
+      required: true
+      example: house.eg.kitchen
+      selector:
+        text:
+
+lighting_object_off:
+  name: Lighting – Object off
+  description: Switches off one Red Queen light object if its feedback currently reports on.
+  fields:
+    light_id:
+      name: Red Queen light ID
+      description: Stable light ID, for example light.eg.office.main.
+      required: true
+      example: light.eg.office.main
+      selector:
+        text:
+
+reload_registry:
+  name: Reload registry
+  description: Reloads and validates rooms.yaml and lights.yaml without restarting Home Assistant.
+  fields: {}
+
+
+list_registry:
+  name: Registry – List objects
+  description: Lists objects from one supported Red Queen registry type.
+  fields:
+    type:
+      name: Registry type
+      description: Registry collection to return.
+      required: true
+      selector:
+        select:
+          options:
+            - label: Rooms
+              value: rooms
+            - label: Lights
+              value: lights
+            - label: Openings
+              value: openings
+            - label: Covers
+              value: covers
+
+get_object:
+  name: Registry – Get object
+  description: Returns one Red Queen registry object by its stable ID.
+  fields:
+    id:
+      name: Red Queen object ID
+      description: Stable Red Queen ID, such as house.eg.office or light.eg.office.main.
+      required: true
+      example: light.eg.office.main
+      selector:
+        text:
+
+
+validate_registry:
+  name: Validate framework
+  description: Runs non-destructive Red Queen registry, entity, duplicate and runtime checks.
+  fields: {}
+
+
+house_snapshot:
+  name: Get house snapshot
+  description: Returns the current aggregated Red Queen state of the complete house.
+  fields: {}
+
+
+capabilities_snapshot:
+  name: Get capabilities snapshot
+  description: Returns all registered Red Queen capabilities and provider states.
+  fields: {}
+
+
+rules_snapshot:
+  name: Get rules snapshot
+  description: Returns loaded rules, warnings, facts and the current evaluation.
+  fields: {}
+
+evaluate_rules:
+  name: Evaluate rules
+  description: Evaluates all enabled Red Queen rules against current house facts.
+  fields: {}
+
+reload_rules:
+  name: Reload rules
+  description: Reloads YAML rules and returns a fresh evaluation.
+  fields: {}
+
+
+context_snapshot:
+  name: Get context snapshot
+  description: Returns the current semantic Red Queen context with reasons and scores.
+  fields: {}
+
+
+policies_snapshot:
+  name: Get policies snapshot
+  description: Returns policy mode, configuration and current calculated decisions.
+  fields: {}
+
+policy_check:
+  name: Check policy
+  description: Checks whether one semantic action is currently allowed.
+  fields:
+    policy_id:
+      name: Policy ID
+      description: Semantic permission ID, for example announcements.play.
+      required: true
+      selector:
+        text:
+
+reload_policies:
+  name: Reload policies
+  description: Reloads optional policy YAML files without restarting Home Assistant.
+  fields: {}
+
+
+decisions_snapshot:
+  name: Get decisions snapshot
+  description: Returns all configured read-only decisions for the current context.
+  fields: {}
+
+decision_evaluate:
+  name: Evaluate decision
+  description: Evaluates one read-only semantic decision.
+  fields:
+    decision_id:
+      name: Decision ID
+      description: Semantic decision ID, for example lighting.house_all_off.
+      required: true
+      selector:
+        text:
+
+reload_decisions:
+  name: Reload decisions
+  description: Reloads optional decision YAML files without restarting Home Assistant.
+  fields: {}
+
+registry_recovery_report:
+  name: Get registry recovery report
+  description: Checks required registry files and reports safe-mode status.
+  fields: {}
+
+
+execution_plan:
+  name: Build execution plan
+  description: Builds a validated dry-run plan for one Decision without executing it.
+  fields:
+    decision_id:
+      name: Decision ID
+      description: Semantic Decision ID to plan.
+      required: true
+      selector:
+        text:
+
+executions_snapshot:
+  name: Get execution plans snapshot
+  description: Builds dry-run plans for all configured Decisions.
+  fields: {}
+
+
+execution_commit:
+  name: Commit execution transaction
+  description: Executes one explicitly confirmed Stage-1 lighting.object_off Decision.
+  fields:
+    decision_id:
+      name: Decision ID
+      description: Decision using lighting.object_off and one light_id target.
+      required: true
+      selector:
+        text:
+    confirm:
+      name: Explicit confirmation
+      description: Must be true before a real command can be sent.
+      required: true
+      selector:
+        boolean:
+
+execution_audit:
+  name: Get execution audit
+  description: Returns the bounded in-memory audit of explicit execution attempts.
+  fields: {}
+
+execute:
+  name: Execute legacy Red Queen Decision
+  description: Legacy Decision-ID execution entry retained for compatibility. New automations should use execution_execute.
+  fields:
+    id:
+      name: Red Queen ID
+      description: Semantic Decision ID.
+      required: true
+      selector:
+        text:
+    confirm:
+      name: Explicit confirmation
+      description: Must be true before an active command can be sent.
+      required: true
+      selector:
+        boolean:
+    conflict_policy:
+      name: Conflict policy
+      description: Reject immediately or wait in the FIFO scheduler queue.
+      required: false
+      default: reject
+      selector:
+        select:
+          options:
+            - reject
+            - wait
+    queue_timeout:
+      name: Queue timeout
+      description: Maximum wait time in seconds when conflict_policy is wait.
+      required: false
+      default: 15
+      selector:
+        number:
+          min: 0.1
+          max: 300
+          step: 0.1
+          unit_of_measurement: s
+
+
+multi_step_plan:
+  name: Build multi-step plan
+  description: Builds a deterministic Stage-2.1 blueprint for room or house lighting off.
+  fields:
+    decision_id:
+      name: Decision ID
+      description: Decision using lighting.room_off or lighting.all_off.
+      required: true
+      selector:
+        text:
+
+
+execution_capabilities_snapshot:
+  name: Get execution capabilities
+  description: Resolves hardware-neutral turn-off strategies for all registered lights.
+  fields: {}
+
+
+multi_step_simulate:
+  name: Simulate multi-step transaction
+  description: Runs the Stage-2.2 transaction state machine without sending commands.
+  fields:
+    decision_id:
+      name: Decision ID
+      description: Decision using lighting.room_off or lighting.all_off.
+      required: true
+      selector:
+        text:
+    confirm:
+      name: Explicit confirmation
+      description: Confirms that the transaction should be simulated as a commit.
+      required: true
+      selector:
+        boolean:
+
+multi_step_simulations_snapshot:
+  name: Get multi-step simulations
+  description: Returns the bounded in-memory audit of multi-step simulations.
+  fields: {}
+
+generic_transaction_run:
+  name: Run generic transaction
+  description: Runs the Stage-3.1 generic dry-run transaction state machine.
+  fields:
+    decision_id:
+      name: Decision ID
+      required: true
+      selector:
+        text:
+    confirm:
+      name: Explicit confirmation
+      required: true
+      selector:
+        boolean:
+
+generic_transactions_snapshot:
+  name: Get generic transactions
+  description: Returns the in-memory Stage-3.1 transaction audit.
+  fields: {}
+
+
+real_step_execute:
+  name: Execute one real transaction step
+  description: Executes exactly one guarded Stage-3.2 blueprint step and verifies feedback.
+  fields:
+    decision_id:
+      name: Decision ID
+      description: A lighting.room_off Decision producing exactly one active step.
+      required: true
+      selector:
+        text:
+    confirm:
+      name: Explicit confirmation
+      description: Must be true before the real command can be dispatched.
+      required: true
+      selector:
+        boolean:
+
+real_step_audit:
+  name: Get real-step audit
+  description: Returns the bounded in-memory audit of Stage-3.2 real-step attempts.
+  fields: {}
+
+
+sequential_room_execute:
+  name: Execute room sequentially
+  description: Executes every active lighting.room_off step strictly sequentially with feedback verification.
+  fields:
+    decision_id:
+      name: Decision ID
+      description: A lighting.room_off Decision with one or more active steps.
+      required: true
+      selector:
+        text:
+    confirm:
+      name: Explicit confirmation
+      description: Must be true before any real command can be dispatched.
+      required: true
+      selector:
+        boolean:
+
+sequential_room_audit:
+  name: Get sequential room audit
+  description: Returns the bounded in-memory audit of Stage-3.3 room transactions.
+  fields: {}
+
+
+house_execute:
+  name: Execute house all off
+  description: Executes a lighting.all_off Decision room by room through the shared Stage-3.4 pipeline.
+  fields:
+    decision_id:
+      name: Decision ID
+      description: A lighting.all_off Decision.
+      required: true
+      selector:
+        text:
+    confirm:
+      name: Explicit confirmation
+      description: Must be true before any real house command can be dispatched.
+      required: true
+      selector:
+        boolean:
+
+house_execution_audit:
+  name: Get house execution audit
+  description: Returns the bounded in-memory audit of Stage-3.4 house transactions.
+  fields: {}
+
+
+transaction_locks:
+  name: Get transaction locks
+  description: Returns active execution scope locks and the latest lock decision.
+  fields: {}
+
+
+transaction_queue:
+  name: Get transaction queue
+  description: Returns the active FIFO scheduler queue and current locks.
+  fields: {}
+
+
+system_status:
+  name: Get Red Queen system status
+  description: Returns the aggregated read-only runtime, registry, validation, execution and runtime-readiness status.
+  fields: {}
+
+
+release_scope:
+  name: Get Red Queen release scope
+  description: Returns active and planned domains for the current release-candidate baseline.
+  fields: {}
+
+
+release_info:
+  name: Get release information
+  description: Returns framework version, release-candidate phase, scope and compatibility metadata.
+  fields: {}
+
+public_api:
+  name: Get public API registry
+  description: Returns stable, diagnostic, maintenance and legacy service classifications.
+  fields: {}
+
+qualification:
+  name: Get framework qualification
+  description: Returns runtime readiness plus canonical persistent execution-evidence qualification for the current baseline.
+  fields: {}
+
+upgrade_check:
+  name: Check upgrade compatibility
+  description: Returns current compatibility, migration and installation requirements.
+  fields: {}
+
+
+access_snapshot:
+  name: Get Access runtime snapshot
+  description: Returns normalized read-only states for windows, sliding doors, doors, locks and garage doors.
+  fields: {}
+
+
+object_capabilities_snapshot:
+  name: Get object capability contracts
+  description: Returns the semantic capability catalog and all Lighting and Access object declarations.
+  fields: {}
+
+
+access_object_execute:
+  name: Execute one Access object capability
+  description: Executes one tightly constrained and explicitly confirmed Access capability. WP-4.3.2B.5.1 permits access.lock, access.unlock, access.door_open and access.toggle.
+  fields:
+    object_id:
+      name: Access object ID
+      description: Semantic Registry ID of one configured door.
+      required: true
+      selector:
+        text:
+    capability_id:
+      name: Capability ID
+      description: Must be access.lock, access.unlock, access.door_open or access.toggle in this qualification stage.
+      required: true
+      selector:
+        select:
+          options:
+            - access.lock
+            - access.unlock
+            - access.door_open
+            - access.toggle
+    confirm:
+      name: Explicit confirmation
+      description: Must be true before any real command can be dispatched.
+      required: true
+      selector:
+        boolean:
+
+access_execution_audit:
+  name: Get Access execution audit
+  description: Returns the bounded in-memory audit of Access object execution attempts.
+  fields: {}
+
+
+access_result_catalog:
+  name: Get Access result catalog
+  description: Returns the stable machine-readable Access execution result and error codes.
+  fields: {}
+
+
+provider_qualification:
+  name: Get provider qualification
+  description: Returns installation-neutral provider qualification derived from canonical semantic execution evidence.
+  fields: {}
+
+
+provider_contract:
+  name: Get provider contract diagnostics
+  description: Validates registered providers against the stable Red Queen provider contract without changing runtime behavior.
+  fields: {}
+
+
+provider_registry:
+  name: Get provider registry diagnostics
+  description: Returns provider-centric registration, capability indexes and deterministic provider resolution.
+  fields: {}
+
+
+provider_discovery:
+  name: Get provider discovery diagnostics
+  description: Returns scanned modules, discovered providers and non-fatal discovery issues.
+  fields: {}
+
+
+provider_diagnostics:
+  name: Get unified provider diagnostics
+  description: Returns identity, runtime, contract, registry, discovery, qualification, confidence, capabilities and recommendations for every provider.
+  fields: {}
+
+
+capability_registry:
+  name: Get capability registry diagnostics
+  description: Returns semantic capability definitions, contract validation and current provider bindings.
+  fields: {}
+
+
+capability_resolver:
+  name: Get capability resolver diagnostics
+  description: Resolves semantic capabilities to selected providers and returns runtime health and selection reasons.
+  fields: {}
+
+
+capability_manager:
+  name: Get capability manager status
+  description: Returns aggregate status for the public read-only semantic capability layer.
+  fields: {}
+
+capability_list:
+  name: List semantic capabilities
+  description: Returns a compact list of all registered semantic capabilities and their current resolution state.
+  fields: {}
+
+capability_info:
+  name: Get semantic capability information
+  description: Returns the complete definition, resolution and diagnostics for one semantic capability.
+  fields:
+    capability_id:
+      name: Capability ID
+      description: Stable semantic capability ID, for example lighting.
+      required: true
+      example: lighting
+      selector:
+        text:
+
+
+execution_manager:
+  name: Get generic execution manager status
+  description: Returns the semantic action catalog and read-only execution readiness through the Capability Manager.
+  fields: {}
+
+execution_action:
+  name: Resolve semantic execution action
+  description: Resolves one semantic action through the Capability Manager without executing hardware commands.
+  fields:
+    action_id:
+      name: Action ID
+      description: Stable semantic action ID, for example lighting.turn_off.
+      required: true
+      example: lighting.turn_off
+      selector:
+        text:
+
+
+execution_dry_run:
+  name: Build semantic execution dry-run
+  description: Validates a semantic execution request and builds a complete execution plan without dispatching hardware commands.
+  fields:
+    action_id:
+      name: Action ID
+      description: Stable semantic action ID.
+      required: true
+      example: lighting.turn_off
+      selector:
+        text:
+    target:
+      name: Target
+      description: Canonical semantic target map. The current lighting.turn_off contract requires exactly one object_id.
+      required: true
+      example:
+        object_id: light.eg.kitchen.spots
+      selector:
+        object:
+    parameters:
+      name: Parameters
+      description: Generic action parameter map.
+      required: false
+      example: {}
+      selector:
+        object:
+    confirmed:
+      name: Confirmed
+      description: Explicit confirmation context for actions that require it.
+      required: false
+      default: false
+      selector:
+        boolean:
+
+
+execution_execute:
+  name: Execute canonical semantic action
+  description: Canonical Red Queen real-execution entry. Currently lighting.turn_off is enabled and targets exactly one semantic light object.
+  fields:
+    action_id:
+      name: Action ID
+      description: Stable semantic action ID. The current real-execution surface enables lighting.turn_off.
+      required: true
+      example: lighting.turn_off
+      selector:
+        text:
+    target:
+      name: Target
+      description: Canonical semantic target map. lighting.turn_off requires exactly one object_id.
+      required: true
+      example:
+        object_id: light.eg.kitchen.spots
+      selector:
+        object:
+    parameters:
+      name: Parameters
+      description: Action parameters. Must be empty for the current lighting.turn_off contract.
+      required: false
+      example: {}
+      selector:
+        object:
+    confirmed:
+      name: Confirmed
+      description: Explicit confirmation context when required by an action.
+      required: false
+      default: false
+      selector:
+        boolean:
+
+
+execution_qualification:
+  name: Get generic execution qualification
+  description: Returns the generic execution evidence architecture, store state and current qualification report.
+  fields: {}
+
+
+execution_runtime_health:
+  name: Get generic execution runtime health
+  description: Returns aggregate health for the execution manager, semantic router, providers and qualification persistence.
+  fields: {}

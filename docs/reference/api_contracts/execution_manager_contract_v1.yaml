@@ -1,0 +1,16 @@
+contract:
+  id: wnhf.execution_manager
+  version: "1.1"
+  implementation: 1.1-stage4.7.9.1
+execution_enabled: true
+read_only: false
+readiness_dimensions:
+  - declared
+  - semantically_ready
+  - real_execution_enabled
+  - executable_now
+real_execution_enabled_actions:
+  - lighting.turn_off
+public_actions:
+  - wnhf.execution_manager
+  - wnhf.execution_action

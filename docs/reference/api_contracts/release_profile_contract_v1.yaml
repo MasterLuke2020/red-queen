@@ -1,0 +1,23 @@
+contract:
+  id: wnhf.release_profile
+  version: '1.1'
+  services:
+  - wnhf.release_info
+  - wnhf.release_scope
+  - wnhf.public_api
+  - wnhf.qualification
+release:
+  framework_version: 1.27.0
+  channel: development
+  phase: rc_preparation
+  candidate: null
+  candidate_assigned: false
+policy:
+  version_does_not_imply_rc_assignment: true
+  canonical_execution_entry: wnhf.execution_execute
+  legacy_execution_entry: wnhf.execute
+  legacy_execution_recommended_for_new_automations: false
+qualification:
+  canonical_evidence_source: execution_evidence_store
+  automatic_collection_enabled: true
+  persistence_enabled: true

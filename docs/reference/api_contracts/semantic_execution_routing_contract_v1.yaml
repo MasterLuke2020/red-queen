@@ -1,0 +1,9 @@
+contract:
+  id: wnhf.semantic_execution_routing
+  version: '1.0'
+  implementation: 1.0-stage4.7.4
+generic_engine_direct_provider_registry_access: false
+router_owns_provider_lookup: true
+provider_selection_owned_by_capability_layer: true
+enabled_real_actions:
+- lighting.turn_off

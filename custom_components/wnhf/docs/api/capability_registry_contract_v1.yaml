@@ -1,0 +1,14 @@
+contract:
+  id: wnhf.capability_registry
+  version: '1.0'
+  implementation: 1.0-stage4.6.1
+registered_capabilities:
+- lighting
+- covers
+- openings
+- security
+- validator
+current_integration:
+  resolver_enabled: true
+  manager_enabled: true
+  canonical_execution_consumes_registry: true

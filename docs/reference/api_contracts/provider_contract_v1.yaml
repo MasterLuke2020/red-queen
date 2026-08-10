@@ -1,0 +1,28 @@
+contract:
+  id: wnhf.provider
+  version: '1.0'
+  status: stable
+required_identity:
+- provider_id
+- provider_version
+required_methods:
+- supported_capabilities
+- snapshot
+- resolve
+- qualification
+- runtime_state
+- diagnostics
+- metadata
+- async_setup
+- async_unload
+provider_id_pattern: provider.<namespace>.<name>[.<name>...]
+provider_version_format: semantic_version_x.y.z
+discovery:
+  internal_package_enabled: true
+  external_entry_points_enabled: false
+dependency_injection_enabled: false
+selection_order:
+- healthy_desc
+- available_desc
+- priority_desc
+- provider_id_asc

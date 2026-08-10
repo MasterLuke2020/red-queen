@@ -1,0 +1,428 @@
+"""Hardware-neutral execution capability resolver."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import StrEnum
+from typing import Any
+
+
+
+class EffectConfirmationMode(StrEnum):
+    """Feedback requirement after command dispatch."""
+
+    REQUIRED = "required"
+    OPTIONAL = "optional"
+    NONE = "none"
+
+
+@dataclass(frozen=True, slots=True)
+class ConfirmationPolicy:
+    """Universal confirmation contract for one execution capability."""
+
+    required_before_dispatch: bool
+    effect_confirmation: EffectConfirmationMode
+    observe_timeout_ms: int = 0
+    observe_interval_ms: int = 200
+
+    def as_dict(self) -> dict[str, Any]:
+        """Return a serializable representation."""
+        return {
+            "before_dispatch": {
+                "confirmation_required": self.required_before_dispatch,
+            },
+            "after_dispatch": {
+                "mode": self.effect_confirmation.value,
+                "observe_timeout_ms": self.observe_timeout_ms,
+                "observe_interval_ms": self.observe_interval_ms,
+            },
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ExecutionCapability:
+    """Resolved technical execution strategy for one semantic object."""
+
+    capability_id: str
+    provider_id: str
+    object_id: str
+    supported: bool
+    available: bool
+    healthy: bool
+    strategy: str
+    command_domain: str | None
+    command_service: str | None
+    command_entity_id: str | None
+    feedback_required: bool
+    feedback_entity_ids: tuple[str, ...]
+    idempotency: str
+    rollback_supported: bool
+    confirmation_policy: ConfirmationPolicy
+    reason: str
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "capability_id": self.capability_id,
+            "provider_id": self.provider_id,
+            "object_id": self.object_id,
+            "supported": self.supported,
+            "available": self.available,
+            "healthy": self.healthy,
+            "strategy": self.strategy,
+            "command": {
+                "domain": self.command_domain,
+                "service": self.command_service,
+                "entity_id": self.command_entity_id,
+            },
+            "feedback": {
+                "required": self.feedback_required,
+                "entity_ids": list(self.feedback_entity_ids),
+            },
+            "idempotency": self.idempotency,
+            "rollback_supported": self.rollback_supported,
+            "confirmation_policy": self.confirmation_policy.as_dict(),
+            "reason": self.reason,
+        }
+
+
+class ExecutionCapabilityAdapter:
+    """Resolve semantic objects into hardware-neutral execution strategies."""
+
+    VERSION = "2.3-stage4.3.2B.5.2"
+
+    @staticmethod
+    def _unsupported(
+        *,
+        object_id: str,
+        capability_id: str,
+        command_entity_id: str | None = None,
+        feedback_entity_ids: tuple[str, ...] = (),
+        reason: str,
+    ) -> ExecutionCapability:
+        return ExecutionCapability(
+            capability_id=capability_id,
+            provider_id="provider.core.unsupported",
+            object_id=object_id,
+            supported=False,
+            available=False,
+            healthy=False,
+            strategy="unsupported",
+            command_domain=None,
+            command_service=None,
+            command_entity_id=command_entity_id,
+            feedback_required=bool(feedback_entity_ids),
+            feedback_entity_ids=feedback_entity_ids,
+            idempotency="not_available",
+            rollback_supported=False,
+            confirmation_policy=ConfirmationPolicy(
+                required_before_dispatch=True,
+                effect_confirmation=EffectConfirmationMode.NONE,
+            ),
+            reason=reason,
+        )
+
+    @classmethod
+    def resolve(
+        cls,
+        semantic_object,
+        capability_id: str,
+        snapshot=None,
+    ) -> ExecutionCapability:
+        """Resolve one canonical capability for one Registry object."""
+        object_capabilities = {
+            item.capability_id: item
+            for item in semantic_object.object_capabilities()
+        }
+        declaration = object_capabilities.get(capability_id)
+        if declaration is None:
+            return cls._unsupported(
+                object_id=semantic_object.object_id,
+                capability_id=capability_id,
+                reason=(
+                    "The semantic object does not declare this capability."
+                ),
+            )
+
+        if not semantic_object.enabled:
+            return cls._unsupported(
+                object_id=semantic_object.object_id,
+                capability_id=capability_id,
+                command_entity_id=(
+                    declaration.command_entity_ids[0]
+                    if declaration.command_entity_ids else None
+                ),
+                feedback_entity_ids=declaration.feedback_entity_ids,
+                reason="The Registry object is disabled.",
+            )
+
+        if capability_id == "lighting.turn_off":
+            return cls.resolve_light_turn_off(semantic_object, snapshot)
+
+        if capability_id in {"access.lock", "access.unlock"}:
+            return cls._resolve_access_lock_operation(
+                semantic_object,
+                capability_id,
+                snapshot,
+            )
+
+        if capability_id == "access.door_open":
+            return cls._resolve_access_door_open(
+                semantic_object,
+                snapshot,
+            )
+
+        if capability_id in {"access.toggle", "access.stop"}:
+            return cls._resolve_access_garage_operation(
+                semantic_object,
+                capability_id,
+                snapshot,
+            )
+
+        return cls._unsupported(
+            object_id=semantic_object.object_id,
+            capability_id=capability_id,
+            command_entity_id=(
+                declaration.command_entity_ids[0]
+                if declaration.command_entity_ids else None
+            ),
+            feedback_entity_ids=declaration.feedback_entity_ids,
+            reason=(
+                "The capability is declared, but no qualified execution "
+                "resolver exists in this stage."
+            ),
+        )
+
+    @classmethod
+    def resolve_light_turn_off(cls, light, snapshot=None) -> ExecutionCapability:
+        """Resolve a safe turn-off strategy for one light."""
+        if snapshot is None:
+            return ExecutionCapability(
+                capability_id="lighting.turn_off",
+                provider_id="provider.core.lighting.disabled",
+                object_id=light.object_id,
+                supported=False,
+                available=False,
+                healthy=False,
+                strategy="disabled_or_not_loaded",
+                command_domain=None,
+                command_service=None,
+                command_entity_id=light.command_entity_id,
+                feedback_required=True,
+                feedback_entity_ids=tuple(light.state_entity_ids),
+                idempotency="not_available",
+                rollback_supported=False,
+                confirmation_policy=ConfirmationPolicy(
+                    required_before_dispatch=False,
+                    effect_confirmation=EffectConfirmationMode.REQUIRED,
+                    observe_timeout_ms=5000,
+                ),
+                reason="No runtime snapshot exists.",
+            )
+
+        if light.control_mode == "toggle" and light.command_entity_id:
+            available = bool(snapshot.available)
+            healthy = available and bool(light.state_entity_ids)
+            return ExecutionCapability(
+                capability_id="lighting.turn_off",
+                provider_id="provider.core.lighting.toggle",
+                object_id=light.object_id,
+                supported=True,
+                available=available,
+                healthy=healthy,
+                strategy="guarded_momentary_pulse",
+                command_domain="button",
+                command_service="press",
+                command_entity_id=light.command_entity_id,
+                feedback_required=True,
+                feedback_entity_ids=tuple(light.state_entity_ids),
+                idempotency="guarded_by_feedback",
+                rollback_supported=False,
+                confirmation_policy=ConfirmationPolicy(
+                    required_before_dispatch=False,
+                    effect_confirmation=EffectConfirmationMode.REQUIRED,
+                    observe_timeout_ms=5000,
+                ),
+                reason=(
+                    "Momentary pulse is permitted only after feedback "
+                    "confirms that the light is currently on."
+                ),
+            )
+
+        return cls._unsupported(
+            object_id=light.object_id,
+            capability_id="lighting.turn_off",
+            command_entity_id=light.command_entity_id,
+            feedback_entity_ids=tuple(light.state_entity_ids),
+            reason=f"No safe adapter for control_mode={light.control_mode!r}.",
+        )
+
+    @classmethod
+    def _resolve_access_lock_operation(
+        cls,
+        opening,
+        capability_id: str,
+        snapshot,
+    ) -> ExecutionCapability:
+        lock = opening.lock
+        if lock is None:
+            return cls._unsupported(
+                object_id=opening.object_id,
+                capability_id=capability_id,
+                reason="No motor-lock module is configured.",
+            )
+
+        command_entity_id = (
+            lock.lock_command_entity_id
+            if capability_id == "access.lock"
+            else lock.unlock_command_entity_id
+        )
+        if not command_entity_id:
+            return cls._unsupported(
+                object_id=opening.object_id,
+                capability_id=capability_id,
+                feedback_entity_ids=(lock.feedback_entity_id,),
+                reason="The required motor-lock command is not configured.",
+            )
+
+        available = bool(snapshot is not None and snapshot.available)
+        healthy = available and snapshot.lock_state in {"locked", "unlocked"}
+        target = "locked" if capability_id == "access.lock" else "unlocked"
+        return ExecutionCapability(
+            capability_id=capability_id,
+            provider_id="provider.core.access.motor_lock",
+            object_id=opening.object_id,
+            supported=True,
+            available=available,
+            healthy=healthy,
+            strategy="guarded_button_with_lock_feedback",
+            command_domain="button",
+            command_service="press",
+            command_entity_id=command_entity_id,
+            feedback_required=True,
+            feedback_entity_ids=(lock.feedback_entity_id,),
+            idempotency=f"guarded_by_{target}_feedback",
+            rollback_supported=False,
+            confirmation_policy=ConfirmationPolicy(
+                required_before_dispatch=True,
+                effect_confirmation=EffectConfirmationMode.REQUIRED,
+                observe_timeout_ms=8000,
+            ),
+            reason=(
+                f"Button pulse is permitted only after feedback confirms "
+                f"that the lock is not already {target}."
+            ),
+        )
+
+    @classmethod
+    def _resolve_access_door_open(cls, opening, snapshot) -> ExecutionCapability:
+        opener = opening.door_opener
+        if opener is None:
+            return cls._unsupported(
+                object_id=opening.object_id,
+                capability_id="access.door_open",
+                reason="No electric door opener is configured.",
+            )
+
+        available = bool(snapshot is not None and snapshot.available)
+        feedback_entity_ids = (
+            (opening.state_entity_id,)
+            if opening.state_entity_id is not None
+            else ()
+        )
+        return ExecutionCapability(
+            capability_id="access.door_open",
+            provider_id="provider.core.access.door_opener",
+            object_id=opening.object_id,
+            supported=True,
+            available=available,
+            healthy=available and bool(feedback_entity_ids),
+            strategy="observable_confirmed_momentary_pulse",
+            command_domain="button",
+            command_service="press",
+            command_entity_id=opener.command_entity_id,
+            feedback_required=False,
+            feedback_entity_ids=feedback_entity_ids,
+            idempotency="non_idempotent_confirmed_pulse",
+            rollback_supported=False,
+            confirmation_policy=ConfirmationPolicy(
+                required_before_dispatch=True,
+                effect_confirmation=EffectConfirmationMode.OPTIONAL,
+                observe_timeout_ms=5000,
+                observe_interval_ms=100,
+            ),
+            reason=(
+                "Explicit confirmation is required. Door-contact feedback "
+                "is observed optionally after dispatch."
+            ),
+        )
+
+    @classmethod
+    def _resolve_access_garage_operation(
+        cls,
+        opening,
+        capability_id: str,
+        snapshot,
+    ) -> ExecutionCapability:
+        garage = opening.garage_door
+        if garage is None:
+            return cls._unsupported(
+                object_id=opening.object_id,
+                capability_id=capability_id,
+                reason="No dedicated garage-door module is configured.",
+            )
+
+        command_entity_id = (
+            garage.toggle_command_entity_id
+            if capability_id == "access.toggle"
+            else garage.stop_command_entity_id
+        )
+        feedback = (
+            garage.open_feedback_entity_id,
+            garage.closed_feedback_entity_id,
+        )
+        if not command_entity_id:
+            return cls._unsupported(
+                object_id=opening.object_id,
+                capability_id=capability_id,
+                feedback_entity_ids=feedback,
+                reason=(
+                    "The requested garage-door command is not configured."
+                ),
+            )
+
+        available = bool(snapshot is not None and snapshot.available)
+        healthy = available and snapshot.state != "error"
+        return ExecutionCapability(
+            capability_id=capability_id,
+            provider_id="provider.core.access.garage_osc",
+            object_id=opening.object_id,
+            supported=True,
+            available=available,
+            healthy=healthy,
+            strategy=(
+                "guarded_osc_pulse"
+                if capability_id == "access.toggle"
+                else "guarded_stop_pulse"
+            ),
+            command_domain="button",
+            command_service="press",
+            command_entity_id=command_entity_id,
+            feedback_required=True,
+            feedback_entity_ids=feedback,
+            idempotency=(
+                "non_idempotent_state_guarded_pulse"
+                if capability_id == "access.toggle"
+                else "guarded_by_movement_state"
+            ),
+            rollback_supported=False,
+            confirmation_policy=ConfirmationPolicy(
+                required_before_dispatch=True,
+                effect_confirmation=EffectConfirmationMode.REQUIRED,
+                observe_timeout_ms=5000,
+                observe_interval_ms=100,
+            ),
+            reason=(
+                "The command requires a stable garage end position and "
+                "valid, non-contradictory feedback before dispatch."
+            ),
+        )

@@ -1,0 +1,18 @@
+contract:
+  id: wnhf.execution_qualification
+  version: '1.1'
+  implementation: 1.1-stage4.7.5B.1
+  status: diagnostic_public
+qualifying_result_codes:
+  EXE-000: real_success
+  EXE-101: idempotency
+automatic_collection_enabled: true
+persistence_enabled: true
+store:
+  path: /config/wnhf/qualification/execution_evidence_store.json
+  store_version: 1.2-stage4.7.7.1
+  schema_version: '1.0'
+  atomic_persistence: true
+policy:
+  qualification_is_execution_authorization: false
+  provider_qualification_uses_same_store: true

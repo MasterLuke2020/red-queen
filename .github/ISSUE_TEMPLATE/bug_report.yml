@@ -1,0 +1,63 @@
+name: Bug report
+description: Report a reproducible Red Queen problem.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please avoid including secrets, credentials or private network data that is not required to reproduce the issue.
+  - type: input
+    id: rq_version
+    attributes:
+      label: Red Queen version
+      placeholder: 1.0.0-rc1
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+    validations:
+      required: true
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Home Assistant installation method
+      options:
+        - Home Assistant OS
+        - Container
+        - Supervised
+        - Core
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem summary
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: system_status
+    attributes:
+      label: Relevant Red Queen diagnostics
+      description: Prefer wnhf.system_status / validation output where applicable. Remove private information.
+      render: yaml
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      render: text

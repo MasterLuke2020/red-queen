@@ -1,0 +1,16 @@
+contract:
+  id: wnhf.provider_registry
+  version: '1.0'
+  implementation: 1.0-stage4.5.2
+indexes:
+- provider_id
+- capability_id
+selection_order:
+- healthy_desc
+- available_desc
+- priority_desc
+- provider_id_asc
+discovery_enabled: true
+internal_discovery_enabled: true
+external_entry_points_enabled: false
+dependency_injection_enabled: false

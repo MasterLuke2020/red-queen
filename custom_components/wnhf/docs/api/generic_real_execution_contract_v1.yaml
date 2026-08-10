@@ -1,0 +1,22 @@
+contract:
+  id: wnhf.generic_real_execution
+  api_version: "1.0"
+  execution_contract: 1.2-stage4.7.4
+canonical_service: wnhf.execution_execute
+enabled_actions:
+  - lighting.turn_off
+target_mode: single_object
+validation_before_dispatch: true
+provider_preflight_before_dispatch: true
+hardware_execution_enabled: true
+all_other_actions_blocked: true
+result_codes:
+  - EXE-000
+  - EXE-101
+  - EXE-205
+  - EXE-206
+  - EXE-207
+  - EXE-208
+  - EXE-300
+  - EXE-301
+  - EXE-900

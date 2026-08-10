@@ -1,0 +1,19 @@
+contract:
+  id: wnhf.generic_execution
+  version: "1.1"
+  implementation: 1.1-stage4.7.9.1
+dry_run_enabled: true
+hardware_dispatch_in_dry_run: false
+real_execution_enabled_actions:
+  lighting.turn_off:
+    target_mode: single_object
+    required_target_keys: [object_id]
+    allowed_target_keys: [object_id]
+    allowed_parameter_keys: []
+result_codes:
+  - EXE-100
+  - EXE-200
+  - EXE-201
+  - EXE-202
+  - EXE-203
+  - EXE-204

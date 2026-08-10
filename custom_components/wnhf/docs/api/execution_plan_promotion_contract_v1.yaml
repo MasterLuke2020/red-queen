@@ -1,0 +1,20 @@
+contract:
+  id: wnhf.execution_plan_promotion
+  version: '1.0'
+  implementation: 1.0-stage4.7.3A
+validation_plan:
+  execution_enabled: false
+  dry_run: true
+promoted_plan:
+  execution_enabled: true
+  dry_run: false
+  planning_mode: execution
+  promoted_from_validation: true
+preserved_fields:
+- request_id
+- action_id
+- capability_id
+- target
+- parameters
+- selected_provider_ids
+- provider_bindings

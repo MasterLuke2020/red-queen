@@ -1,0 +1,43 @@
+contract:
+  id: wnhf.provider_qualification
+  version: '1.1'
+  status: diagnostic_public
+  service: wnhf.provider_qualification
+  architecture: stage4.7_execution_evidence
+policy:
+  canonical_evidence_source: execution_evidence_store
+  automatic_collection_enabled: true
+  framework_persistence_enabled: true
+  installation_specific_evidence_bundled: false
+  curated_manual_profiles_enabled: false
+  legacy_provider_evidence_consumed: false
+  qualification_is_execution_authorization: false
+provider_required_fields:
+- provider_id
+- provider_version
+- qualification_version
+- qualification_status
+- hardware_verified
+- framework_verified
+- supported_capabilities
+- evidence_actions
+- statistics
+- first_verified
+- last_verified
+- evidence
+- runtime
+- confidence
+evidence_required_fields:
+- evidence_id
+- action_id
+- provider_id
+- evidence_type
+- first_verified
+- last_verified
+- pass_count
+- last_execution_id
+- last_result_code
+- hardware_verified
+- framework_verified
+- source
+- persisted_by_framework

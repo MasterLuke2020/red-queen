@@ -1,0 +1,15 @@
+contract:
+  id: wnhf.capability_resolver
+  version: '1.0'
+  implementation: 1.0-stage4.6.2
+states:
+- resolved
+- not_found
+- disabled
+- provider_unresolved
+- provider_unavailable
+- provider_unhealthy
+read_only: true
+current_integration:
+  manager_enabled: true
+  canonical_execution_consumes_resolution: true

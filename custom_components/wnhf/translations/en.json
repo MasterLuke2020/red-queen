@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Red Queen",
+        "description": "Set up Red Queen with the local registry."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Red Queen is already configured."
+    }
+  }
+}

@@ -1,0 +1,74 @@
+contract:
+  id: wnhf.access_execution
+  version: '1.0'
+  status: stable
+  compatibility: additive_only
+  service: wnhf.access_object_execute
+required_top_level_fields:
+- api_contract
+- result_code
+- error_code
+- execution_id
+- generated_at
+- finished_at
+- duration_ms
+- decision_id
+- plan_id
+- confirmed
+- accepted
+- state
+- dry_run
+- executed
+- command_sent
+- feedback_confirmed
+- command_outcome
+- effect_outcome
+- transition_effect
+- terminal_effect
+- object_id
+- step_id
+- capability_snapshot
+- capability
+- command
+- feedback_before
+- feedback_after
+- feedback_wait_ms
+- reason
+- error
+- transitions
+- blueprint
+- versions
+command_outcome:
+  required_fields:
+  - status
+  - attempted
+  - dispatched
+  - completed
+  - domain
+  - service
+  - entity_id
+  - message
+  status_values:
+  - not_attempted
+  - rejected
+  - succeeded
+  - failed
+effect_outcome:
+  required_fields:
+  - status
+  - required
+  - expected
+  - observed
+  - confirmed
+  - wait_ms
+  - message
+  status_values:
+  - not_executed
+  - not_required
+  - not_observed
+  - confirmed
+  - failed
+versions:
+  api_contract: '1.0'
+  result_contract: 2.1-multi-effect
+  result_catalog: '1.0'

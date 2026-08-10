@@ -1,0 +1,7 @@
+contract:
+  id: wnhf.provider_discovery
+  version: '1.0'
+  implementation: 1.0-stage4.5.3
+scope: internal_package_only
+external_entry_points_enabled: false
+dependency_injection_enabled: false

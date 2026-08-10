@@ -1,0 +1,11 @@
+contract:
+  id: wnhf.capability_manager
+  version: '1.0'
+  implementation: 1.0-stage4.6.3
+methods:
+- async_status
+- async_get_capabilities
+- async_get_capability
+read_only: true
+public_execution_enabled: false
+used_by_canonical_execution: true

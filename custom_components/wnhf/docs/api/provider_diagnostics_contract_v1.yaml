@@ -1,0 +1,15 @@
+contract:
+  id: wnhf.provider_diagnostics
+  version: '1.0'
+  implementation: 1.0-stage4.5.4
+provider_sections:
+- identity
+- runtime
+- contract
+- registry
+- discovery
+- qualification
+- confidence
+- capabilities
+- diagnostics
+read_only: true
