@@ -1,21 +1,21 @@
 # WNHF Canonical Real Execution Contract
 
-The stable real-execution entry is `wnhf.execution_execute`. The RC2 candidate
-surface enables two semantic lighting actions: `lighting.turn_on` and
-`lighting.turn_off`, each targeting one semantic light object through
-`target.object_id`. Parameters must be empty.
+The stable real-execution entry is `wnhf.execution_execute`. RC3 enables four semantic
+actions: `lighting.turn_on`, `lighting.turn_off`, `covers.open`, and `covers.close`.
+Each targets one semantic object through `target.object_id`; parameters must be empty.
 
-Every real execution first passes the same dry-run validation and provider
-preflight. Only a promoted validation plan can reach the Semantic Execution Router.
-The Lighting provider uses a feedback-guarded momentary pipeline for both target
-states: no toggle pulse is sent when feedback already reports the requested state,
-and a sent command is considered successful only after required feedback
-confirmation.
+Every real execution first passes dry-run validation and provider preflight. Only a
+promoted validation plan can reach the Semantic Execution Router.
 
-`wnhf.execution_execute` performs a real action and supports response data
-optionally. Callers that request a response receive the complete canonical execution
-result; ordinary dashboard or automation calls may execute without requesting a
-response.
+Lighting confirms the requested ON/OFF state. Cover execution sends one dedicated
+directional command and confirms either movement in the requested direction or the
+requested end state. A second request while the requested movement is already in
+progress returns `EXE-102` without sending a duplicate command. A request while the
+opposite movement is active is rejected rather than automatically reversing direction.
 
-The legacy Decision-ID service `wnhf.execute` is separate and is not recommended
-for new automations.
+Continuous cover position is supplemental read-only feedback and is not a canonical
+command parameter. Blade/slat commands are not canonical because blade-position
+feedback is unavailable.
+
+`wnhf.execution_execute` performs a real action and supports response data optionally.
+The legacy Decision-ID service `wnhf.execute` remains separate.

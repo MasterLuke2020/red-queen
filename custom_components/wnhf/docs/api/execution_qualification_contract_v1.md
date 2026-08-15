@@ -16,6 +16,9 @@ EXE-000 -> real_success
 EXE-101 -> idempotency
 ```
 
+`EXE-102 already_in_progress` is intentionally non-qualifying: it proves the guard
+avoided a duplicate command, but it does not establish a newly reached end state.
+
 Evidence is persisted atomically per installation at:
 
 ```text

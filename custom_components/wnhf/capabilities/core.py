@@ -63,6 +63,24 @@ def register_core_capabilities(
                         "Read semantic cover state."
                     ),
                 ),
+                CapabilityAction(
+                    action_id="covers.open",
+                    name="Open cover",
+                    mutating=True,
+                    confirmation_required=False,
+                    description=(
+                        "Start opening exactly one semantic cover object."
+                    ),
+                ),
+                CapabilityAction(
+                    action_id="covers.close",
+                    name="Close cover",
+                    mutating=True,
+                    confirmation_required=False,
+                    description=(
+                        "Start closing exactly one semantic cover object."
+                    ),
+                ),
             ),
             required_provider_capabilities=("covers",),
         ),

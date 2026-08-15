@@ -16,3 +16,6 @@ store:
 policy:
   qualification_is_execution_authorization: false
   provider_qualification_uses_same_store: true
+
+non_qualifying_result_codes:
+  EXE-102: already_in_progress

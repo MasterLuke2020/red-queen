@@ -5,18 +5,9 @@ execution surface. It validates semantic/provider readiness, the action-specific
 request envelope, the semantic target object, and provider technical capability.
 It never dispatches a hardware command.
 
-Example real-execution action contract:
+RC3 real-execution-enabled actions are `lighting.turn_on`, `lighting.turn_off`,
+`covers.open`, and `covers.close`. Each requires exactly one `target.object_id`,
+accepts no extra target keys, and accepts no parameters.
 
-```yaml
-action: wnhf.execution_dry_run
-data:
-  action_id: lighting.turn_off
-  target:
-    object_id: light.eg.kitchen.spots
-  parameters: {}
-  confirmed: false
-```
-
-For both `lighting.turn_on` and `lighting.turn_off`, `target.object_id` is mandatory,
-exactly one semantic light is targeted, no extra target keys are accepted, and
-parameters must be empty.
+For directional cover execution, provider preflight blocks unavailable/contradictory
+binary feedback and a cover currently moving in the opposite direction.

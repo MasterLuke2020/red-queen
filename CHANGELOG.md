@@ -4,19 +4,43 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
-### 1.0.0-rc2 candidate — WP-4.7.10.1
+### 1.0.0-rc3 candidate — WP-4.7.10.2
 
-#### Fixed
+#### Added
+
+- Canonical real execution for `covers.open` and `covers.close`.
+- Symmetric feedback guards for already-satisfied, already-in-progress, opposite-direction, and real-command cover paths.
+- `EXE-102 already_in_progress` for duplicate movement requests.
+- Optional cover Registry binding `feedback.closed_percent_entity_id`.
+- Read-only native Home Assistant cover position derived from PLC closing degree.
+
+#### Changed
+
+- Cover `OPEN` and `CLOSED` feedback now represent true physical end positions.
+- Stable `OPEN=false` and `CLOSED=false` is treated as an intermediate position.
+- Automatic cover direction reversal remains blocked by canonical execution.
+
+#### Verified
+
+- Native cover position at open, closed, and intermediate positions.
+- `covers.open`: real command, already-in-progress, and already-satisfied paths.
+- `covers.close`: real command, already-in-progress, and already-satisfied paths.
+- Opposite-direction guard without automatic reversal.
+- RC2 canonical lighting regression remained operational.
+
+## [1.0.0-rc2] - 2026-08-15
+
+### Fixed
 
 - Changed `wnhf.execution_execute` Home Assistant response support from response-only to optional response semantics so mutating canonical execution can be called directly from dashboards and ordinary automations.
 
-#### Added
+### Added
 
 - Canonical real execution for `lighting.turn_on`.
 - Bidirectional feedback-guarded canonical lighting execution for `lighting.turn_on` and `lighting.turn_off`.
 - Idempotent no-command behavior when the requested lighting state is already satisfied.
 
-#### Verified
+### Verified
 
 - Direct dashboard canonical execution without a wrapper script.
 - `lighting.turn_on`: real command path and already-satisfied path.

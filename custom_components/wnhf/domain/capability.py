@@ -131,6 +131,7 @@ class CapabilityCatalog:
             CapabilityDefinition("access.door_open", "access", "door_open", a, "Activate door opener.", True, False, True),
             CapabilityDefinition("access.toggle", "access", "toggle", a, "Send garage OSC pulse.", True, True, True),
             CapabilityDefinition("access.stop", "access", "stop", a, "Stop garage movement.", True, True, True),
+            CapabilityDefinition("covers.monitor_state", "covers", "monitor_state", m, "Read cover movement/end state.", False, True),
             CapabilityDefinition("covers.open", "covers", "open", a, "Open cover.", True, True),
             CapabilityDefinition("covers.close", "covers", "close", a, "Close cover.", True, True),
             CapabilityDefinition("covers.blades_open", "covers", "blades_open", a, "Open slats.", True, True),

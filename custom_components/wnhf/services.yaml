@@ -580,18 +580,18 @@ execution_dry_run:
 
 execution_execute:
   name: Execute canonical semantic action
-  description: Canonical Red Queen real-execution entry. lighting.turn_on and lighting.turn_off are enabled and target exactly one semantic light object.
+  description: Canonical Red Queen real-execution entry. lighting.turn_on, lighting.turn_off and covers.open are enabled and target exactly one semantic object.
   fields:
     action_id:
       name: Action ID
-      description: Stable semantic action ID. The current real-execution surface enables lighting.turn_on and lighting.turn_off.
+      description: Stable semantic action ID. The current real-execution surface enables lighting.turn_on, lighting.turn_off and covers.open.
       required: true
       example: lighting.turn_off
       selector:
         text:
     target:
       name: Target
-      description: Canonical semantic target map. lighting.turn_on and lighting.turn_off require exactly one object_id.
+      description: Canonical semantic target map. Lighting and canonical cover actions require exactly one object_id.
       required: true
       example:
         object_id: light.eg.kitchen.spots
@@ -599,7 +599,7 @@ execution_execute:
         object:
     parameters:
       name: Parameters
-      description: Action parameters. Must be empty for the current canonical lighting contracts.
+      description: Action parameters. Must be empty for the current canonical execution contracts.
       required: false
       example: {}
       selector:

@@ -52,7 +52,7 @@ class DiagnosticClassification:
 class ReleaseScopeManager:
     """Central immutable Red Queen release-candidate profile and warning classifier."""
 
-    VERSION = "2.2-rc2"
+    VERSION = "2.3-rc3"
     CHANNEL = RELEASE_CHANNEL
     PHASE = RELEASE_PHASE
 
@@ -86,8 +86,10 @@ class ReleaseScopeManager:
             LifecycleStage.ACTIVE,
             True,
             (
-                "Cover registry, normalized state and covers.snapshot; "
-                "canonical mutating cover actions are not yet exposed."
+                "Cover registry, normalized end/movement state, continuous "
+                "position feedback and covers.snapshot plus canonical covers.open "
+                "and covers.close execution. Blade/slat commands remain native-only "
+                "until objective blade-position feedback exists."
             ),
         ),
         "security": DomainReleaseState(

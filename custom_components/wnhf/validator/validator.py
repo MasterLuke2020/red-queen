@@ -312,14 +312,18 @@ class WNHFValidator:
                 references.append(
                     (cover.object_id, entity_id, "button", True)
                 )
-            for entity_id in (
-                cover.open_feedback_entity_id,
-                cover.closed_feedback_entity_id,
-                cover.opening_feedback_entity_id,
-                cover.closing_feedback_entity_id,
-            ):
+            for entity_id in cover.direction_feedback_entity_ids:
                 references.append(
                     (cover.object_id, entity_id, "binary_sensor", True)
+                )
+            if cover.closed_percent_feedback_entity_id:
+                references.append(
+                    (
+                        cover.object_id,
+                        cover.closed_percent_feedback_entity_id,
+                        "sensor",
+                        True,
+                    )
                 )
 
         for opening in house.openings.values():
@@ -497,12 +501,7 @@ class WNHFValidator:
                 cover.blades_close_command_entity_id,
             ):
                 command_usage[entity_id].append(cover.object_id)
-            for entity_id in (
-                cover.open_feedback_entity_id,
-                cover.closed_feedback_entity_id,
-                cover.opening_feedback_entity_id,
-                cover.closing_feedback_entity_id,
-            ):
+            for entity_id in cover.feedback_entity_ids:
                 feedback_usage[entity_id].append(cover.object_id)
 
         for opening in house.openings.values():
@@ -580,7 +579,11 @@ class WNHFValidator:
     ) -> None:
         """Validate generic semantic capability declarations."""
         catalog = self.engine.capability_catalog
-        objects = [*house.lights.values(), *house.openings.values()]
+        objects = [
+            *house.lights.values(),
+            *house.covers.values(),
+            *house.openings.values(),
+        ]
 
         for item in objects:
             for declaration in item.object_capabilities():

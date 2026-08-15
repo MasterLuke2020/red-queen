@@ -1,15 +1,11 @@
 # WNHF Canonical Execution Manager API v1.1
 
-The Execution Manager separates four concepts that must not be conflated:
+The Execution Manager separates four concepts: declared, semantically ready, real
+execution enabled, and executable now.
 
-1. **declared** — the semantic action exists in the Capability Registry;
-2. **semantically ready** — its capability resolves to available, healthy providers;
-3. **real execution enabled** — the action has a canonical real-execution contract;
-4. **executable now** — both semantic readiness and real-execution enablement are true.
+Current RC3 baseline: eight semantic actions are declared. Four actions are enabled
+through `wnhf.execution_execute`: `lighting.turn_on`, `lighting.turn_off`,
+`covers.open`, and `covers.close`.
 
-Current RC2 baseline: six actions are declared. All may be semantically ready, while
-`lighting.turn_on` and `lighting.turn_off` are enabled through `wnhf.execution_execute`.
-
-`wnhf.execution_manager` and `wnhf.execution_action` are diagnostic services.
-The manager is not read-only as a product architecture: canonical execution is
-active, while these two diagnostic services themselves do not dispatch hardware.
+`wnhf.execution_manager` and `wnhf.execution_action` are diagnostic services; they do
+not dispatch hardware themselves.

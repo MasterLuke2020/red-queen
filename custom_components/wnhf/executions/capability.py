@@ -88,7 +88,7 @@ class ExecutionCapability:
 class ExecutionCapabilityAdapter:
     """Resolve semantic objects into hardware-neutral execution strategies."""
 
-    VERSION = "2.4-rc2-lighting-bidirectional"
+    VERSION = "2.5-rc3-cover-directional"
 
     @staticmethod
     def _unsupported(
@@ -160,6 +160,12 @@ class ExecutionCapabilityAdapter:
 
         if capability_id == "lighting.turn_off":
             return cls.resolve_light_turn_off(semantic_object, snapshot)
+
+        if capability_id == "covers.open":
+            return cls.resolve_cover_open(semantic_object, snapshot)
+
+        if capability_id == "covers.close":
+            return cls.resolve_cover_close(semantic_object, snapshot)
 
         if capability_id in {"access.lock", "access.unlock"}:
             return cls._resolve_access_lock_operation(
@@ -321,6 +327,93 @@ class ExecutionCapabilityAdapter:
             command_entity_id=light.command_entity_id,
             feedback_entity_ids=tuple(light.state_entity_ids),
             reason=f"No safe adapter for control_mode={light.control_mode!r}.",
+        )
+
+    @classmethod
+    def _resolve_cover_direction(
+        cls,
+        cover,
+        snapshot,
+        *,
+        action_id: str,
+        command_entity_id: str,
+        registry_capability: str,
+    ) -> ExecutionCapability:
+        """Resolve one feedback-guarded directional cover command."""
+        feedback_entity_ids = tuple(cover.direction_feedback_entity_ids)
+
+        if registry_capability not in cover.capabilities:
+            return cls._unsupported(
+                object_id=cover.object_id,
+                capability_id=action_id,
+                command_entity_id=command_entity_id,
+                feedback_entity_ids=feedback_entity_ids,
+                reason=(
+                    f"Registry cover does not declare capability "
+                    f"{registry_capability!r}."
+                ),
+            )
+
+        if snapshot is None:
+            return cls._unsupported(
+                object_id=cover.object_id,
+                capability_id=action_id,
+                command_entity_id=command_entity_id,
+                feedback_entity_ids=feedback_entity_ids,
+                reason="No runtime cover snapshot exists.",
+            )
+
+        available = bool(snapshot.available)
+        healthy = available and not bool(snapshot.is_error)
+        direction = "opening" if action_id == "covers.open" else "closing"
+        return ExecutionCapability(
+            capability_id=action_id,
+            provider_id="provider.core.covers.directional",
+            object_id=cover.object_id,
+            supported=True,
+            available=available,
+            healthy=healthy,
+            strategy="guarded_directional_cover_pulse",
+            command_domain="button",
+            command_service="press",
+            command_entity_id=command_entity_id,
+            feedback_required=True,
+            feedback_entity_ids=feedback_entity_ids,
+            idempotency="guarded_by_directional_feedback",
+            rollback_supported=False,
+            confirmation_policy=ConfirmationPolicy(
+                required_before_dispatch=False,
+                effect_confirmation=EffectConfirmationMode.REQUIRED,
+                observe_timeout_ms=5000,
+                observe_interval_ms=100,
+            ),
+            reason=(
+                f"Directional cover pulse is permitted only with available, "
+                f"non-conflicting feedback; {direction} or the target end "
+                "state must be observed after dispatch."
+            ),
+        )
+
+    @classmethod
+    def resolve_cover_open(cls, cover, snapshot=None) -> ExecutionCapability:
+        """Resolve canonical covers.open execution."""
+        return cls._resolve_cover_direction(
+            cover,
+            snapshot,
+            action_id="covers.open",
+            command_entity_id=cover.open_command_entity_id,
+            registry_capability="open",
+        )
+
+    @classmethod
+    def resolve_cover_close(cls, cover, snapshot=None) -> ExecutionCapability:
+        """Resolve canonical covers.close execution."""
+        return cls._resolve_cover_direction(
+            cover,
+            snapshot,
+            action_id="covers.close",
+            command_entity_id=cover.close_command_entity_id,
+            registry_capability="close",
         )
 
     @classmethod

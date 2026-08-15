@@ -1,23 +1,35 @@
 contract:
   id: wnhf.generic_real_execution
-  api_version: "1.0"
-  execution_contract: 1.3-rc2
+  api_version: '1.0'
+  execution_contract: 1.5-rc3
 canonical_service: wnhf.execution_execute
 enabled_actions:
-  - lighting.turn_on
-  - lighting.turn_off
+- lighting.turn_on
+- lighting.turn_off
+- covers.open
+- covers.close
 target_mode: single_object
 validation_before_dispatch: true
 provider_preflight_before_dispatch: true
 hardware_execution_enabled: true
 all_other_actions_blocked: true
 result_codes:
-  - EXE-000
-  - EXE-101
-  - EXE-205
-  - EXE-206
-  - EXE-207
-  - EXE-208
-  - EXE-300
-  - EXE-301
-  - EXE-900
+- EXE-000
+- EXE-101
+- EXE-102
+- EXE-205
+- EXE-206
+- EXE-207
+- EXE-208
+- EXE-300
+- EXE-301
+- EXE-900
+cover_directional_semantics:
+  open_success_confirmation: opening_or_fully_open
+  close_success_confirmation: closing_or_fully_closed
+  duplicate_direction_command_while_moving: false
+  automatic_reversal_while_opposite_movement: false
+  canonical_open_execution: true
+  canonical_close_execution: true
+  canonical_blade_execution: false
+  set_position_execution: false

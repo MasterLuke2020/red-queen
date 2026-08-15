@@ -117,12 +117,7 @@ class WNHFCoverEntity(CoverEntity):
         self.async_on_remove(
             async_track_state_change_event(
                 self.hass,
-                {
-                    self.cover_object.open_feedback_entity_id,
-                    self.cover_object.closed_feedback_entity_id,
-                    self.cover_object.opening_feedback_entity_id,
-                    self.cover_object.closing_feedback_entity_id,
-                },
+                set(self.cover_object.feedback_entity_ids),
                 async_feedback_changed,
             )
         )
@@ -133,12 +128,7 @@ class WNHFCoverEntity(CoverEntity):
         if not self.cover_object.enabled:
             return False
 
-        entity_ids = (
-            self.cover_object.open_feedback_entity_id,
-            self.cover_object.closed_feedback_entity_id,
-            self.cover_object.opening_feedback_entity_id,
-            self.cover_object.closing_feedback_entity_id,
-        )
+        entity_ids = self.cover_object.direction_feedback_entity_ids
         return all(
             (state := self.hass.states.get(entity_id)) is not None
             and state.state not in {"unknown", "unavailable"}
@@ -171,10 +161,12 @@ class WNHFCoverEntity(CoverEntity):
 
     @property
     def current_cover_position(self) -> int | None:
-        """Expose only objectively known end positions."""
+        """Expose objective PLC position feedback using HA's 0=closed/100=open scale."""
         snapshot = self.engine.cover_snapshot(
             self.cover_object.object_id
         )
+        if snapshot.current_position is not None:
+            return snapshot.current_position
         if snapshot.is_open:
             return 100
         if snapshot.is_closed:
@@ -218,17 +210,23 @@ class WNHFCoverEntity(CoverEntity):
             "normalized_state": snapshot.state.value,
             "is_intermediate": snapshot.is_intermediate,
             "is_error": snapshot.is_error,
-            "is_not_fully_open": snapshot.is_not_fully_open,
+            "closed_percent": snapshot.closed_percent,
+            "current_position": snapshot.current_position,
+            "position_feedback_available": snapshot.position_available,
+            "position_warnings": list(snapshot.position_warnings),
             "errors": list(snapshot.errors),
             "feedback": {
                 "open": snapshot.feedback_open,
-                "not_fully_open": snapshot.feedback_closed,
+                "closed": snapshot.feedback_closed,
                 "opening": snapshot.feedback_opening,
                 "closing": snapshot.feedback_closing,
             },
             "capabilities": list(self.cover_object.capabilities),
             "stop_supported": False,
             "position_supported": False,
+            "position_feedback_supported": bool(
+                self.cover_object.closed_percent_feedback_entity_id
+            ),
             "tilt_position_supported": False,
             "framework_version": VERSION,
         }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static repository checks for the Red Queen 1.0.0-rc2 candidate."""
+"""Static repository checks for the Red Queen 1.0.0-rc3 candidate."""
 from __future__ import annotations
 
 import compileall
@@ -29,6 +29,7 @@ for path in [
     INTEGRATION / "services.yaml",
     INTEGRATION / "translations" / "en.json",
     INTEGRATION / "translations" / "de.json",
+    ROOT / "docs" / "RC3_CANDIDATE_VALIDATION.md",
 ]:
     if not path.exists():
         fail(f"Missing required path: {path.relative_to(ROOT)}")
@@ -42,7 +43,7 @@ except Exception as exc:
 expected = {
     "domain": "wnhf",
     "name": "Red Queen",
-    "version": "1.0.0-rc2",
+    "version": "1.0.0-rc3",
     "documentation": "https://github.com/MasterLuke2020/red-queen#readme",
     "issue_tracker": "https://github.com/MasterLuke2020/red-queen/issues",
     "codeowners": ["@MasterLuke2020"],
@@ -69,9 +70,9 @@ if len(service_keys) != 66:
 if len(set(service_keys)) != len(service_keys):
     fail("Duplicate service keys detected in services.yaml")
 
-checksum_file = ROOT / "checksums" / "rc2_source.sha256"
+checksum_file = ROOT / "checksums" / "rc3_source.sha256"
 if not checksum_file.exists():
-    fail("Missing RC2 source checksum catalogue: checksums/rc2_source.sha256")
+    fail("Missing RC3 source checksum catalogue: checksums/rc3_source.sha256")
 else:
     for line in checksum_file.read_text(encoding="utf-8").splitlines():
         if not line.strip():
@@ -98,5 +99,5 @@ if ERRORS:
 print("Red Queen repository verification PASS")
 print(f"- integration: {manifest.get('name')} {manifest.get('version')} ({manifest.get('domain')})")
 print(f"- services: {len(service_keys)}")
-print("- RC2 source checksums: PASS")
+print("- RC3 source checksums: PASS")
 print("- active HACS metadata: intentionally disabled")

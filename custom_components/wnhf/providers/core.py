@@ -331,24 +331,283 @@ class LightingCapabilityProvider(_BaseProvider):
 
 
 class CoversCapabilityProvider(_BaseProvider):
-    """Auto-discoverable core provider."""
+    """Auto-discoverable core cover provider."""
 
     provider_name = "CoversCapabilityProvider"
     discoverable = True
+    _EXECUTABLE_ACTIONS = {
+        "covers.open",
+        "covers.close",
+    }
 
     def __init__(self, engine) -> None:
         super().__init__(engine, "provider.core.covers", "covers")
+
+    @staticmethod
+    def _resolve_execution_capability(action_id: str, cover, snapshot):
+        if action_id == "covers.open":
+            return ExecutionCapabilityAdapter.resolve_cover_open(
+                cover,
+                snapshot,
+            )
+        if action_id == "covers.close":
+            return ExecutionCapabilityAdapter.resolve_cover_close(
+                cover,
+                snapshot,
+            )
+        return None
+
+    @staticmethod
+    def _opposite_movement(action_id: str, snapshot) -> bool:
+        if action_id == "covers.open":
+            return snapshot.is_closing
+        if action_id == "covers.close":
+            return snapshot.is_opening
+        return False
+
+    async def async_validate_execution(
+        self,
+        *,
+        action_id: str,
+        target: dict,
+        parameters: dict,
+        confirmed: bool,
+    ) -> ProviderExecutionValidationResult:
+        """Validate canonical directional cover execution."""
+        if action_id not in self._EXECUTABLE_ACTIONS:
+            return await super().async_validate_execution(
+                action_id=action_id,
+                target=target,
+                parameters=parameters,
+                confirmed=confirmed,
+            )
+
+        object_id = target.get("object_id")
+        if not isinstance(object_id, str) or not object_id.strip():
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"{action_id} requires target.object_id.",
+                errors=("target.object_id is required.",),
+            )
+        if parameters:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"{action_id} does not accept parameters.",
+                errors=(f"parameters must be empty for {action_id}.",),
+            )
+
+        try:
+            cover = self.engine._require_house().cover(object_id)
+            snapshot = self.engine.cover_snapshot(object_id)
+            capability = self._resolve_execution_capability(
+                action_id,
+                cover,
+                snapshot,
+            )
+        except KeyError:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"Unknown semantic cover object ID: {object_id}.",
+                errors=(f"Unknown semantic cover object ID: {object_id}.",),
+            )
+        except Exception as err:  # noqa: BLE001
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason="Cover execution validation failed.",
+                errors=(f"{type(err).__name__}: {err}",),
+            )
+
+        if capability is None:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"No canonical cover adapter exists for {action_id}.",
+                errors=(f"No canonical cover adapter exists for {action_id}.",),
+            )
+
+        if not (
+            capability.supported
+            and capability.available
+            and capability.healthy
+        ):
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=capability.reason,
+                errors=(capability.reason,),
+                technical_capability=capability.as_dict(),
+            )
+
+        if self._opposite_movement(action_id, snapshot):
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=(
+                    "Cover is currently moving in the opposite direction; "
+                    "canonical reversal is intentionally not enabled."
+                ),
+                errors=(
+                    "Wait for a stable cover state before reversing direction.",
+                ),
+                technical_capability=capability.as_dict(),
+            )
+
+        return ProviderExecutionValidationResult(
+            valid=True,
+            reason=(
+                f"{action_id} target and current cover feedback are valid "
+                "for canonical execution."
+            ),
+            technical_capability=capability.as_dict(),
+        )
+
+    async def async_execute(
+        self,
+        *,
+        action_id: str,
+        target: dict,
+        parameters: dict,
+        confirmed: bool,
+    ) -> ProviderExecutionResult:
+        """Execute one qualified canonical directional cover action."""
+        if action_id not in self._EXECUTABLE_ACTIONS:
+            return await super().async_execute(
+                action_id=action_id,
+                target=target,
+                parameters=parameters,
+                confirmed=confirmed,
+            )
+
+        object_id = target.get("object_id")
+        if not isinstance(object_id, str) or not object_id.strip():
+            return ProviderExecutionResult(
+                status="rejected",
+                executed=False,
+                command_sent=False,
+                feedback_confirmed=False,
+                reason=f"{action_id} requires target.object_id.",
+            )
+
+        if parameters:
+            return ProviderExecutionResult(
+                status="rejected",
+                executed=False,
+                command_sent=False,
+                feedback_confirmed=False,
+                reason=f"{action_id} does not accept parameters.",
+            )
+
+        try:
+            cover = self.engine._require_house().cover(object_id)
+            snapshot = self.engine.cover_snapshot(object_id)
+            capability = self._resolve_execution_capability(
+                action_id,
+                cover,
+                snapshot,
+            )
+
+            if capability is None:
+                return ProviderExecutionResult(
+                    status="unsupported",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=f"No canonical cover adapter exists for {action_id}.",
+                )
+
+            if not (
+                capability.supported
+                and capability.available
+                and capability.healthy
+            ):
+                return ProviderExecutionResult(
+                    status="rejected",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=capability.reason,
+                    technical_capability=capability.as_dict(),
+                )
+
+            if self._opposite_movement(action_id, snapshot):
+                return ProviderExecutionResult(
+                    status="rejected",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=(
+                        "Cover is moving in the opposite direction; wait for "
+                        "a stable state before reversing direction."
+                    ),
+                    technical_capability=capability.as_dict(),
+                    feedback_before=snapshot.as_dict(),
+                )
+
+            class _Step:
+                def __init__(self) -> None:
+                    self.object_id = object_id
+                    self.command_entity_id = capability.command_entity_id
+                    self.capability = capability.as_dict()
+
+            pipeline_result = (
+                await ExecutionPipeline.async_execute_guarded_cover_step(
+                    hass=self.engine.hass,
+                    step=_Step(),
+                    snapshot_reader=self.engine.cover_snapshot,
+                    feedback_timeout_seconds=(
+                        capability.confirmation_policy.observe_timeout_ms
+                        / 1000.0
+                    ),
+                    feedback_interval_seconds=(
+                        capability.confirmation_policy.observe_interval_ms
+                        / 1000.0
+                    ),
+                )
+            )
+
+            if pipeline_result.state == "succeeded":
+                status = "succeeded"
+                effect_confirmed = True
+            elif pipeline_result.state == "skipped":
+                status = "no_action"
+                effect_confirmed = True
+            elif pipeline_result.state == "in_progress":
+                status = "in_progress"
+                effect_confirmed = True
+            elif pipeline_result.state == "rejected":
+                status = "rejected"
+                effect_confirmed = False
+            else:
+                status = "failed"
+                effect_confirmed = bool(
+                    pipeline_result.feedback_confirmed
+                )
+
+            return ProviderExecutionResult(
+                status=status,
+                executed=pipeline_result.executed,
+                command_sent=pipeline_result.command_sent,
+                feedback_confirmed=effect_confirmed,
+                reason=pipeline_result.reason,
+                error=pipeline_result.error,
+                technical_capability=capability.as_dict(),
+                feedback_before=pipeline_result.feedback_before,
+                feedback_after=pipeline_result.feedback_after,
+                feedback_wait_ms=pipeline_result.feedback_wait_ms,
+            )
+
+        except Exception as err:  # noqa: BLE001
+            return ProviderExecutionResult(
+                status="failed",
+                executed=False,
+                command_sent=False,
+                feedback_confirmed=False,
+                reason="Cover provider execution failed.",
+                error=f"{type(err).__name__}: {err}",
+            )
 
     def snapshot(self) -> CapabilitySnapshot:
         house = self.engine._require_house()
         supported = bool(house.covers)
         snapshots = self.engine.cover_snapshots() if supported else []
-        required_entities = self.engine.cover_feedback_entities() if supported else set()
-        available = supported and all(
-            (state := self.engine.hass.states.get(entity_id)) is not None
-            and state.state not in {"unknown", "unavailable"}
-            for entity_id in required_entities
-        )
+        available = supported and all(item.available for item in snapshots)
         errors = [item for item in snapshots if item.is_error]
         healthy = available and not errors
         return self._snapshot(
@@ -367,8 +626,11 @@ class CoversCapabilityProvider(_BaseProvider):
             details={
                 "objects": len(house.covers),
                 "enabled": len(house.enabled_covers),
+                "available": sum(1 for item in snapshots if item.available),
                 "moving": sum(1 for item in snapshots if item.is_moving),
                 "errors": len(errors),
+                "canonical_actions": sorted(self._EXECUTABLE_ACTIONS),
+                "canonical_blade_execution": False,
             },
         )
 

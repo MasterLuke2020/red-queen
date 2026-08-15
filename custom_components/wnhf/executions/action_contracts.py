@@ -86,6 +86,20 @@ _CANONICAL_ACTION_CONTRACTS = {
         allowed_target_keys=("object_id",),
         allowed_parameter_keys=(),
     ),
+    "covers.open": CanonicalActionExecutionContract(
+        action_id="covers.open",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=(),
+    ),
+    "covers.close": CanonicalActionExecutionContract(
+        action_id="covers.close",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=(),
+    ),
 }
 
 REAL_EXECUTION_ENABLED_ACTIONS = frozenset(_CANONICAL_ACTION_CONTRACTS)

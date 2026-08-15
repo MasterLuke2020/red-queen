@@ -233,6 +233,19 @@ def _required_string(mapping: dict[str, Any], key: str, object_id: str, section:
         raise WNHFRegistryError(f"Cover '{object_id}': invalid {section}.{key}")
     return value
 
+def _optional_cover_string(
+    mapping: dict[str, Any],
+    key: str,
+    object_id: str,
+    section: str,
+) -> str | None:
+    value = mapping.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value:
+        raise WNHFRegistryError(f"Cover '{object_id}': invalid {section}.{key}")
+    return value
+
 def _load_covers(path: Path, rooms: dict[str, Room]) -> tuple[dict[str, Cover], list[str]]:
     raw = _load_yaml(path)
     cover_list = raw.get("covers")
@@ -266,6 +279,9 @@ def _load_covers(path: Path, rooms: dict[str, Room]) -> tuple[dict[str, Cover], 
             closed_feedback_entity_id=_required_string(feedback,"closed_entity_id",object_id,"feedback"),
             opening_feedback_entity_id=_required_string(feedback,"opening_entity_id",object_id,"feedback"),
             closing_feedback_entity_id=_required_string(feedback,"closing_entity_id",object_id,"feedback"),
+            closed_percent_feedback_entity_id=_optional_cover_string(
+                feedback,"closed_percent_entity_id",object_id,"feedback"
+            ),
             capabilities=tuple(capabilities))
         covers[object_id]=cover; rooms[room_id].add_cover(cover)
     return covers,warnings

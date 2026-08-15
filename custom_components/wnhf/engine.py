@@ -748,6 +748,8 @@ class WNHFEngine:
 
         for light in house.lights.values():
             declarations.extend(light.object_capabilities())
+        for cover in house.covers.values():
+            declarations.extend(cover.object_capabilities())
         for opening in house.openings.values():
             declarations.extend(opening.object_capabilities())
 
@@ -4924,22 +4926,46 @@ class WNHFEngine:
         return state is not None and state.state == "on"
 
     def cover_snapshot(self, cover_id: str) -> CoverSnapshot:
-        """Return the normalized runtime state of one cover."""
+        """Return the normalized runtime state and optional position of one cover."""
         cover = self._require_house().cover(cover_id)
+        feedback_states = {
+            entity_id: self.hass.states.get(entity_id)
+            for entity_id in cover.direction_feedback_entity_ids
+        }
+        available = all(
+            state is not None
+            and state.state not in {"unknown", "unavailable"}
+            for state in feedback_states.values()
+        )
+
+        def is_on(entity_id: str) -> bool:
+            state = feedback_states[entity_id]
+            return state is not None and state.state == "on"
+
+        closed_percent: float | None = None
+        position_available = False
+        position_entity_id = cover.closed_percent_feedback_entity_id
+        if position_entity_id:
+            position_state = self.hass.states.get(position_entity_id)
+            if (
+                position_state is not None
+                and position_state.state not in {"unknown", "unavailable"}
+            ):
+                try:
+                    closed_percent = float(position_state.state)
+                    position_available = True
+                except (TypeError, ValueError):
+                    closed_percent = None
+
         return CoverStateMachine.evaluate(
             cover,
-            feedback_open=self._entity_is_on(
-                cover.open_feedback_entity_id
-            ),
-            feedback_closed=self._entity_is_on(
-                cover.closed_feedback_entity_id
-            ),
-            feedback_opening=self._entity_is_on(
-                cover.opening_feedback_entity_id
-            ),
-            feedback_closing=self._entity_is_on(
-                cover.closing_feedback_entity_id
-            ),
+            available=available,
+            feedback_open=is_on(cover.open_feedback_entity_id),
+            feedback_closed=is_on(cover.closed_feedback_entity_id),
+            feedback_opening=is_on(cover.opening_feedback_entity_id),
+            feedback_closing=is_on(cover.closing_feedback_entity_id),
+            closed_percent=closed_percent,
+            position_available=position_available,
         )
 
     def cover_snapshots(self) -> list[CoverSnapshot]:
@@ -4989,14 +5015,7 @@ class WNHFEngine:
     def cover_feedback_entities(self) -> set[str]:
         entities: set[str] = set()
         for cover in self._require_house().enabled_covers:
-            entities.update(
-                {
-                    cover.open_feedback_entity_id,
-                    cover.closed_feedback_entity_id,
-                    cover.opening_feedback_entity_id,
-                    cover.closing_feedback_entity_id,
-                }
-            )
+            entities.update(cover.feedback_entity_ids)
         return entities
 
     async def async_cover_open(self, cover_id: str) -> dict[str, Any]:

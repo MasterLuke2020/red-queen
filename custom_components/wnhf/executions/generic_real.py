@@ -23,6 +23,7 @@ class GenericRealExecutionState(StrEnum):
 class GenericRealResultCode(StrEnum):
     SUCCEEDED = "EXE-000"
     ALREADY_SATISFIED = "EXE-101"
+    ALREADY_IN_PROGRESS = "EXE-102"
     ACTION_NOT_IMPLEMENTED = "EXE-205"
     PLAN_REJECTED = "EXE-206"
     PROVIDER_NOT_FOUND = "EXE-207"
@@ -91,7 +92,7 @@ class GenericExecutionEngine:
     """
 
     API_VERSION = "1.0"
-    VERSION = "1.3-rc2"
+    VERSION = "1.5-rc3"
     ENABLED_ACTIONS = REAL_EXECUTION_ENABLED_ACTIONS
 
     def __init__(
@@ -250,6 +251,11 @@ class GenericExecutionEngine:
             elif provider_status == "no_action":
                 state = GenericRealExecutionState.NO_ACTION
                 code = GenericRealResultCode.ALREADY_SATISFIED
+                accepted = True
+                executable = True
+            elif provider_status == "in_progress":
+                state = GenericRealExecutionState.NO_ACTION
+                code = GenericRealResultCode.ALREADY_IN_PROGRESS
                 accepted = True
                 executable = True
             elif provider_status in {
