@@ -6,4 +6,5 @@ generic_engine_direct_provider_registry_access: false
 router_owns_provider_lookup: true
 provider_selection_owned_by_capability_layer: true
 enabled_real_actions:
+- lighting.turn_on
 - lighting.turn_off

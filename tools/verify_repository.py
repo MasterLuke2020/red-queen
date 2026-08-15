@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Static repository checks for Red Queen.
-
-This intentionally does not replace Home Assistant hassfest or HACS validation.
-It verifies the frozen repository structure and basic release invariants using the
-Python standard library only.
-"""
+"""Static repository checks for the Red Queen 1.0.0-rc2 candidate."""
 from __future__ import annotations
 
 import compileall
@@ -23,7 +18,6 @@ def fail(message: str) -> None:
     ERRORS.append(message)
 
 
-# Required repository/runtime paths.
 for path in [
     ROOT / "README.md",
     ROOT / "PUBLISHING_CHECKLIST.md",
@@ -39,7 +33,6 @@ for path in [
     if not path.exists():
         fail(f"Missing required path: {path.relative_to(ROOT)}")
 
-# Manifest identity.
 try:
     manifest = json.loads((INTEGRATION / "manifest.json").read_text(encoding="utf-8"))
 except Exception as exc:
@@ -49,7 +42,7 @@ except Exception as exc:
 expected = {
     "domain": "wnhf",
     "name": "Red Queen",
-    "version": "1.0.0-rc1",
+    "version": "1.0.0-rc2",
     "documentation": "https://github.com/MasterLuke2020/red-queen#readme",
     "issue_tracker": "https://github.com/MasterLuke2020/red-queen/issues",
     "codeowners": ["@MasterLuke2020"],
@@ -58,7 +51,6 @@ for key, value in expected.items():
     if manifest.get(key) != value:
         fail(f"manifest {key!r}: expected {value!r}, got {manifest.get(key)!r}")
 
-# JSON files.
 for path in ROOT.rglob("*.json"):
     if path.name.endswith(".example"):
         continue
@@ -67,11 +59,9 @@ for path in ROOT.rglob("*.json"):
     except Exception as exc:
         fail(f"Invalid JSON {path.relative_to(ROOT)}: {exc}")
 
-# Python syntax/bytecode compilation.
 if not compileall.compile_dir(str(INTEGRATION), quiet=1, force=True):
     fail("Python compileall failed")
 
-# Service inventory count (top-level service keys in services.yaml).
 service_text = (INTEGRATION / "services.yaml").read_text(encoding="utf-8")
 service_keys = re.findall(r"(?m)^([a-z0-9_]+):\s*$", service_text)
 if len(service_keys) != 66:
@@ -79,9 +69,10 @@ if len(service_keys) != 66:
 if len(set(service_keys)) != len(service_keys):
     fail("Duplicate service keys detected in services.yaml")
 
-# Verify frozen RC1 source hashes.
-checksum_file = ROOT / "checksums" / "rc1_source.sha256"
-if checksum_file.exists():
+checksum_file = ROOT / "checksums" / "rc2_source.sha256"
+if not checksum_file.exists():
+    fail("Missing RC2 source checksum catalogue: checksums/rc2_source.sha256")
+else:
     for line in checksum_file.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
@@ -95,9 +86,8 @@ if checksum_file.exists():
         if actual != expected_hash:
             fail(f"Checksum mismatch: {rel}")
 
-# Publication safety: HACS remains intentionally inactive until branding is ready.
 if (ROOT / "hacs.json").exists():
-    fail("hacs.json is active, but this snapshot is intentionally pre-publication")
+    fail("hacs.json is active, but this candidate remains pre-publication")
 
 if ERRORS:
     print("Red Queen repository verification FAILED")
@@ -108,6 +98,5 @@ if ERRORS:
 print("Red Queen repository verification PASS")
 print(f"- integration: {manifest.get('name')} {manifest.get('version')} ({manifest.get('domain')})")
 print(f"- services: {len(service_keys)}")
-print("- private-publication metadata: PASS")
-print("- repository source checksums: PASS")
+print("- RC2 source checksums: PASS")
 print("- active HACS metadata: intentionally disabled")

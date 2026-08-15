@@ -88,7 +88,7 @@ class ExecutionCapability:
 class ExecutionCapabilityAdapter:
     """Resolve semantic objects into hardware-neutral execution strategies."""
 
-    VERSION = "2.3-stage4.3.2B.5.2"
+    VERSION = "2.4-rc2-lighting-bidirectional"
 
     @staticmethod
     def _unsupported(
@@ -155,6 +155,9 @@ class ExecutionCapabilityAdapter:
                 reason="The Registry object is disabled.",
             )
 
+        if capability_id == "lighting.turn_on":
+            return cls.resolve_light_turn_on(semantic_object, snapshot)
+
         if capability_id == "lighting.turn_off":
             return cls.resolve_light_turn_off(semantic_object, snapshot)
 
@@ -190,6 +193,70 @@ class ExecutionCapabilityAdapter:
                 "The capability is declared, but no qualified execution "
                 "resolver exists in this stage."
             ),
+        )
+
+    @classmethod
+    def resolve_light_turn_on(cls, light, snapshot=None) -> ExecutionCapability:
+        """Resolve a safe turn-on strategy for one light."""
+        if snapshot is None:
+            return ExecutionCapability(
+                capability_id="lighting.turn_on",
+                provider_id="provider.core.lighting.disabled",
+                object_id=light.object_id,
+                supported=False,
+                available=False,
+                healthy=False,
+                strategy="disabled_or_not_loaded",
+                command_domain=None,
+                command_service=None,
+                command_entity_id=light.command_entity_id,
+                feedback_required=True,
+                feedback_entity_ids=tuple(light.state_entity_ids),
+                idempotency="not_available",
+                rollback_supported=False,
+                confirmation_policy=ConfirmationPolicy(
+                    required_before_dispatch=False,
+                    effect_confirmation=EffectConfirmationMode.REQUIRED,
+                    observe_timeout_ms=5000,
+                ),
+                reason="No runtime snapshot exists.",
+            )
+
+        if light.control_mode == "toggle" and light.command_entity_id:
+            available = bool(snapshot.available)
+            healthy = available and bool(light.state_entity_ids)
+            return ExecutionCapability(
+                capability_id="lighting.turn_on",
+                provider_id="provider.core.lighting.toggle",
+                object_id=light.object_id,
+                supported=True,
+                available=available,
+                healthy=healthy,
+                strategy="guarded_momentary_pulse",
+                command_domain="button",
+                command_service="press",
+                command_entity_id=light.command_entity_id,
+                feedback_required=True,
+                feedback_entity_ids=tuple(light.state_entity_ids),
+                idempotency="guarded_by_feedback",
+                rollback_supported=False,
+                confirmation_policy=ConfirmationPolicy(
+                    required_before_dispatch=False,
+                    effect_confirmation=EffectConfirmationMode.REQUIRED,
+                    observe_timeout_ms=5000,
+                ),
+                reason=(
+                    "Momentary pulse is permitted only after feedback "
+                    "confirms that the light is currently off."
+                ),
+            )
+
+        return cls._unsupported(
+            object_id=light.object_id,
+            capability_id="lighting.turn_on",
+            command_entity_id=light.command_entity_id,
+            feedback_entity_ids=tuple(light.state_entity_ids),
+            reason=f"No safe adapter for control_mode={light.control_mode!r}.",
         )
 
     @classmethod

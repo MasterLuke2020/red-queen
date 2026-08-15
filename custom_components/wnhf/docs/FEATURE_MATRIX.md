@@ -1,9 +1,9 @@
-# Red Queen 1.0.0-rc1 Feature Matrix
+# Red Queen 1.0.0-rc2 Feature Matrix
 
-| Domain | Semantic model/state | Stable snapshot/diagnostics | Canonical mutating execution | RC1 status |
+| Domain | Semantic model/state | Stable snapshot/diagnostics | Canonical mutating execution | RC2 status |
 |---|---:|---:|---:|---|
 | Rooms | Yes | Yes | N/A | Stable |
-| Lighting | Yes | Yes | `lighting.turn_off` | Stable |
+| Lighting | Yes | Yes | `lighting.turn_on`, `lighting.turn_off` | RC2 candidate |
 | Openings | Yes | `openings.snapshot` | No | Stable state/read surface |
 | Covers | Yes | `covers.snapshot` | Not yet | Stable state/read surface |
 | Security | Yes | `security.snapshot` | No | Stable state/read surface |

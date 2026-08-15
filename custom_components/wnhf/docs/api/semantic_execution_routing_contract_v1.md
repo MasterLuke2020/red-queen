@@ -13,4 +13,5 @@ The Capability Layer remains responsible for provider selection. The router
 only resolves the already-selected provider ID to the provider instance and
 normalizes the provider execution result.
 
-`lighting.turn_off` remains the only real generic action enabled in WP-4.7.4.
+The RC2 candidate enables `lighting.turn_on` and `lighting.turn_off` through the
+same provider-bound canonical route.

@@ -1,4 +1,4 @@
-# Red Queen 1.0.0-rc1
+# Red Queen 1.0.0-rc2
 
 Red Queen is a semantic home framework for Home Assistant. It models the house as
 objects and state, evaluates context/rules/policies/decisions, resolves capabilities
@@ -24,11 +24,11 @@ is not recommended for new automations.
 ## Release status
 
 - Product: Red Queen
-- Version: `1.0.0-rc1`
+- Version: `1.0.0-rc2`
 - Channel: `release_candidate`
 - Phase: `rc`
-- Candidate: `rc1`
-- Verified development baseline: WNHF `1.27.0` / `WP-4.7.9.1`
+- Candidate: `rc2`
+- Candidate development baseline: WNHF `1.28.0` / `WP-4.7.10.1`
 
 ## Stable 1.0 RC scope
 
@@ -37,12 +37,13 @@ security, providers, capabilities, qualification, validation, rules, context,
 policies, decisions, canonical execution and scheduler diagnostics.
 
 The stable canonical mutating execution surface is intentionally narrower than the
-semantic model. At RC1, `lighting.turn_off` is the canonical real-execution action.
+semantic model. At RC2, `lighting.turn_on` and `lighting.turn_off` are the canonical
+real-execution lighting actions.
 Cover state/snapshots are present, while canonical mutating cover actions are not yet
 part of the stable execution surface. Climate, media, notifications and active garage
 actuation remain planned domains.
 
-See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc1.md`.
+See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc2.md`.
 
 ## Qualification
 

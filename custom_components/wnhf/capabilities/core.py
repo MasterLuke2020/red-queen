@@ -25,6 +25,15 @@ def register_core_capabilities(
             kind=CapabilityKind.CORE,
             actions=(
                 CapabilityAction(
+                    action_id="lighting.turn_on",
+                    name="Turn lighting on",
+                    mutating=True,
+                    confirmation_required=False,
+                    description=(
+                        "Turn on exactly one semantic light object."
+                    ),
+                ),
+                CapabilityAction(
                     action_id="lighting.turn_off",
                     name="Turn lighting off",
                     mutating=True,

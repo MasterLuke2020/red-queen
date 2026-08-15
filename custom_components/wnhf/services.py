@@ -461,7 +461,7 @@ async def async_register_services(
 
     async def handle_execution_execute(
         call: ServiceCall,
-    ) -> dict:
+    ) -> dict | None:
         result = await engine.execution_execute(
             action_id=str(call.data["action_id"]),
             target=dict(call.data.get("target", {})),
@@ -473,7 +473,7 @@ async def async_register_services(
             SIGNAL_EXECUTION_EXECUTE_UPDATED,
         )
         async_dispatcher_send(hass, SIGNAL_PERFORMANCE_UPDATED)
-        return result
+        return result if call.return_response else None
 
     async def handle_execution_dry_run(
         call: ServiceCall,
@@ -1052,7 +1052,7 @@ async def async_register_services(
                 vol.Optional("confirmed", default=False): cv.boolean,
             }
         ),
-        supports_response=SupportsResponse.ONLY,
+        supports_response=SupportsResponse.OPTIONAL,
     )
     hass.services.async_register(
         DOMAIN,

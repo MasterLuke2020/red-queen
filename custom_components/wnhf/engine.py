@@ -3079,10 +3079,16 @@ class WNHFEngine:
 
         requested: list[tuple[Any, str, Any]] = []
         for light in house.lights.values():
+            snapshot = light_snapshots.get(light.object_id)
+            requested.append((
+                light,
+                "lighting.turn_on",
+                snapshot,
+            ))
             requested.append((
                 light,
                 "lighting.turn_off",
-                light_snapshots.get(light.object_id),
+                snapshot,
             ))
 
         qualified_access_ids = {

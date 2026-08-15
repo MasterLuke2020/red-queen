@@ -72,6 +72,13 @@ class CanonicalActionExecutionContract:
 
 
 _CANONICAL_ACTION_CONTRACTS = {
+    "lighting.turn_on": CanonicalActionExecutionContract(
+        action_id="lighting.turn_on",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=(),
+    ),
     "lighting.turn_off": CanonicalActionExecutionContract(
         action_id="lighting.turn_off",
         target_mode="single_object",

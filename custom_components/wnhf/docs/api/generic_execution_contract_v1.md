@@ -5,7 +5,7 @@ execution surface. It validates semantic/provider readiness, the action-specific
 request envelope, the semantic target object, and provider technical capability.
 It never dispatches a hardware command.
 
-Current real-execution action contract:
+Example real-execution action contract:
 
 ```yaml
 action: wnhf.execution_dry_run
@@ -17,5 +17,6 @@ data:
   confirmed: false
 ```
 
-For `lighting.turn_off`, `target.object_id` is mandatory, exactly one semantic
-light is targeted, no extra target keys are accepted, and parameters must be empty.
+For both `lighting.turn_on` and `lighting.turn_off`, `target.object_id` is mandatory,
+exactly one semantic light is targeted, no extra target keys are accepted, and
+parameters must be empty.

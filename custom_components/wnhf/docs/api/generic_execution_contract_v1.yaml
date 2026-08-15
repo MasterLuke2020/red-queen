@@ -1,10 +1,15 @@
 contract:
   id: wnhf.generic_execution
   version: "1.1"
-  implementation: 1.1-stage4.7.9.1
+  implementation: 1.2-rc2
 dry_run_enabled: true
 hardware_dispatch_in_dry_run: false
 real_execution_enabled_actions:
+  lighting.turn_on:
+    target_mode: single_object
+    required_target_keys: [object_id]
+    allowed_target_keys: [object_id]
+    allowed_parameter_keys: []
   lighting.turn_off:
     target_mode: single_object
     required_target_keys: [object_id]

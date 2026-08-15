@@ -73,9 +73,27 @@ class LightingCapabilityProvider(_BaseProvider):
 
     provider_name = "LightingCapabilityProvider"
     discoverable = True
+    _EXECUTABLE_ACTIONS = {
+        "lighting.turn_on",
+        "lighting.turn_off",
+    }
 
     def __init__(self, engine) -> None:
         super().__init__(engine, "provider.core.lighting", "lighting")
+
+    @staticmethod
+    def _resolve_execution_capability(action_id: str, light, snapshot):
+        if action_id == "lighting.turn_on":
+            return ExecutionCapabilityAdapter.resolve_light_turn_on(
+                light,
+                snapshot,
+            )
+        if action_id == "lighting.turn_off":
+            return ExecutionCapabilityAdapter.resolve_light_turn_off(
+                light,
+                snapshot,
+            )
+        return None
 
     async def async_validate_execution(
         self,
@@ -86,7 +104,7 @@ class LightingCapabilityProvider(_BaseProvider):
         confirmed: bool,
     ) -> ProviderExecutionValidationResult:
         """Validate canonical lighting execution without dispatching hardware."""
-        if action_id != "lighting.turn_off":
+        if action_id not in self._EXECUTABLE_ACTIONS:
             return await super().async_validate_execution(
                 action_id=action_id,
                 target=target,
@@ -98,20 +116,21 @@ class LightingCapabilityProvider(_BaseProvider):
         if not isinstance(object_id, str) or not object_id.strip():
             return ProviderExecutionValidationResult(
                 valid=False,
-                reason="lighting.turn_off requires target.object_id.",
+                reason=f"{action_id} requires target.object_id.",
                 errors=("target.object_id is required.",),
             )
         if parameters:
             return ProviderExecutionValidationResult(
                 valid=False,
-                reason="lighting.turn_off does not accept parameters.",
-                errors=("parameters must be empty for lighting.turn_off.",),
+                reason=f"{action_id} does not accept parameters.",
+                errors=(f"parameters must be empty for {action_id}.",),
             )
 
         try:
             light = self.engine._require_house().light(object_id)
             snapshot = self.engine.light_snapshot(object_id)
-            capability = ExecutionCapabilityAdapter.resolve_light_turn_off(
+            capability = self._resolve_execution_capability(
+                action_id,
                 light,
                 snapshot,
             )
@@ -126,6 +145,13 @@ class LightingCapabilityProvider(_BaseProvider):
                 valid=False,
                 reason="Lighting execution validation failed.",
                 errors=(f"{type(err).__name__}: {err}",),
+            )
+
+        if capability is None:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"No canonical lighting adapter exists for {action_id}.",
+                errors=(f"No canonical lighting adapter exists for {action_id}.",),
             )
 
         if not (
@@ -143,7 +169,7 @@ class LightingCapabilityProvider(_BaseProvider):
         return ProviderExecutionValidationResult(
             valid=True,
             reason=(
-                "lighting.turn_off target and current technical capability "
+                f"{action_id} target and current technical capability "
                 "are valid for canonical execution."
             ),
             technical_capability=capability.as_dict(),
@@ -157,8 +183,8 @@ class LightingCapabilityProvider(_BaseProvider):
         parameters: dict,
         confirmed: bool,
     ) -> ProviderExecutionResult:
-        """Execute the first qualified generic lighting action."""
-        if action_id != "lighting.turn_off":
+        """Execute one qualified canonical lighting action."""
+        if action_id not in self._EXECUTABLE_ACTIONS:
             return await super().async_execute(
                 action_id=action_id,
                 target=target,
@@ -173,9 +199,7 @@ class LightingCapabilityProvider(_BaseProvider):
                 executed=False,
                 command_sent=False,
                 feedback_confirmed=False,
-                reason=(
-                    "lighting.turn_off requires target.object_id."
-                ),
+                reason=f"{action_id} requires target.object_id.",
             )
 
         if parameters:
@@ -184,20 +208,27 @@ class LightingCapabilityProvider(_BaseProvider):
                 executed=False,
                 command_sent=False,
                 feedback_confirmed=False,
-                reason=(
-                    "lighting.turn_off does not accept parameters."
-                ),
+                reason=f"{action_id} does not accept parameters.",
             )
 
         try:
             light = self.engine._require_house().light(object_id)
             snapshot = self.engine.light_snapshot(object_id)
-            capability = (
-                ExecutionCapabilityAdapter.resolve_light_turn_off(
-                    light,
-                    snapshot,
-                )
+            capability = self._resolve_execution_capability(
+                action_id,
+                light,
+                snapshot,
             )
+            if capability is None:
+                return ProviderExecutionResult(
+                    status="unsupported",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=(
+                        f"No canonical lighting adapter exists for {action_id}."
+                    ),
+                )
 
             if not (
                 capability.supported
@@ -213,13 +244,11 @@ class LightingCapabilityProvider(_BaseProvider):
                     technical_capability=capability.as_dict(),
                 )
 
-            # Minimal step adapter for the already-qualified guarded pipeline.
+            # Minimal step adapter for the qualified guarded lighting pipeline.
             class _Step:
                 def __init__(self) -> None:
                     self.object_id = object_id
-                    self.command_entity_id = (
-                        capability.command_entity_id
-                    )
+                    self.command_entity_id = capability.command_entity_id
                     self.capability = capability.as_dict()
 
             pipeline_result = (
@@ -242,8 +271,8 @@ class LightingCapabilityProvider(_BaseProvider):
                 status = "succeeded"
                 effect_confirmed = True
             elif pipeline_result.state == "skipped":
-                # The qualified pipeline skips only when feedback already
-                # reports the requested off state.
+                # The guarded pipeline skips only when feedback already
+                # reports the requested target state.
                 status = "no_action"
                 effect_confirmed = True
             else:

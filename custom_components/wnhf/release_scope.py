@@ -52,7 +52,7 @@ class DiagnosticClassification:
 class ReleaseScopeManager:
     """Central immutable Red Queen release-candidate profile and warning classifier."""
 
-    VERSION = "2.1-rc1"
+    VERSION = "2.2-rc2"
     CHANNEL = RELEASE_CHANNEL
     PHASE = RELEASE_PHASE
 
@@ -72,7 +72,7 @@ class ReleaseScopeManager:
             True,
             (
                 "Lighting registry/state plus canonical semantic "
-                "lighting.turn_off execution."
+                "lighting.turn_on and lighting.turn_off execution."
             ),
         ),
         "openings": DomainReleaseState(

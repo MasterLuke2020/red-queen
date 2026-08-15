@@ -39,15 +39,19 @@ class PipelineStepResult:
 class ExecutionPipeline:
     """Hardware-neutral guarded step validation and dispatch."""
 
-    VERSION = "1.0-stage3.4"
+    VERSION = "1.1-rc2-lighting-bidirectional"
+    _LIGHTING_ACTIONS = {
+        "lighting.turn_on": True,
+        "lighting.turn_off": False,
+    }
 
-    @staticmethod
-    def validate_guarded_step(step) -> tuple[bool, str]:
-        """Validate one supported guarded momentary step."""
+    @classmethod
+    def validate_guarded_step(cls, step) -> tuple[bool, str]:
+        """Validate one supported guarded momentary lighting step."""
         capability = step.capability
         command = capability.get("command") or {}
         valid = (
-            capability.get("capability_id") == "lighting.turn_off"
+            capability.get("capability_id") in cls._LIGHTING_ACTIONS
             and capability.get("supported") is True
             and capability.get("available") is True
             and capability.get("healthy") is True
@@ -57,7 +61,7 @@ class ExecutionPipeline:
             and command.get("entity_id") == step.command_entity_id
         )
         if valid:
-            return True, "Guarded step is supported by the pipeline."
+            return True, "Guarded lighting step is supported by the pipeline."
         return False, "Step capability is not permitted by the pipeline."
 
     @classmethod
@@ -70,7 +74,7 @@ class ExecutionPipeline:
         feedback_timeout_seconds: float,
         feedback_interval_seconds: float,
     ) -> PipelineStepResult:
-        """Execute exactly one guarded step and verify off feedback."""
+        """Execute one guarded lighting step and verify the requested state."""
         valid, validation_reason = cls.validate_guarded_step(step)
         if not valid:
             return PipelineStepResult(
@@ -87,6 +91,9 @@ class ExecutionPipeline:
 
         capability = step.capability
         command = capability["command"]
+        capability_id = str(capability["capability_id"])
+        desired_on = cls._LIGHTING_ACTIONS[capability_id]
+        desired_label = "on" if desired_on else "off"
 
         try:
             snapshot_before = snapshot_reader(step.object_id)
@@ -105,7 +112,10 @@ class ExecutionPipeline:
                     error=None,
                 )
 
-            if snapshot_before.is_off:
+            already_satisfied = (
+                snapshot_before.is_on if desired_on else snapshot_before.is_off
+            )
+            if already_satisfied:
                 return PipelineStepResult(
                     state="skipped",
                     command_sent=False,
@@ -114,11 +124,17 @@ class ExecutionPipeline:
                     feedback_before=feedback_before,
                     feedback_after=None,
                     feedback_wait_ms=0.0,
-                    reason="Object already reports off; no command sent.",
+                    reason=(
+                        f"Object already reports {desired_label}; "
+                        "no command sent."
+                    ),
                     error=None,
                 )
 
-            if not snapshot_before.is_on:
+            opposite_state_confirmed = (
+                snapshot_before.is_off if desired_on else snapshot_before.is_on
+            )
+            if not opposite_state_confirmed:
                 return PipelineStepResult(
                     state="failed",
                     command_sent=False,
@@ -146,7 +162,12 @@ class ExecutionPipeline:
             while True:
                 snapshot_after = snapshot_reader(step.object_id)
                 feedback_after = snapshot_after.as_dict()
-                if snapshot_after.available and snapshot_after.is_off:
+                reached_target = (
+                    snapshot_after.is_on
+                    if desired_on
+                    else snapshot_after.is_off
+                )
+                if snapshot_after.available and reached_target:
                     feedback_confirmed = True
                     break
                 if perf_counter() >= deadline:
@@ -167,7 +188,9 @@ class ExecutionPipeline:
                     feedback_before=feedback_before,
                     feedback_after=feedback_after,
                     feedback_wait_ms=feedback_wait_ms,
-                    reason="Command sent and off feedback confirmed.",
+                    reason=(
+                        f"Command sent and {desired_label} feedback confirmed."
+                    ),
                     error=None,
                 )
 
@@ -180,8 +203,8 @@ class ExecutionPipeline:
                 feedback_after=feedback_after,
                 feedback_wait_ms=feedback_wait_ms,
                 reason=(
-                    "Command sent, but off feedback was not confirmed "
-                    "before timeout."
+                    f"Command sent, but {desired_label} feedback was not "
+                    "confirmed before timeout."
                 ),
                 error=None,
             )
