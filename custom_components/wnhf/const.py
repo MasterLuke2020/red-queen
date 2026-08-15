@@ -5,9 +5,9 @@ from __future__ import annotations
 DOMAIN = "wnhf"
 PRODUCT_NAME = "Red Queen"
 DEVELOPMENT_NAME = "WNHF"
-DEVELOPMENT_BASELINE_VERSION = "1.29.1"
-RELEASE_BASELINE = "WP-4.7.10.2"
-VERSION = "1.0.0-rc3"
+DEVELOPMENT_BASELINE_VERSION = "1.30.0"
+RELEASE_BASELINE = "WP-4.7.11.1"
+VERSION = "1.0.0-rc4"
 
 DATA_ENGINE = "engine"
 
@@ -318,10 +318,10 @@ RELEASE_INFO_API_VERSION = "1.1"
 PUBLIC_API_REGISTRY_VERSION = "1.1"
 QUALIFICATION_API_VERSION = "1.1"
 UPGRADE_CHECK_API_VERSION = "1.1"
-# Red Queen 1.0.0-rc3 is the third explicitly assigned public release candidate.
-RELEASE_CANDIDATE = "rc3"
+# Red Queen 1.0.0-rc4 is the fourth explicitly assigned public release candidate.
+RELEASE_CANDIDATE = "rc4"
 CANONICAL_EXECUTION_API_VERSION = "1.0"
-CANONICAL_EXECUTION_CONTRACT_VERSION = "1.5-rc3"
+CANONICAL_EXECUTION_CONTRACT_VERSION = "1.6-rc4"
 LEGACY_PUBLIC_EXECUTION_API_VERSION = "1.3"
 # Compatibility name now follows the canonical public execution entry.
 PUBLIC_EXECUTION_API_VERSION = CANONICAL_EXECUTION_API_VERSION
@@ -474,7 +474,7 @@ CAPABILITY_MANAGER_READ_ONLY = True
 SERVICE_EXECUTION_MANAGER = "execution_manager"
 SERVICE_EXECUTION_ACTION = "execution_action"
 SIGNAL_EXECUTION_MANAGER_UPDATED = "wnhf_execution_manager_updated"
-GENERIC_EXECUTION_MANAGER_VERSION = "1.4-rc3"
+GENERIC_EXECUTION_MANAGER_VERSION = "1.5-rc4"
 GENERIC_EXECUTION_ENABLED = True
 GENERIC_EXECUTION_READ_ONLY = False
 
@@ -482,7 +482,7 @@ GENERIC_EXECUTION_READ_ONLY = False
 # Generic Execution Contract & Dry-Run - WP-4.7.2
 SERVICE_EXECUTION_DRY_RUN = "execution_dry_run"
 SIGNAL_EXECUTION_DRY_RUN_UPDATED = "wnhf_execution_dry_run_updated"
-GENERIC_EXECUTION_CONTRACT_VERSION = "1.4-rc3"
+GENERIC_EXECUTION_CONTRACT_VERSION = "1.5-rc4"
 GENERIC_EXECUTION_DRY_RUN_ENABLED = True
 GENERIC_EXECUTION_HARDWARE_ENABLED = True
 
@@ -490,13 +490,15 @@ GENERIC_EXECUTION_HARDWARE_ENABLED = True
 # First Real Generic Execution - WP-4.7.3
 SERVICE_EXECUTION_EXECUTE = "execution_execute"
 SIGNAL_EXECUTION_EXECUTE_UPDATED = "wnhf_execution_execute_updated"
-GENERIC_REAL_EXECUTION_VERSION = "1.3-rc3"
+GENERIC_REAL_EXECUTION_VERSION = "1.4-rc4"
 GENERIC_REAL_EXECUTION_ENABLED = True
 GENERIC_REAL_EXECUTION_ACTIONS = (
     "lighting.turn_on",
     "lighting.turn_off",
     "covers.open",
     "covers.close",
+    "openings.lock",
+    "openings.unlock",
 )
 
 

@@ -86,7 +86,7 @@ def register_core_capabilities(
         ),
         CapabilityDefinition(
             capability_id="openings",
-            version="1.0.0",
+            version="1.1.0",
             name="Openings",
             description=(
                 "Semantic windows, doors, locks and garage domain."
@@ -100,6 +100,26 @@ def register_core_capabilities(
                     confirmation_required=False,
                     description=(
                         "Read semantic opening and access state."
+                    ),
+                ),
+                CapabilityAction(
+                    action_id="openings.lock",
+                    name="Lock door",
+                    mutating=True,
+                    confirmation_required=True,
+                    description=(
+                        "Lock exactly one semantic door object with "
+                        "closed-door and lock-feedback guards."
+                    ),
+                ),
+                CapabilityAction(
+                    action_id="openings.unlock",
+                    name="Unlock door",
+                    mutating=True,
+                    confirmation_required=True,
+                    description=(
+                        "Unlock exactly one semantic door object with "
+                        "closed-door and lock-feedback guards."
                     ),
                 ),
             ),

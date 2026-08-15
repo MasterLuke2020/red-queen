@@ -1,24 +1,42 @@
 contract:
   id: wnhf.generic_execution
   version: '1.1'
-  implementation: 1.4-rc3
+  implementation: 1.5-rc4
 dry_run_enabled: true
 hardware_dispatch_in_dry_run: false
 real_execution_enabled_actions:
-  lighting.turn_on: &id001
+  lighting.turn_on:
     target_mode: single_object
-    required_target_keys: &id002
+    required_target_keys: &id001
     - object_id
-    allowed_target_keys: &id003
+    allowed_target_keys: &id002
     - object_id
-    allowed_parameter_keys: &id004 []
-  lighting.turn_off: *id001
-  covers.open: *id001
+    allowed_parameter_keys: &id003 []
+  lighting.turn_off:
+    target_mode: single_object
+    required_target_keys: *id001
+    allowed_target_keys: *id002
+    allowed_parameter_keys: *id003
+  covers.open:
+    target_mode: single_object
+    required_target_keys: *id001
+    allowed_target_keys: *id002
+    allowed_parameter_keys: *id003
   covers.close:
     target_mode: single_object
-    required_target_keys: *id002
-    allowed_target_keys: *id003
-    allowed_parameter_keys: *id004
+    required_target_keys: *id001
+    allowed_target_keys: *id002
+    allowed_parameter_keys: *id003
+  openings.lock:
+    target_mode: single_object
+    required_target_keys: *id001
+    allowed_target_keys: *id002
+    allowed_parameter_keys: *id003
+  openings.unlock:
+    target_mode: single_object
+    required_target_keys: *id001
+    allowed_target_keys: *id002
+    allowed_parameter_keys: *id003
 result_codes:
 - EXE-100
 - EXE-200

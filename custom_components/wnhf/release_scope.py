@@ -52,7 +52,7 @@ class DiagnosticClassification:
 class ReleaseScopeManager:
     """Central immutable Red Queen release-candidate profile and warning classifier."""
 
-    VERSION = "2.3-rc3"
+    VERSION = "2.4-rc4"
     CHANNEL = RELEASE_CHANNEL
     PHASE = RELEASE_PHASE
 
@@ -79,7 +79,11 @@ class ReleaseScopeManager:
             "openings",
             LifecycleStage.ACTIVE,
             True,
-            "Opening registry, normalized state and openings.snapshot.",
+            (
+                "Opening registry, normalized state, openings.snapshot and "
+                "confirmed feedback-guarded openings.lock/openings.unlock "
+                "canonical execution."
+            ),
         ),
         "covers": DomainReleaseState(
             "covers",

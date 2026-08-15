@@ -1,4 +1,4 @@
-# Red Queen 1.0.0-rc3
+# Red Queen 1.0.0-rc4
 
 Red Queen is a semantic home framework for Home Assistant. It models the house as
 objects and state, evaluates context/rules/policies/decisions, resolves capabilities
@@ -19,16 +19,22 @@ automations.
 ## Release status
 
 - Product: Red Queen
-- Version: `1.0.0-rc3`
+- Version: `1.0.0-rc4`
 - Channel: `release_candidate`
 - Phase: `rc`
-- Candidate: `rc3`
-- Candidate development baseline: WNHF `1.29.1` / `WP-4.7.10.2`
+- Candidate: `rc4`
+- Candidate development baseline: WNHF `1.30.0` / `WP-4.7.11.1`
 
 ## Stable 1.0 RC scope
 
 Canonical mutating execution currently includes `lighting.turn_on`,
-`lighting.turn_off`, `covers.open`, and `covers.close`.
+`lighting.turn_off`, `covers.open`, `covers.close`, `openings.lock`, and
+`openings.unlock`.
+
+Door lock/unlock targets exactly one semantic opening object. Both actions require
+`confirmed: true`, require a healthy motor-lock command plus objective lock feedback,
+and are blocked while the door contact reports open. Repeating an already-satisfied
+lock state sends no command.
 
 Directional cover execution targets exactly one semantic cover and is guarded by
 objective PLC end-state and movement feedback. Repeating a request when the requested
@@ -39,13 +45,10 @@ Automatic direction reversal while the opposite movement is active remains block
 The cover Registry can additionally bind a `closed_percent_entity_id`. This PLC
 feedback uses 0%=fully open and 100%=fully closed. Red Queen exposes it through the
 native Home Assistant cover entity as `current_cover_position` after converting to
-Home Assistant's 0=closed / 100=open convention.
+Home Assistant's 0=closed / 100=open convention. Position targeting remains disabled
+until a real position command exists.
 
-Position feedback is read-only in RC3. `SET_POSITION` is not advertised because no
-position target command exists. Blade/slat controls remain native-only because no
-objective blade-position feedback is available.
-
-See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc3.md`.
+See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc4.md`.
 
 ## Qualification
 

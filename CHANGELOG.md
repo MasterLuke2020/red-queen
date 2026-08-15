@@ -4,6 +4,32 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0-rc4 candidate — WP-4.7.11.1
+
+#### Added
+
+- Canonical real execution for `openings.lock`.
+- Canonical real execution for `openings.unlock`.
+- Explicit confirmation requirement for both canonical lock directions.
+- Feedback-guarded idempotent lock execution using the existing Access object contract.
+- Open-door guard preventing canonical lock commands while the door contact reports open.
+
+#### Changed
+
+- Canonical real-execution surface now contains six actions:
+  `lighting.turn_on`, `lighting.turn_off`, `covers.open`, `covers.close`,
+  `openings.lock`, and `openings.unlock`.
+- Semantic action catalog now contains ten actions.
+
+#### Verified
+
+- Confirmation gate (`EXE-202`) and valid confirmed dry-run (`EXE-100`).
+- Real unlock and lock execution with confirmed feedback (`EXE-000`).
+- Already-satisfied lock/unlock idempotency with no duplicate command (`EXE-101`).
+- Open-door lock rejection in dry-run and real execution without a hardware command.
+- Lock and unlock execution on both configured entrance doors.
+- RC3 canonical lighting and cover execution remained unchanged.
+
 ### 1.0.0-rc3 candidate — WP-4.7.10.2
 
 #### Added

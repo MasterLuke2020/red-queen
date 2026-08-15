@@ -10,3 +10,5 @@ enabled_real_actions:
 - lighting.turn_off
 - covers.open
 - covers.close
+- openings.lock
+- openings.unlock

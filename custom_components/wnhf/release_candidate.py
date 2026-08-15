@@ -32,7 +32,7 @@ from .release_scope import ReleaseScopeManager
 class ReleaseProfile:
     """Immutable product metadata for the Red Queen 1.0 release candidate."""
 
-    VERSION = "2.4-rc3"
+    VERSION = "2.5-rc4"
     CHANNEL = RELEASE_CHANNEL
     PHASE = RELEASE_PHASE
     CANDIDATE = RELEASE_CANDIDATE

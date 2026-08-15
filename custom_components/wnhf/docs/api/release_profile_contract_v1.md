@@ -4,12 +4,12 @@ The current candidate identity is explicitly assigned by runtime metadata.
 
 ```text
 product: Red Queen
-framework_version: 1.0.0-rc3
-development_baseline_version: 1.29.1
-release_baseline: WP-4.7.10.2
+framework_version: 1.0.0-rc4
+development_baseline_version: 1.30.0
+release_baseline: WP-4.7.11.1
 channel: release_candidate
 phase: rc
-candidate: rc3
+candidate: rc4
 candidate_assigned: true
 ```
 

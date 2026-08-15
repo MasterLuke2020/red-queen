@@ -636,13 +636,340 @@ class CoversCapabilityProvider(_BaseProvider):
 
 
 class OpeningsCapabilityProvider(_BaseProvider):
-    """Auto-discoverable core provider."""
+    """Auto-discoverable core openings/access provider."""
 
     provider_name = "OpeningsCapabilityProvider"
     discoverable = True
+    _EXECUTABLE_ACTIONS = {
+        "openings.lock",
+        "openings.unlock",
+    }
+    _TECHNICAL_ACTIONS = {
+        "openings.lock": "access.lock",
+        "openings.unlock": "access.unlock",
+    }
 
     def __init__(self, engine) -> None:
         super().__init__(engine, "provider.core.openings", "openings")
+
+    @classmethod
+    def _technical_action_id(cls, action_id: str) -> str | None:
+        return cls._TECHNICAL_ACTIONS.get(action_id)
+
+    @staticmethod
+    def _desired_lock_state(action_id: str) -> str | None:
+        if action_id == "openings.lock":
+            return "locked"
+        if action_id == "openings.unlock":
+            return "unlocked"
+        return None
+
+    @classmethod
+    def _resolve_execution_capability(cls, action_id: str, opening, runtime):
+        technical_action_id = cls._technical_action_id(action_id)
+        if technical_action_id is None:
+            return None
+        return ExecutionCapabilityAdapter.resolve(
+            opening,
+            technical_action_id,
+            runtime,
+        )
+
+    async def async_validate_execution(
+        self,
+        *,
+        action_id: str,
+        target: dict,
+        parameters: dict,
+        confirmed: bool,
+    ) -> ProviderExecutionValidationResult:
+        """Validate canonical lock/unlock execution without dispatch."""
+        if action_id not in self._EXECUTABLE_ACTIONS:
+            return await super().async_validate_execution(
+                action_id=action_id,
+                target=target,
+                parameters=parameters,
+                confirmed=confirmed,
+            )
+
+        object_id = target.get("object_id")
+        if not isinstance(object_id, str) or not object_id.strip():
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"{action_id} requires target.object_id.",
+                errors=("target.object_id is required.",),
+            )
+        if parameters:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"{action_id} does not accept parameters.",
+                errors=(f"parameters must be empty for {action_id}.",),
+            )
+        if not confirmed:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"{action_id} requires explicit confirmation.",
+                errors=("confirmed must be true for canonical lock execution.",),
+            )
+
+        try:
+            opening = self.engine._require_house().openings.get(object_id)
+            if opening is None:
+                return ProviderExecutionValidationResult(
+                    valid=False,
+                    reason=f"Unknown semantic opening object ID: {object_id}.",
+                    errors=(f"Unknown semantic opening object ID: {object_id}.",),
+                )
+
+            runtime = self.engine.access_object_snapshot(object_id)
+            capability = self._resolve_execution_capability(
+                action_id,
+                opening,
+                runtime,
+            )
+        except Exception as err:  # noqa: BLE001
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason="Openings lock execution validation failed.",
+                errors=(f"{type(err).__name__}: {err}",),
+            )
+
+        if capability is None:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"No canonical openings adapter exists for {action_id}.",
+                errors=(f"No canonical openings adapter exists for {action_id}.",),
+            )
+
+        if not (
+            capability.supported
+            and capability.available
+            and capability.healthy
+        ):
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=capability.reason,
+                errors=(capability.reason,),
+                technical_capability=capability.as_dict(),
+            )
+
+        if runtime.is_open:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=(
+                    "Door is open; canonical lock/unlock execution is "
+                    "intentionally blocked until the door is closed."
+                ),
+                errors=("Close the door before changing its lock state.",),
+                technical_capability=capability.as_dict(),
+            )
+
+        if runtime.lock_state not in {"locked", "unlocked"}:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason="Door lock feedback is not a valid stable lock state.",
+                errors=("Lock feedback must report locked or unlocked.",),
+                technical_capability=capability.as_dict(),
+            )
+
+        return ProviderExecutionValidationResult(
+            valid=True,
+            reason=(
+                f"{action_id} target, closed-door guard and lock feedback "
+                "are valid for canonical execution."
+            ),
+            technical_capability=capability.as_dict(),
+        )
+
+    async def async_execute(
+        self,
+        *,
+        action_id: str,
+        target: dict,
+        parameters: dict,
+        confirmed: bool,
+    ) -> ProviderExecutionResult:
+        """Execute one confirmed canonical lock/unlock action."""
+        if action_id not in self._EXECUTABLE_ACTIONS:
+            return await super().async_execute(
+                action_id=action_id,
+                target=target,
+                parameters=parameters,
+                confirmed=confirmed,
+            )
+
+        object_id = target.get("object_id")
+        if not isinstance(object_id, str) or not object_id.strip():
+            return ProviderExecutionResult(
+                status="rejected",
+                executed=False,
+                command_sent=False,
+                feedback_confirmed=False,
+                reason=f"{action_id} requires target.object_id.",
+            )
+        if parameters:
+            return ProviderExecutionResult(
+                status="rejected",
+                executed=False,
+                command_sent=False,
+                feedback_confirmed=False,
+                reason=f"{action_id} does not accept parameters.",
+            )
+        if not confirmed:
+            return ProviderExecutionResult(
+                status="rejected",
+                executed=False,
+                command_sent=False,
+                feedback_confirmed=False,
+                reason=f"{action_id} requires explicit confirmation.",
+            )
+
+        try:
+            opening = self.engine._require_house().openings.get(object_id)
+            if opening is None:
+                return ProviderExecutionResult(
+                    status="rejected",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=f"Unknown semantic opening object ID: {object_id}.",
+                )
+
+            runtime = self.engine.access_object_snapshot(object_id)
+            capability = self._resolve_execution_capability(
+                action_id,
+                opening,
+                runtime,
+            )
+            desired_state = self._desired_lock_state(action_id)
+
+            if capability is None or desired_state is None:
+                return ProviderExecutionResult(
+                    status="unsupported",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=f"No canonical openings adapter exists for {action_id}.",
+                )
+
+            if not (
+                capability.supported
+                and capability.available
+                and capability.healthy
+            ):
+                return ProviderExecutionResult(
+                    status="rejected",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=capability.reason,
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                )
+
+            if runtime.is_open:
+                return ProviderExecutionResult(
+                    status="rejected",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=(
+                        "Door is open; canonical lock/unlock execution is "
+                        "blocked until the door is closed."
+                    ),
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                )
+
+            if runtime.lock_state not in {"locked", "unlocked"}:
+                return ProviderExecutionResult(
+                    status="rejected",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason="Door lock feedback is not a valid stable lock state.",
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                )
+
+            if runtime.lock_state == desired_state:
+                return ProviderExecutionResult(
+                    status="no_action",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=True,
+                    reason=(
+                        f"Door already reports {desired_state}; no command sent."
+                    ),
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                    feedback_after=runtime.as_dict(),
+                    feedback_wait_ms=0.0,
+                )
+
+            command_outcome = await self.engine.command_dispatcher.async_dispatch(
+                capability
+            )
+            if not command_outcome.completed:
+                return ProviderExecutionResult(
+                    status="failed",
+                    executed=False,
+                    command_sent=bool(command_outcome.dispatched),
+                    feedback_confirmed=False,
+                    reason=f"{action_id} command dispatch failed.",
+                    error=command_outcome.message,
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                )
+
+            effect_outcome, observed_runtime = (
+                await self.engine.effect_observer.async_observe(
+                    policy=capability.confirmation_policy,
+                    expected=desired_state,
+                    snapshot_factory=lambda: self.engine.access_object_snapshot(
+                        object_id
+                    ),
+                    predicate=lambda item: (
+                        item.available and item.lock_state == desired_state
+                    ),
+                    observed_factory=lambda item: item.lock_state,
+                )
+            )
+
+            if effect_outcome.confirmed:
+                status = "succeeded"
+                reason = (
+                    f"{action_id} command sent and {desired_state} feedback "
+                    "confirmed."
+                )
+            else:
+                status = "failed"
+                reason = (
+                    f"{action_id} command was sent, but {desired_state} "
+                    "feedback was not confirmed before timeout."
+                )
+
+            return ProviderExecutionResult(
+                status=status,
+                executed=True,
+                command_sent=bool(command_outcome.dispatched),
+                feedback_confirmed=bool(effect_outcome.confirmed),
+                reason=reason,
+                technical_capability=capability.as_dict(),
+                feedback_before=runtime.as_dict(),
+                feedback_after=observed_runtime.as_dict(),
+                feedback_wait_ms=effect_outcome.wait_ms,
+            )
+
+        except Exception as err:  # noqa: BLE001
+            return ProviderExecutionResult(
+                status="failed",
+                executed=False,
+                command_sent=False,
+                feedback_confirmed=False,
+                reason="Openings provider lock execution failed.",
+                error=f"{type(err).__name__}: {err}",
+            )
 
     def snapshot(self) -> CapabilitySnapshot:
         house = self.engine._require_house()
