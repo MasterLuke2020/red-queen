@@ -1,4 +1,4 @@
-# Red Queen 1.0.0-rc4
+# Red Queen 1.0.0-rc5
 
 Red Queen is a semantic home framework for Home Assistant. It models the house as
 objects and state, evaluates context/rules/policies/decisions, resolves capabilities
@@ -19,17 +19,25 @@ automations.
 ## Release status
 
 - Product: Red Queen
-- Version: `1.0.0-rc4`
+- Version: `1.0.0-rc5`
 - Channel: `release_candidate`
 - Phase: `rc`
-- Candidate: `rc4`
-- Candidate development baseline: WNHF `1.30.0` / `WP-4.7.11.1`
+- Candidate: `rc5`
+- Candidate development baseline: WNHF `1.31.0` / `WP-4.7.12.1`
 
 ## Stable 1.0 RC scope
 
 Canonical mutating execution currently includes `lighting.turn_on`,
-`lighting.turn_off`, `covers.open`, `covers.close`, `openings.lock`, and
-`openings.unlock`.
+`lighting.turn_off`, `covers.open`, `covers.close`, `garage.open`, `garage.close`,
+`openings.lock`, and `openings.unlock`.
+
+Garage open/close targets exactly one semantic `garage_door` opening object. Both
+actions require `confirmed: true`. The residential OSC pulse is dispatched only when
+objective end-position feedback proves the door is at the opposite stable end state.
+Already-satisfied requests send no pulse; moving, intermediate, unavailable, or
+contradictory states are rejected. After dispatch, movement start and the requested
+terminal end position are observed. Canonical `garage.stop` and `garage.toggle` are
+intentionally not exposed.
 
 Door lock/unlock targets exactly one semantic opening object. Both actions require
 `confirmed: true`, require a healthy motor-lock command plus objective lock feedback,
@@ -42,13 +50,7 @@ end state is already reached produces no command; repeating it while the cover i
 already moving in the requested direction also produces no duplicate command.
 Automatic direction reversal while the opposite movement is active remains blocked.
 
-The cover Registry can additionally bind a `closed_percent_entity_id`. This PLC
-feedback uses 0%=fully open and 100%=fully closed. Red Queen exposes it through the
-native Home Assistant cover entity as `current_cover_position` after converting to
-Home Assistant's 0=closed / 100=open convention. Position targeting remains disabled
-until a real position command exists.
-
-See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc4.md`.
+See `docs/FEATURE_MATRIX.md` and `docs/RC5_CANDIDATE_VALIDATION.md`.
 
 ## Qualification
 

@@ -88,7 +88,7 @@ class ExecutionCapability:
 class ExecutionCapabilityAdapter:
     """Resolve semantic objects into hardware-neutral execution strategies."""
 
-    VERSION = "2.5-rc3-cover-directional"
+    VERSION = "2.7-rc5-garage-directional"
 
     @staticmethod
     def _unsupported(
@@ -414,6 +414,101 @@ class ExecutionCapabilityAdapter:
             action_id="covers.close",
             command_entity_id=cover.close_command_entity_id,
             registry_capability="close",
+        )
+
+    @classmethod
+    def _resolve_garage_direction(
+        cls,
+        opening,
+        snapshot,
+        *,
+        action_id: str,
+    ) -> ExecutionCapability:
+        """Resolve one canonical garage direction through a guarded OSC pulse.
+
+        Residential garage drives commonly expose one OSC (open/stop/close)
+        pulse input rather than dedicated directional inputs.  A canonical
+        direction is therefore safe only when both end-position feedback
+        signals are available and the runtime starts at a proven end position.
+        The provider applies the final state guard before dispatch.
+        """
+        garage = opening.garage_door
+        if garage is None or not opening.is_garage_door:
+            return cls._unsupported(
+                object_id=opening.object_id,
+                capability_id=action_id,
+                reason="No dedicated garage-door OSC module is configured.",
+            )
+
+        feedback = (
+            garage.open_feedback_entity_id,
+            garage.closed_feedback_entity_id,
+        )
+        if action_id not in {"garage.open", "garage.close"}:
+            return cls._unsupported(
+                object_id=opening.object_id,
+                capability_id=action_id,
+                command_entity_id=garage.toggle_command_entity_id,
+                feedback_entity_ids=feedback,
+                reason="Unsupported canonical garage direction.",
+            )
+
+        if snapshot is None:
+            return cls._unsupported(
+                object_id=opening.object_id,
+                capability_id=action_id,
+                command_entity_id=garage.toggle_command_entity_id,
+                feedback_entity_ids=feedback,
+                reason="No runtime garage snapshot exists.",
+            )
+
+        available = bool(snapshot.available)
+        healthy = available and snapshot.state != "error"
+        target = "open" if action_id == "garage.open" else "closed"
+        return ExecutionCapability(
+            capability_id=action_id,
+            provider_id="provider.core.garage.osc",
+            object_id=opening.object_id,
+            supported=True,
+            available=available,
+            healthy=healthy,
+            strategy="guarded_directional_osc_pulse",
+            command_domain="button",
+            command_service="press",
+            command_entity_id=garage.toggle_command_entity_id,
+            feedback_required=True,
+            feedback_entity_ids=feedback,
+            idempotency=f"guarded_by_{target}_end_feedback",
+            rollback_supported=False,
+            confirmation_policy=ConfirmationPolicy(
+                required_before_dispatch=True,
+                effect_confirmation=EffectConfirmationMode.REQUIRED,
+                observe_timeout_ms=5000,
+                observe_interval_ms=100,
+            ),
+            reason=(
+                "OSC pulse is permitted only from a proven garage end "
+                f"position; movement start and terminal {target} feedback "
+                "must be observed after dispatch."
+            ),
+        )
+
+    @classmethod
+    def resolve_garage_open(cls, opening, snapshot=None) -> ExecutionCapability:
+        """Resolve canonical garage.open execution."""
+        return cls._resolve_garage_direction(
+            opening,
+            snapshot,
+            action_id="garage.open",
+        )
+
+    @classmethod
+    def resolve_garage_close(cls, opening, snapshot=None) -> ExecutionCapability:
+        """Resolve canonical garage.close execution."""
+        return cls._resolve_garage_direction(
+            opening,
+            snapshot,
+            action_id="garage.close",
         )
 
     @classmethod

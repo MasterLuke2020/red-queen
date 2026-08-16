@@ -4,7 +4,11 @@ from __future__ import annotations
 
 
 from ..domain.capability import CapabilitySnapshot, CapabilityState
-from ..executions.capability import ExecutionCapabilityAdapter
+from ..executions.capability import (
+    ConfirmationPolicy,
+    EffectConfirmationMode,
+    ExecutionCapabilityAdapter,
+)
 from ..executions.pipeline import ExecutionPipeline
 from .execution import ProviderExecutionResult, ProviderExecutionValidationResult
 from .base import ProviderKind, WNHFProvider
@@ -1016,6 +1020,475 @@ class OpeningsCapabilityProvider(_BaseProvider):
                 if access is not None
                 else {}
             ),
+        )
+
+
+class GarageCapabilityProvider(_BaseProvider):
+    """Canonical residential garage provider backed by guarded OSC control."""
+
+    provider_name = "GarageCapabilityProvider"
+    discoverable = True
+    _EXECUTABLE_ACTIONS = {
+        "garage.open",
+        "garage.close",
+    }
+    _STABLE_STATES = {"open", "closed"}
+    _TERMINAL_TIMEOUT_MS = 60000
+    _TERMINAL_INTERVAL_MS = 200
+
+    def __init__(self, engine) -> None:
+        super().__init__(engine, "provider.core.garage", "garage")
+
+    @staticmethod
+    def _desired_state(action_id: str) -> str | None:
+        if action_id == "garage.open":
+            return "open"
+        if action_id == "garage.close":
+            return "closed"
+        return None
+
+    @staticmethod
+    def _resolve_execution_capability(action_id: str, opening, runtime):
+        if action_id == "garage.open":
+            return ExecutionCapabilityAdapter.resolve_garage_open(
+                opening,
+                runtime,
+            )
+        if action_id == "garage.close":
+            return ExecutionCapabilityAdapter.resolve_garage_close(
+                opening,
+                runtime,
+            )
+        return None
+
+    @classmethod
+    def _runtime_guard_error(cls, runtime) -> str | None:
+        if not runtime.available:
+            return "Garage end-position feedback is unavailable."
+        if runtime.state == "error":
+            return (
+                "Contradictory garage end-position feedback prevents "
+                "canonical execution."
+            )
+        if runtime.state == "moving":
+            return (
+                "Garage door is already moving; another OSC pulse is "
+                "intentionally blocked."
+            )
+        if runtime.state == "intermediate_open":
+            return (
+                "Garage door is in an intermediate position; the next OSC "
+                "direction is ambiguous and canonical execution will not guess."
+            )
+        if runtime.state not in cls._STABLE_STATES:
+            return (
+                "Garage door does not report a proven open or closed end "
+                "position."
+            )
+        return None
+
+    async def async_validate_execution(
+        self,
+        *,
+        action_id: str,
+        target: dict,
+        parameters: dict,
+        confirmed: bool,
+    ) -> ProviderExecutionValidationResult:
+        """Validate canonical garage direction without dispatching hardware."""
+        if action_id not in self._EXECUTABLE_ACTIONS:
+            return await super().async_validate_execution(
+                action_id=action_id,
+                target=target,
+                parameters=parameters,
+                confirmed=confirmed,
+            )
+
+        object_id = target.get("object_id")
+        if not isinstance(object_id, str) or not object_id.strip():
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"{action_id} requires target.object_id.",
+                errors=("target.object_id is required.",),
+            )
+        if parameters:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"{action_id} does not accept parameters.",
+                errors=(f"parameters must be empty for {action_id}.",),
+            )
+        if not confirmed:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"{action_id} requires explicit confirmation.",
+                errors=(
+                    "confirmed must be true for canonical garage execution.",
+                ),
+            )
+
+        try:
+            opening = self.engine._require_house().openings.get(object_id)
+            if opening is None:
+                return ProviderExecutionValidationResult(
+                    valid=False,
+                    reason=f"Unknown semantic opening object ID: {object_id}.",
+                    errors=(f"Unknown semantic opening object ID: {object_id}.",),
+                )
+            if not opening.is_garage_door or opening.garage_door is None:
+                return ProviderExecutionValidationResult(
+                    valid=False,
+                    reason=(
+                        f"Semantic object {object_id} is not a configured "
+                        "garage door."
+                    ),
+                    errors=("target.object_id must identify a garage door.",),
+                )
+
+            runtime = self.engine.access_object_snapshot(object_id)
+            capability = self._resolve_execution_capability(
+                action_id,
+                opening,
+                runtime,
+            )
+        except Exception as err:  # noqa: BLE001
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason="Garage execution validation failed.",
+                errors=(f"{type(err).__name__}: {err}",),
+            )
+
+        if capability is None:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=f"No canonical garage adapter exists for {action_id}.",
+                errors=(f"No canonical garage adapter exists for {action_id}.",),
+            )
+
+        if not (
+            capability.supported
+            and capability.available
+            and capability.healthy
+        ):
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=capability.reason,
+                errors=(capability.reason,),
+                technical_capability=capability.as_dict(),
+            )
+
+        guard_error = self._runtime_guard_error(runtime)
+        if guard_error is not None:
+            return ProviderExecutionValidationResult(
+                valid=False,
+                reason=guard_error,
+                errors=(guard_error,),
+                technical_capability=capability.as_dict(),
+            )
+
+        desired_state = self._desired_state(action_id)
+        return ProviderExecutionValidationResult(
+            valid=True,
+            reason=(
+                f"{action_id} target is a qualified garage door with stable "
+                f"{runtime.state} feedback; desired end state is "
+                f"{desired_state}."
+            ),
+            technical_capability=capability.as_dict(),
+        )
+
+    async def async_execute(
+        self,
+        *,
+        action_id: str,
+        target: dict,
+        parameters: dict,
+        confirmed: bool,
+    ) -> ProviderExecutionResult:
+        """Execute one canonical garage direction through exactly one OSC pulse."""
+        if action_id not in self._EXECUTABLE_ACTIONS:
+            return await super().async_execute(
+                action_id=action_id,
+                target=target,
+                parameters=parameters,
+                confirmed=confirmed,
+            )
+
+        object_id = target.get("object_id")
+        if not isinstance(object_id, str) or not object_id.strip():
+            return ProviderExecutionResult(
+                status="rejected",
+                executed=False,
+                command_sent=False,
+                feedback_confirmed=False,
+                reason=f"{action_id} requires target.object_id.",
+            )
+        if parameters:
+            return ProviderExecutionResult(
+                status="rejected",
+                executed=False,
+                command_sent=False,
+                feedback_confirmed=False,
+                reason=f"{action_id} does not accept parameters.",
+            )
+        if not confirmed:
+            return ProviderExecutionResult(
+                status="rejected",
+                executed=False,
+                command_sent=False,
+                feedback_confirmed=False,
+                reason=f"{action_id} requires explicit confirmation.",
+            )
+
+        try:
+            opening = self.engine._require_house().openings.get(object_id)
+            if opening is None:
+                return ProviderExecutionResult(
+                    status="rejected",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=f"Unknown semantic opening object ID: {object_id}.",
+                )
+            if not opening.is_garage_door or opening.garage_door is None:
+                return ProviderExecutionResult(
+                    status="rejected",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=(
+                        f"Semantic object {object_id} is not a configured "
+                        "garage door."
+                    ),
+                )
+
+            runtime = self.engine.access_object_snapshot(object_id)
+            capability = self._resolve_execution_capability(
+                action_id,
+                opening,
+                runtime,
+            )
+            desired_state = self._desired_state(action_id)
+
+            if capability is None or desired_state is None:
+                return ProviderExecutionResult(
+                    status="unsupported",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=f"No canonical garage adapter exists for {action_id}.",
+                )
+
+            if not (
+                capability.supported
+                and capability.available
+                and capability.healthy
+            ):
+                return ProviderExecutionResult(
+                    status="rejected",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=capability.reason,
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                )
+
+            guard_error = self._runtime_guard_error(runtime)
+            if guard_error is not None:
+                return ProviderExecutionResult(
+                    status="rejected",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=guard_error,
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                )
+
+            if runtime.state == desired_state:
+                return ProviderExecutionResult(
+                    status="no_action",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=True,
+                    reason=(
+                        f"Garage door already reports {desired_state}; "
+                        "no OSC pulse sent."
+                    ),
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                    feedback_after=runtime.as_dict(),
+                    feedback_wait_ms=0.0,
+                )
+
+            command_outcome = await self.engine.command_dispatcher.async_dispatch(
+                capability
+            )
+            if not command_outcome.completed:
+                return ProviderExecutionResult(
+                    status="failed",
+                    executed=False,
+                    command_sent=bool(command_outcome.dispatched),
+                    feedback_confirmed=False,
+                    reason=f"{action_id} OSC command dispatch failed.",
+                    error=command_outcome.message,
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                )
+
+            transition_effect, transition_runtime = (
+                await self.engine.effect_observer.async_observe(
+                    policy=capability.confirmation_policy,
+                    expected="moving",
+                    snapshot_factory=lambda: self.engine.access_object_snapshot(
+                        object_id
+                    ),
+                    predicate=lambda item: (
+                        item.available
+                        and item.state in {"moving", desired_state}
+                    ),
+                    observed_factory=lambda item: item.state,
+                )
+            )
+
+            if not transition_effect.confirmed:
+                return ProviderExecutionResult(
+                    status="failed",
+                    executed=True,
+                    command_sent=bool(command_outcome.dispatched),
+                    feedback_confirmed=False,
+                    reason=(
+                        f"{action_id} OSC pulse was sent, but movement start "
+                        "or the requested terminal state was not observed."
+                    ),
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                    feedback_after=transition_runtime.as_dict(),
+                    feedback_wait_ms=transition_effect.wait_ms,
+                )
+
+            if transition_runtime.state == desired_state:
+                return ProviderExecutionResult(
+                    status="succeeded",
+                    executed=True,
+                    command_sent=bool(command_outcome.dispatched),
+                    feedback_confirmed=True,
+                    reason=(
+                        f"{action_id} OSC pulse sent and terminal "
+                        f"{desired_state} feedback confirmed."
+                    ),
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                    feedback_after=transition_runtime.as_dict(),
+                    feedback_wait_ms=transition_effect.wait_ms,
+                )
+
+            terminal_policy = ConfirmationPolicy(
+                required_before_dispatch=True,
+                effect_confirmation=EffectConfirmationMode.REQUIRED,
+                observe_timeout_ms=self._TERMINAL_TIMEOUT_MS,
+                observe_interval_ms=self._TERMINAL_INTERVAL_MS,
+            )
+            terminal_effect, terminal_runtime = (
+                await self.engine.effect_observer.async_observe(
+                    policy=terminal_policy,
+                    expected=desired_state,
+                    snapshot_factory=lambda: self.engine.access_object_snapshot(
+                        object_id
+                    ),
+                    predicate=lambda item: (
+                        item.available and item.state == desired_state
+                    ),
+                    observed_factory=lambda item: item.state,
+                )
+            )
+            feedback_wait_ms = round(
+                transition_effect.wait_ms + terminal_effect.wait_ms,
+                2,
+            )
+
+            if terminal_effect.confirmed:
+                status = "succeeded"
+                reason = (
+                    f"{action_id} OSC pulse sent; movement and terminal "
+                    f"{desired_state} feedback confirmed."
+                )
+            else:
+                status = "failed"
+                reason = (
+                    f"{action_id} movement started, but terminal "
+                    f"{desired_state} feedback was not confirmed before "
+                    "timeout."
+                )
+
+            return ProviderExecutionResult(
+                status=status,
+                executed=True,
+                command_sent=bool(command_outcome.dispatched),
+                feedback_confirmed=bool(terminal_effect.confirmed),
+                reason=reason,
+                technical_capability=capability.as_dict(),
+                feedback_before=runtime.as_dict(),
+                feedback_after=terminal_runtime.as_dict(),
+                feedback_wait_ms=feedback_wait_ms,
+            )
+
+        except Exception as err:  # noqa: BLE001
+            return ProviderExecutionResult(
+                status="failed",
+                executed=False,
+                command_sent=False,
+                feedback_confirmed=False,
+                reason="Garage provider execution failed.",
+                error=f"{type(err).__name__}: {err}",
+            )
+
+    def snapshot(self) -> CapabilitySnapshot:
+        house = self.engine._require_house()
+        garage_objects = tuple(
+            opening
+            for opening in house.openings.values()
+            if opening.is_garage_door and opening.garage_door is not None
+        )
+        enabled_objects = tuple(item for item in garage_objects if item.enabled)
+        snapshots = [
+            self.engine.access_object_snapshot(item.object_id)
+            for item in enabled_objects
+        ]
+        supported = bool(garage_objects)
+        available = supported and bool(enabled_objects) and all(
+            item.available for item in snapshots
+        )
+        healthy = available and all(item.state != "error" for item in snapshots)
+
+        return self._snapshot(
+            supported=supported,
+            available=available,
+            healthy=healthy,
+            message=(
+                "Garage available."
+                if healthy
+                else "Garage feedback contains an invalid state."
+                if available
+                else "Garage feedback is unavailable or incomplete."
+                if supported
+                else "Garage is not configured."
+            ),
+            details={
+                "objects": len(garage_objects),
+                "enabled": len(enabled_objects),
+                "available": sum(1 for item in snapshots if item.available),
+                "open": sum(1 for item in snapshots if item.state == "open"),
+                "closed": sum(1 for item in snapshots if item.state == "closed"),
+                "moving": sum(1 for item in snapshots if item.state == "moving"),
+                "intermediate_open": sum(
+                    1 for item in snapshots if item.state == "intermediate_open"
+                ),
+                "error": sum(1 for item in snapshots if item.state == "error"),
+                "canonical_actions": sorted(self._EXECUTABLE_ACTIONS),
+                "canonical_stop_execution": False,
+                "technical_control": "osc",
+            },
         )
 
 

@@ -14,6 +14,7 @@ from .base import (
 
 from .core import (
     CoversCapabilityProvider,
+    GarageCapabilityProvider,
     LightingCapabilityProvider,
     OpeningsCapabilityProvider,
     SecurityCapabilityProvider,
@@ -39,6 +40,7 @@ __all__ = [
     "provider_contract_definition",
     "validate_provider_contract",
     "CoversCapabilityProvider",
+    "GarageCapabilityProvider",
     "LightingCapabilityProvider",
     "OpeningsCapabilityProvider",
     "SecurityCapabilityProvider",

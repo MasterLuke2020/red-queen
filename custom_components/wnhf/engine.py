@@ -119,6 +119,7 @@ from .providers import (
     provider_contract_definition,
     validate_provider_contract,
     CoversCapabilityProvider,
+    GarageCapabilityProvider,
     LightingCapabilityProvider,
     OpeningsCapabilityProvider,
     SecurityCapabilityProvider,
@@ -127,6 +128,7 @@ from .providers import (
 from .validator import ValidationReport, WNHFValidator
 from .const import (
     CAPABILITY_COVERS,
+    CAPABILITY_GARAGE,
     CAPABILITY_DIAGNOSTICS,
     CAPABILITY_HOUSE_MODEL,
     CAPABILITY_HOUSE_ENGINE,
@@ -5261,6 +5263,7 @@ class WNHFEngine:
             CAPABILITY_OPENINGS: registry_loaded,
             CAPABILITY_SECURITY: registry_loaded,
             CAPABILITY_COVERS: registry_loaded,
+            CAPABILITY_GARAGE: registry_loaded,
             CAPABILITY_DIAGNOSTICS: True,
             CAPABILITY_VALIDATION: registry_loaded,
         }

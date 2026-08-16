@@ -52,7 +52,7 @@ class DiagnosticClassification:
 class ReleaseScopeManager:
     """Central immutable Red Queen release-candidate profile and warning classifier."""
 
-    VERSION = "2.4-rc4"
+    VERSION = "2.5-rc5"
     CHANNEL = RELEASE_CHANNEL
     PHASE = RELEASE_PHASE
 
@@ -182,11 +182,11 @@ class ReleaseScopeManager:
         ),
         "garage": DomainReleaseState(
             "garage",
-            LifecycleStage.PLANNED,
-            False,
+            LifecycleStage.ACTIVE,
+            True,
             (
-                "Canonical active garage-door actuation is planned; garage state "
-                "may already be represented through openings/security."
+                "Residential garage state plus confirmed, end-position-guarded "
+                "canonical open/close execution through OSC control."
             ),
         ),
     }

@@ -100,6 +100,20 @@ _CANONICAL_ACTION_CONTRACTS = {
         allowed_target_keys=("object_id",),
         allowed_parameter_keys=(),
     ),
+    "garage.open": CanonicalActionExecutionContract(
+        action_id="garage.open",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=(),
+    ),
+    "garage.close": CanonicalActionExecutionContract(
+        action_id="garage.close",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=(),
+    ),
     "openings.lock": CanonicalActionExecutionContract(
         action_id="openings.lock",
         target_mode="single_object",

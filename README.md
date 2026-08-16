@@ -2,22 +2,24 @@
 
 **Red Queen** is a semantic home framework for Home Assistant. It models the house as semantic objects and state, evaluates context/rules/policies/decisions, resolves capabilities and providers, and executes explicitly supported actions through contracts and feedback-aware guards.
 
-> **Current candidate:** `1.0.0-rc4` — LIVE VERIFIED candidate  
-> **Technical Home Assistant domain:** `wnhf`  
-> **Development lineage:** WNHF `1.30.0` / `WP-4.7.11.1`
+> **Current candidate:** `1.0.0-rc5` — LIVE VERIFIED on the reference installation
+> **Technical Home Assistant domain:** `wnhf`
+> **Development lineage:** WNHF `1.31.0` / `WP-4.7.12.1`
 
-## RC4 candidate changes
+## RC5 candidate changes
 
-- Added canonical `openings.lock` and `openings.unlock` real execution.
-- Both actions require explicit `confirmed: true`.
-- Added guarded lock/unlock execution using the existing Access object contract:
-  - requested lock state already satisfied → no hardware command (`EXE-101`);
-  - valid opposite lock state → one command and feedback confirmation (`EXE-000`);
-  - open door → reject without sending a lock command;
-  - unavailable or invalid lock feedback → reject without command;
-  - missing explicit confirmation → reject (`EXE-202`).
-- Existing canonical lighting and cover execution from RC2/RC3 remains unchanged.
-- Door-opener and garage commands are intentionally not promoted by this candidate.
+- Adds a first-class semantic `garage` capability with `garage.snapshot`, `garage.open`, and `garage.close`.
+- Promotes `garage.open` and `garage.close` into canonical real execution.
+- Both directional actions require explicit `confirmed: true`.
+- Residential OSC control is abstracted behind semantic directions:
+  - already at requested end position → no OSC pulse (`EXE-101`);
+  - proven opposite end position → exactly one OSC pulse and feedback observation;
+  - moving state → reject without a pulse;
+  - intermediate position → reject without a pulse because the next OSC direction is ambiguous;
+  - contradictory or unavailable end-position feedback → reject without a pulse;
+  - command sent without confirmed requested end position → `EXE-301`.
+- Canonical garage stop/toggle is intentionally not exposed. The technical OSC capability remains internal.
+- Existing canonical lighting, covers, and door lock/unlock behavior remains unchanged.
 
 ## Current canonical real-execution surface
 
@@ -26,29 +28,20 @@ lighting.turn_on
 lighting.turn_off
 covers.open
 covers.close
+garage.open
+garage.close
 openings.lock
 openings.unlock
 ```
 
-Canonical execution entry point:
-
-```text
-wnhf.execution_execute
-```
-
-Dry-run entry point:
-
-```text
-wnhf.execution_dry_run
-```
+Canonical execution entry point: `wnhf.execution_execute`
+Dry-run entry point: `wnhf.execution_dry_run`
 
 ## Candidate status
 
-`1.0.0-rc4` has passed live validation on the reference installation, including confirmation gating, real lock/unlock execution, idempotency, the open-door safety guard, and a second physical door regression.
+`1.0.0-rc5` has passed local static and isolated behavior validation. Live Home Assistant verification is still required before the work package is marked LIVE VERIFIED and before repository tagging/publishing.
 
-It is not considered published until the repository branch passes Static repository checks and Home Assistant hassfest and a `v1.0.0-rc4` tag/release is created.
-
-See `docs/RC4_CANDIDATE_VALIDATION.md` for the validation record.
+See `docs/RC5_CANDIDATE_VALIDATION.md` for the validation record and live test plan.
 
 ## Installation
 

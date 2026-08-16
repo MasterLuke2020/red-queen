@@ -45,7 +45,7 @@ rooms:
 
 State feedback can be supplied through one `state.entity_id` and/or multiple `states` entries. A command can define `command.entity_id`.
 
-Example matching the canonical RC1 execution model:
+Example matching the canonical execution model:
 
 ```yaml
 lights:
@@ -64,15 +64,15 @@ For an enabled `toggle` light, missing command or missing feedback is reported a
 
 ## Covers
 
-`covers.yaml` contains a `covers:` list. RC1 supports the registry model for `type: venetian_blind`. The current loader requires command entity IDs for open/close/blades-open/blades-close and feedback entity IDs for open/closed/opening/closing, plus a non-empty `capabilities` list.
+`covers.yaml` contains a `covers:` list. The current registry supports `type: venetian_blind`. The current loader requires command entity IDs for open/close/blades-open/blades-close and feedback entity IDs for open/closed/opening/closing, plus a non-empty `capabilities` list.
 
-The semantic/read surface is part of RC1; canonical mutating cover execution is not.
+The semantic/read surface and canonical `covers.open` / `covers.close` execution are active; position and blade commands remain non-canonical.
 
 ## Openings
 
 `openings.yaml` models `window`, `sliding_door`, `door` and `garage_door` objects. Ordinary openings use state feedback plus configured open-state values. Door objects may additionally define lock feedback/commands and an electric door opener. Garage doors may define two-sensor feedback plus toggle/optional stop commands.
 
-Some Access execution services remain legacy/development surfaces in RC1. They are not the canonical new-automation route.
+Some Access execution services remain legacy/development surfaces. Canonical garage open/close and door lock/unlock should use `wnhf.execution_execute` for new automations.
 
 ## Rules
 

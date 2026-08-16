@@ -4,6 +4,35 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0-rc5 candidate — WP-4.7.12.1
+
+#### Added
+
+- First-class semantic `garage` capability with `garage.snapshot`.
+- Canonical real execution for `garage.open` and `garage.close`.
+- Explicit confirmation requirement for both canonical garage directions.
+- Guarded residential OSC execution with objective open/closed end-position feedback.
+
+#### Changed
+
+- Canonical real-execution surface now contains eight actions.
+- Semantic action catalog now contains thirteen actions.
+- Garage is now an active release-scope domain rather than planned state-only support.
+
+#### Safety
+
+- Already-satisfied garage requests send no OSC pulse.
+- Moving and intermediate garage states reject canonical open/close without a pulse.
+- Unavailable or contradictory end-position feedback rejects execution.
+- Canonical `garage.stop` and `garage.toggle` are intentionally not exposed.
+- A dispatched direction succeeds only after the requested terminal end position is confirmed.
+
+#### Validation
+
+- Static candidate validation and isolated provider behavior tests passed.
+- Live Home Assistant verification passed on the reference installation on 2026-08-16.
+- Canonical garage open/close, both idempotency paths, moving-state rejection, and intermediate-position rejection were hardware-verified.
+
 ### 1.0.0-rc4 candidate — WP-4.7.11.1
 
 #### Added

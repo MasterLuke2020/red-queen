@@ -8,12 +8,12 @@ contract:
   - wnhf.qualification
 release:
   product_name: Red Queen
-  framework_version: 1.0.0-rc4
-  development_baseline_version: 1.30.0
-  release_baseline: WP-4.7.11.1
+  framework_version: 1.0.0-rc5
+  development_baseline_version: 1.31.0
+  release_baseline: WP-4.7.12.1
   channel: release_candidate
   phase: rc
-  candidate: rc4
+  candidate: rc5
   candidate_assigned: true
 policy:
   version_does_not_imply_rc_assignment: true

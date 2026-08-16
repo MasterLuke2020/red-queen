@@ -13,7 +13,7 @@ from .registry import CapabilityRegistry
 def register_core_capabilities(
     registry: CapabilityRegistry,
 ) -> None:
-    """Register the five currently implemented WNHF domains."""
+    """Register the currently implemented Red Queen core domains."""
     definitions = (
         CapabilityDefinition(
             capability_id="lighting",
@@ -124,6 +124,47 @@ def register_core_capabilities(
                 ),
             ),
             required_provider_capabilities=("openings",),
+        ),
+        CapabilityDefinition(
+            capability_id="garage",
+            version="1.0.0",
+            name="Garage",
+            description=(
+                "Semantic residential garage-door state and directional control."
+            ),
+            kind=CapabilityKind.CORE,
+            actions=(
+                CapabilityAction(
+                    action_id="garage.snapshot",
+                    name="Read garage state",
+                    mutating=False,
+                    confirmation_required=False,
+                    description=(
+                        "Read normalized residential garage-door state."
+                    ),
+                ),
+                CapabilityAction(
+                    action_id="garage.open",
+                    name="Open garage door",
+                    mutating=True,
+                    confirmation_required=True,
+                    description=(
+                        "Open exactly one garage door from a proven closed "
+                        "end position through its guarded OSC command."
+                    ),
+                ),
+                CapabilityAction(
+                    action_id="garage.close",
+                    name="Close garage door",
+                    mutating=True,
+                    confirmation_required=True,
+                    description=(
+                        "Close exactly one garage door from a proven open "
+                        "end position through its guarded OSC command."
+                    ),
+                ),
+            ),
+            required_provider_capabilities=("garage",),
         ),
         CapabilityDefinition(
             capability_id="security",
