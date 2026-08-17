@@ -51,15 +51,27 @@ def verify_git_whitespace() -> str:
     if staged.returncode == 1:
         command = ["git", "-C", str(ROOT), "diff", "--cached", "--check"]
     elif staged.returncode == 0:
+        parent = subprocess.run(
+            ["git", "-C", str(ROOT), "rev-parse", "--verify", "HEAD^"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if parent.returncode != 0:
+            fail(
+                "Git parent commit unavailable for whitespace verification; "
+                "checkout with fetch-depth >= 2"
+            )
+            return "FAILED"
         command = [
             "git",
             "-C",
             str(ROOT),
-            "diff-tree",
+            "diff",
             "--check",
-            "--root",
-            "-r",
+            "HEAD^",
             "HEAD",
+            "--",
         ]
     else:
         fail("Unable to determine staged Git state for whitespace verification")
