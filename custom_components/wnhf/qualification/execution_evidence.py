@@ -80,8 +80,8 @@ class ExecutionEvidence:
             pass_count=self.pass_count + 1,
             last_execution_id=execution_id,
             last_result_code=result_code,
-            hardware_verified=True,
-            framework_verified=True,
+            hardware_verified=self.hardware_verified,
+            framework_verified=self.framework_verified,
             source=self.source,
             persisted_by_framework=True,
         )

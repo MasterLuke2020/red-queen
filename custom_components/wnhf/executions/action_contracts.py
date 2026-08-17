@@ -21,6 +21,7 @@ class CanonicalActionExecutionContract:
     required_target_keys: tuple[str, ...]
     allowed_target_keys: tuple[str, ...]
     allowed_parameter_keys: tuple[str, ...]
+    required_parameter_keys: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -30,6 +31,7 @@ class CanonicalActionExecutionContract:
             "required_target_keys": list(self.required_target_keys),
             "allowed_target_keys": list(self.allowed_target_keys),
             "allowed_parameter_keys": list(self.allowed_parameter_keys),
+            "required_parameter_keys": list(self.required_parameter_keys),
         }
 
     def validate_target(self, target: dict[str, Any]) -> tuple[str, ...]:
@@ -61,14 +63,35 @@ class CanonicalActionExecutionContract:
     def validate_parameters(self, parameters: dict[str, Any]) -> tuple[str, ...]:
         if not isinstance(parameters, dict):
             return ("parameters must be an object/map.",)
-        unexpected = sorted(set(parameters) - set(self.allowed_parameter_keys))
+
+        errors: list[str] = []
+        keys = set(parameters)
+        missing = [key for key in self.required_parameter_keys if key not in keys]
+        if missing:
+            errors.append(
+                "parameters is missing required key(s): "
+                + ", ".join(sorted(missing))
+                + "."
+            )
+
+        unexpected = sorted(keys - set(self.allowed_parameter_keys))
         if unexpected:
-            return (
+            errors.append(
                 "parameters contains unsupported key(s): "
                 + ", ".join(unexpected)
-                + ".",
+                + "."
             )
-        return ()
+
+        if self.action_id == "notifications.send":
+            message = parameters.get("message")
+            if not isinstance(message, str) or not message.strip():
+                errors.append("parameters.message must be a non-empty string.")
+            if "title" in parameters:
+                title = parameters.get("title")
+                if title is not None and not isinstance(title, str):
+                    errors.append("parameters.title must be a string or null.")
+
+        return tuple(errors)
 
 
 _CANONICAL_ACTION_CONTRACTS = {
@@ -127,6 +150,14 @@ _CANONICAL_ACTION_CONTRACTS = {
         required_target_keys=("object_id",),
         allowed_target_keys=("object_id",),
         allowed_parameter_keys=(),
+    ),
+    "notifications.send": CanonicalActionExecutionContract(
+        action_id="notifications.send",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=("message", "title"),
+        required_parameter_keys=("message",),
     ),
 }
 

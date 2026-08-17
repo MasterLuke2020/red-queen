@@ -4,6 +4,47 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0-rc6 candidate — WP-4.7.13.1
+
+#### Added
+
+- Provider-neutral semantic `notifications` capability with
+  `notifications.snapshot` and canonical `notifications.send`.
+- Provider-owned semantic target registry at
+  `/config/wnhf/house/registry/notification_targets.yaml`.
+- Home Assistant notify-entity provider `provider.core.notifications`.
+- Required-parameter support in canonical action contracts.
+- Dispatch-scoped provider and qualification evidence semantics.
+
+#### Changed
+
+- Canonical real-execution surface now contains nine actions.
+- Semantic action catalog now contains fifteen actions across seven capabilities.
+- Notifications is now an active release-scope domain; climate and media remain
+  planned.
+- Execution Manager release marker advanced to `1.6-rc6`.
+- Dry-run and real-execution contracts advanced to `1.7-rc6` and `1.8-rc6`.
+
+#### Safety and privacy
+
+- `notifications.send` requires a non-empty `message` and accepts only optional
+  `title` in addition.
+- Notification sends require no confirmation and are intentionally non-idempotent.
+- A successful send proves Home Assistant dispatch only; it does not claim delivery
+  or read receipt.
+- Dispatch evidence is framework-verified but never hardware-verified.
+- Persistent qualification evidence stores no notification message/title text.
+- Evidence merging preserves verification flags instead of promoting dispatch-only
+  evidence to hardware-verified.
+
+#### Validation
+
+- Live Home Assistant verification passed on 2026-08-17.
+- Valid dry-run, empty-message guard, unknown-target guard and two identical real
+  sends passed with the expected canonical result codes.
+- Both identical notifications arrived, confirming non-idempotent execution.
+- Final system health: 100, runtime ready, zero errors and zero warnings.
+
 ### 1.0.0-rc5 candidate — WP-4.7.12.1
 
 #### Added

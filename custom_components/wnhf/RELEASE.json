@@ -1,14 +1,14 @@
 {
   "product_name": "Red Queen",
-  "version": "1.0.0-rc5",
+  "version": "1.0.0-rc6",
   "channel": "release_candidate",
   "phase": "rc",
-  "candidate": "rc5",
+  "candidate": "rc6",
   "technical_domain": "wnhf",
   "development_name": "WNHF",
-  "development_baseline_version": "1.31.0",
-  "release_baseline": "WP-4.7.12.1",
+  "development_baseline_version": "1.32.0",
+  "release_baseline": "WP-4.7.13.1",
   "canonical_execution_service": "wnhf.execution_execute",
   "canonical_execution_api_version": "1.0",
-  "canonical_execution_contract": "1.7-rc5"
+  "canonical_execution_contract": "1.8-rc6"
 }

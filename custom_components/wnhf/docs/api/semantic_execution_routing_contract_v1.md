@@ -4,6 +4,7 @@ The Capability Layer owns provider selection. The Generic Execution Engine route
 promoted plan through `SemanticExecutionRouter`, which resolves the already-selected
 provider and calls `provider.async_execute(...)`.
 
-RC5 routes `lighting.turn_on`, `lighting.turn_off`, `covers.open`, `covers.close`,
-`garage.open`, `garage.close`, `openings.lock`, and `openings.unlock` through this
-provider-bound canonical path.
+RC6 routes `lighting.turn_on`, `lighting.turn_off`, `covers.open`,
+`covers.close`, `garage.open`, `garage.close`, `openings.lock`,
+`openings.unlock` and `notifications.send` through this provider-bound canonical
+path.

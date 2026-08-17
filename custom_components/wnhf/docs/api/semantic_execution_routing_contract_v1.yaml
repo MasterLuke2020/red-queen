@@ -14,3 +14,4 @@ enabled_real_actions:
 - garage.close
 - openings.lock
 - openings.unlock
+- notifications.send

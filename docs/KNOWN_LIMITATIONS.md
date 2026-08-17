@@ -1,10 +1,22 @@
-# Known Limitations and Deliberate RC5 Boundaries
+# Known Limitations and Deliberate RC6 Boundaries
 
 ## Canonical execution remains intentionally bounded
 
 The canonical real-execution surface contains lighting on/off, directional cover
-open/close, confirmed garage open/close, and confirmed door lock/unlock. Other
-semantic/read capabilities do not automatically imply productive actuation.
+open/close, confirmed garage open/close, confirmed door lock/unlock and semantic
+notification dispatch. Other semantic/read capabilities do not automatically imply
+productive actuation.
+
+## Notifications
+
+RC6 supports `notifications.send` with a required non-empty `message` and optional
+`title`. It does not yet support announcements/TTS, priority or category routing,
+presence-based routing, multiple recipients in one target, or arbitrary
+provider-specific data.
+
+A successful result proves that Home Assistant accepted the notify service call. It
+does not prove handset delivery or a read receipt. Qualification is therefore
+framework-verified at dispatch scope and not hardware-verified.
 
 ## Covers
 
@@ -17,19 +29,14 @@ objective command/feedback contract is qualified for them.
 
 Canonical garage execution supports only `garage.open` and `garage.close`, both with
 explicit confirmation and only from a proven opposite end position. Moving,
-intermediate, unavailable, or contradictory states reject without an OSC pulse.
-Canonical garage stop/toggle is intentionally not exposed because a residential OSC
-pulse is stateful and can start movement when the actual motor state is not provable.
+intermediate, unavailable or contradictory states reject without an OSC pulse.
+Canonical garage stop/toggle is intentionally not exposed.
 
 ## Door opener
 
 Electric door-opener commands remain outside canonical real execution. Existing
-Access-level functionality is legacy/development surface only.
+Access-level functionality is a legacy/development surface only.
 
-## Climate / temperature
+## Climate / temperature and media
 
-Climate and temperature semantics remain planned future feature work.
-
-## Media and notifications
-
-Media and semantic notification/announcement domains remain planned future work.
+Climate/temperature semantics and media semantics remain planned future work.

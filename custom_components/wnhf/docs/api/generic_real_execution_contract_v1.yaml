@@ -1,7 +1,7 @@
 contract:
   id: wnhf.generic_real_execution
   api_version: '1.0'
-  execution_contract: 1.7-rc5
+  execution_contract: 1.8-rc6
 canonical_service: wnhf.execution_execute
 enabled_actions:
 - lighting.turn_on
@@ -12,10 +12,11 @@ enabled_actions:
 - garage.close
 - openings.lock
 - openings.unlock
+- notifications.send
 target_mode: single_object
 validation_before_dispatch: true
 provider_preflight_before_dispatch: true
-hardware_execution_enabled: true
+real_execution_enabled: true
 all_other_actions_blocked: true
 result_codes:
 - EXE-000
@@ -28,6 +29,19 @@ result_codes:
 - EXE-300
 - EXE-301
 - EXE-900
+notification_semantics:
+  explicit_confirmation_required: false
+  required_parameter_keys:
+  - message
+  optional_parameter_keys:
+  - title
+  idempotent: false
+  verification_scope: dispatch
+  framework_verified_on_success: true
+  hardware_verified_on_success: false
+  delivery_receipt_claimed: false
+  read_receipt_claimed: false
+  persistent_message_or_title: false
 cover_directional_semantics:
   open_success_confirmation: opening_or_fully_open
   close_success_confirmation: closing_or_fully_closed

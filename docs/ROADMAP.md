@@ -5,37 +5,44 @@ The roadmap is directional rather than a promise of exact release numbers or dat
 ## 1.0 release-candidate line
 
 The 1.0 RC line expands only through bounded, independently qualified capability
-packets. RC5 introduces canonical residential garage open/close execution while
-preserving the previously verified lighting, cover, and door lock/unlock contracts.
+packets. RC6 adds the live-verified Semantic Notifications Core while preserving the
+previously verified lighting, cover, door lock/unlock and garage contracts.
 
-## Future feature candidates
+## Next candidates
 
-### Door opener
+### Notification routing / announcements
 
-Evaluate a separate canonical contract for electric residential door openers with
-explicit confirmation and appropriate observable feedback semantics.
+A possible WP-4.7.13.2 may add context-based routing, multiple semantic recipients,
+house announcements and TTS/Sonos delivery. These are not part of RC6.
 
 ### Climate / temperature semantics
 
 Introduce semantic temperature, humidity, setpoint and climate-state models/providers
 before adding higher-level control decisions.
 
-### Notifications
+### Climate control
 
-Add semantic notification/announcement capabilities with routing based on house
-context and resident-control principles.
+After the read semantics are stable, evaluate controlled setpoint writes, operating
+modes, safety guards and observable feedback contracts.
+
+## Later feature candidates
 
 ### Media
 
 Add semantic media capabilities without coupling Red Queen core architecture to one
-vendor/player implementation.
+vendor or player implementation.
 
 ### Semantic Plant Care
 
-Introduce semantic plant objects with plant species, room/location, watering history
-and species-dependent care intervals. Later extensions may incorporate season,
-indoor climate, light conditions, soil-moisture sensors, fertilizing, repotting and
+Introduce semantic plant objects with species, room/location, watering history and
+species-dependent care intervals. Later extensions may incorporate season, indoor
+climate, light conditions, soil-moisture sensors, fertilizing, repotting and
 vacation-aware care reminders.
+
+### Door opener
+
+Evaluate a separate canonical contract for electric residential door openers with
+explicit confirmation and appropriate observable feedback semantics.
 
 ## Versioning principle
 

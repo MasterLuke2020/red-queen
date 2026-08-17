@@ -38,6 +38,9 @@ class ProviderExecutionResult:
     feedback_before: dict[str, Any] | None = None
     feedback_after: dict[str, Any] | None = None
     feedback_wait_ms: float = 0.0
+    # "effect" proves an observed target effect. "dispatch" proves only that
+    # the provider call completed; it does not claim remote delivery/read.
+    verification_scope: str = "effect"
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -51,4 +54,5 @@ class ProviderExecutionResult:
             "feedback_before": self.feedback_before,
             "feedback_after": self.feedback_after,
             "feedback_wait_ms": self.feedback_wait_ms,
+            "verification_scope": self.verification_scope,
         }

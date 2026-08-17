@@ -4,10 +4,10 @@
 
 **WP-4.7.12.1 — Canonical Garage Open / Close Execution**
 
-Candidate baseline: WNHF 1.31.0
-Public candidate: Red Queen 1.0.0-rc5
-Canonical execution API: 1.0
-Canonical dry-run contract: 1.6-rc5
+Candidate baseline: WNHF 1.31.0<br>
+Public candidate: Red Queen 1.0.0-rc5<br>
+Canonical execution API: 1.0<br>
+Canonical dry-run contract: 1.6-rc5<br>
 Canonical real-execution contract: 1.7-rc5
 
 ## Scope

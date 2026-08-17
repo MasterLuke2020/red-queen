@@ -74,6 +74,45 @@ The semantic/read surface and canonical `covers.open` / `covers.close` execution
 
 Some Access execution services remain legacy/development surfaces. Canonical garage open/close and door lock/unlock should use `wnhf.execution_execute` for new automations.
 
+## Notification targets
+
+`notification_targets.yaml` is an optional provider-owned registry next to the
+physical house registries:
+
+```text
+/config/wnhf/house/registry/notification_targets.yaml
+```
+
+Example:
+
+```yaml
+notification_targets:
+  - id: notification.target.lukas
+    name: Lukas
+    enabled: true
+    provider: home_assistant_notify_entity
+    entity_id: notify.motorola_edge_40_neo
+```
+
+Target IDs must use the `notification.target.` prefix. RC6 supports the provider
+value `home_assistant_notify_entity`; `entity_id` must reference a Home Assistant
+`notify.*` entity. The registry is reloaded during provider preflight.
+
+Canonical `notifications.send` requires one semantic target and a non-empty message:
+
+```yaml
+action: wnhf.execution_execute
+data:
+  action_id: notifications.send
+  target:
+    object_id: notification.target.lukas
+  parameters:
+    message: Red Queen Testnachricht
+    title: Optionaler Titel
+```
+
+The action needs no confirmation and identical requests are separate sends.
+
 ## Rules
 
 Directory:

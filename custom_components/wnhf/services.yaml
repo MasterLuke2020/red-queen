@@ -580,18 +580,18 @@ execution_dry_run:
 
 execution_execute:
   name: Execute canonical semantic action
-  description: Canonical Red Queen real-execution entry. Lighting on/off, cover open/close, confirmed garage open/close and confirmed door lock/unlock are enabled for exactly one semantic object.
+  description: Canonical Red Queen real-execution entry. Lighting on/off, cover open/close, confirmed garage open/close, confirmed door lock/unlock and notification dispatch are enabled for exactly one semantic object.
   fields:
     action_id:
       name: Action ID
-      description: Stable semantic action ID. The current real-execution surface enables lighting.turn_on, lighting.turn_off, covers.open, covers.close, garage.open, garage.close, openings.lock and openings.unlock.
+      description: Stable semantic action ID. The current real-execution surface enables lighting.turn_on, lighting.turn_off, covers.open, covers.close, garage.open, garage.close, openings.lock, openings.unlock and notifications.send.
       required: true
       example: lighting.turn_off
       selector:
         text:
     target:
       name: Target
-      description: Canonical semantic target map. Lighting, cover and door lock actions require exactly one object_id.
+      description: Canonical semantic target map. Every current canonical action requires exactly one object_id.
       required: true
       example:
         object_id: light.eg.kitchen.spots
@@ -599,7 +599,7 @@ execution_execute:
         object:
     parameters:
       name: Parameters
-      description: Action parameters. Must be empty for the current canonical execution contracts.
+      description: Action parameters. notifications.send requires message and accepts optional title; all other current canonical contracts require an empty map.
       required: false
       example: {}
       selector:

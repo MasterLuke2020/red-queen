@@ -188,6 +188,38 @@ def register_core_capabilities(
             required_provider_capabilities=("security",),
         ),
         CapabilityDefinition(
+            capability_id="notifications",
+            version="1.0.0",
+            name="Notifications",
+            description=(
+                "Semantic notification targets and provider-neutral message dispatch."
+            ),
+            kind=CapabilityKind.CORE,
+            actions=(
+                CapabilityAction(
+                    action_id="notifications.snapshot",
+                    name="Read notification target state",
+                    mutating=False,
+                    confirmation_required=False,
+                    description=(
+                        "Read configured semantic notification targets and their "
+                        "current provider availability."
+                    ),
+                ),
+                CapabilityAction(
+                    action_id="notifications.send",
+                    name="Send notification",
+                    mutating=True,
+                    confirmation_required=False,
+                    description=(
+                        "Dispatch one explicit message to exactly one semantic "
+                        "notification target."
+                    ),
+                ),
+            ),
+            required_provider_capabilities=("notifications",),
+        ),
+        CapabilityDefinition(
             capability_id="validator",
             version="1.0.0",
             name="Validator",

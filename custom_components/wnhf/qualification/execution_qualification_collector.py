@@ -93,7 +93,9 @@ class ExecutionQualificationCollector:
                 return ExecutionQualificationDecision(
                     qualified=False,
                     evidence=None,
-                    reason="EXE-000 did not confirm the physical effect.",
+                    reason=(
+                        "EXE-000 did not report the provider-defined confirmation."
+                    ),
                 )
 
         if result_code == "EXE-101":
@@ -110,6 +112,12 @@ class ExecutionQualificationCollector:
                     reason="EXE-101 lacks confirmed satisfied feedback.",
                 )
 
+        provider_result = result.get("provider_result") or {}
+        verification_scope = str(
+            provider_result.get("verification_scope") or "effect"
+        )
+        hardware_verified = verification_scope != "dispatch"
+
         verified_at = datetime.now(UTC)
         evidence_id = f"auto.execution.{action_id}.{evidence_type}"
 
@@ -123,7 +131,7 @@ class ExecutionQualificationCollector:
             pass_count=1,
             last_execution_id=execution_id,
             last_result_code=result_code,
-            hardware_verified=True,
+            hardware_verified=hardware_verified,
             framework_verified=True,
             source="framework_automatic",
             persisted_by_framework=True,
@@ -134,7 +142,8 @@ class ExecutionQualificationCollector:
             evidence=evidence,
             reason=(
                 "Execution result qualifies as framework-verified "
-                f"{evidence_type} evidence."
+                f"{evidence_type} evidence "
+                f"(verification_scope={verification_scope})."
             ),
         )
 
