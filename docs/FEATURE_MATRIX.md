@@ -1,13 +1,13 @@
-# Red Queen 1.0.0-rc6 Feature Matrix
+# Red Queen 1.0.0-rc7 Verified Feature Matrix
 
-| Domain | Semantic model/state | Stable snapshot/diagnostics | Canonical mutating execution | RC6 status |
+| Domain | Semantic model/state | Stable snapshot/diagnostics | Canonical mutating execution | RC7 candidate status |
 |---|---:|---:|---:|---|
 | Rooms | Yes | Yes | N/A | Stable |
 | Lighting | Yes | Yes | `lighting.turn_on`, `lighting.turn_off` | Live-verified baseline |
 | Openings | Yes | `openings.snapshot` | `openings.lock`, `openings.unlock` | Live-verified baseline |
 | Covers | Yes | `covers.snapshot`, continuous position feedback | `covers.open`, `covers.close` | Live-verified baseline |
 | Garage | Yes | `garage.snapshot` / Access state | `garage.open`, `garage.close` | Live-verified baseline |
-| Notifications | Yes | `notifications.snapshot`, provider diagnostics | `notifications.send` | LIVE VERIFIED RC6 |
+| Notifications | Yes | direct, announcement and route diagnostics | `notifications.send`, `notifications.announce`, `notifications.route` | Live verified on 2026-08-20 |
 | Security | Yes | `security.snapshot` | No | Stable read surface |
 | Providers | Yes | Yes | N/A | Stable core architecture |
 | Capabilities | Yes | Yes | N/A | Stable core architecture |
@@ -22,10 +22,11 @@
 | Climate / temperature | Planned | Planned | Planned | Future feature work |
 | Media | Planned | Planned | Planned | Future feature work |
 
-`notifications.send` is provider-neutral, requires a non-empty message, needs no
-confirmation and is deliberately non-idempotent. Its success scope is dispatch:
-framework completion is verified, but remote delivery/read and hardware verification
-are not claimed.
+All notification actions are provider-neutral, require a non-empty message, need no
+confirmation and are deliberately non-idempotent. Announcement targets keep raw TTS
+and media-player IDs out of the public action envelope. Route targets select log,
+dashboard, mobile and voice channels through priority/profile policy. Success remains
+dispatch-scoped; delivery, read and audible playback are not claimed.
 
 Garage stop/toggle, cover set-position/blade execution and electric door-opener
 execution remain outside the canonical surface.

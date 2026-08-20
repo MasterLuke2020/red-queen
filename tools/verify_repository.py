@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static repository checks for the Red Queen 1.0.0-rc6 candidate."""
+"""Static repository checks for the Red Queen 1.0.0-rc7 candidate."""
 from __future__ import annotations
 
 import ast
@@ -7,6 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import runpy
 import shutil
 import subprocess
 import sys
@@ -113,7 +114,8 @@ required_paths = [
     ROOT / "docs" / "KNOWN_LIMITATIONS.md",
     ROOT / "docs" / "RELEASE_STATUS.md",
     ROOT / "docs" / "ROADMAP.md",
-    ROOT / "docs" / "RC6_CANDIDATE_VALIDATION.md",
+    ROOT / "docs" / "RC7_CANDIDATE_VALIDATION.md",
+    ROOT / "configuration" / "notification_targets.yaml",
     INTEGRATION / "__init__.py",
     INTEGRATION / "manifest.json",
     INTEGRATION / "RELEASE.json",
@@ -122,7 +124,7 @@ required_paths = [
     INTEGRATION / "translations" / "de.json",
     INTEGRATION / "domain" / "notification.py",
     INTEGRATION / "providers" / "notifications.py",
-    INTEGRATION / "docs" / "RELEASE_NOTES_1.0.0-rc6.md",
+    INTEGRATION / "docs" / "RELEASE_NOTES_1.0.0-rc7.md",
 ]
 for path in required_paths:
     if not path.exists():
@@ -139,7 +141,7 @@ except Exception as exc:
 expected_manifest = {
     "domain": "wnhf",
     "name": "Red Queen",
-    "version": "1.0.0-rc6",
+    "version": "1.0.0-rc7",
     "documentation": "https://github.com/MasterLuke2020/red-queen#readme",
     "issue_tracker": "https://github.com/MasterLuke2020/red-queen/issues",
     "codeowners": ["@MasterLuke2020"],
@@ -156,12 +158,12 @@ except Exception as exc:
 
 expected_release = {
     "product_name": "Red Queen",
-    "version": "1.0.0-rc6",
-    "candidate": "rc6",
-    "development_baseline_version": "1.32.0",
-    "release_baseline": "WP-4.7.13.1",
+    "version": "1.0.0-rc7",
+    "candidate": "rc7",
+    "development_baseline_version": "1.33.0",
+    "release_baseline": "WP-4.7.13.2",
     "canonical_execution_api_version": "1.0",
-    "canonical_execution_contract": "1.8-rc6",
+    "canonical_execution_contract": "1.9-rc7",
 }
 for key, value in expected_release.items():
     if release.get(key) != value:
@@ -169,28 +171,34 @@ for key, value in expected_release.items():
 
 const_text = read_text(INTEGRATION / "const.py")
 for marker in (
-    'DEVELOPMENT_BASELINE_VERSION = "1.32.0"',
-    'RELEASE_BASELINE = "WP-4.7.13.1"',
-    'GENERIC_EXECUTION_CONTRACT_VERSION = "1.7-rc6"',
-    'GENERIC_REAL_EXECUTION_VERSION = "1.8-rc6"',
-    'CANONICAL_EXECUTION_CONTRACT_VERSION = "1.8-rc6"',
+    'DEVELOPMENT_BASELINE_VERSION = "1.33.0"',
+    'RELEASE_BASELINE = "WP-4.7.13.2"',
+    'GENERIC_EXECUTION_CONTRACT_VERSION = "1.8-rc7"',
+    'GENERIC_REAL_EXECUTION_VERSION = "1.9-rc7"',
+    'CANONICAL_EXECUTION_CONTRACT_VERSION = "1.9-rc7"',
 ):
     if marker not in const_text:
         fail(f"Missing release/version marker: {marker}")
 
 planner_text = read_text(INTEGRATION / "executions" / "generic_planner.py")
-if 'CONTRACT_VERSION = "1.7-rc6"' not in planner_text:
-    fail("GenericExecutionPlanner.CONTRACT_VERSION must be 1.7-rc6")
+if 'CONTRACT_VERSION = "1.8-rc7"' not in planner_text:
+    fail("GenericExecutionPlanner.CONTRACT_VERSION must be 1.8-rc7")
 
 real_text = read_text(INTEGRATION / "executions" / "generic_real.py")
-if 'VERSION = "1.8-rc6"' not in real_text:
-    fail("GenericExecutionEngine.VERSION must be 1.8-rc6")
+if 'VERSION = "1.9-rc7"' not in real_text:
+    fail("GenericExecutionEngine.VERSION must be 1.9-rc7")
 
 manager_text = read_text(INTEGRATION / "executions" / "generic_manager.py")
-if 'VERSION = "1.6-rc6"' not in manager_text:
-    fail("SemanticExecutionManager.VERSION must be 1.6-rc6")
-if "1.5-rc5" in manager_text:
-    fail("Stale SemanticExecutionManager RC5 marker remains")
+if 'VERSION = "1.7-rc7"' not in manager_text:
+    fail("SemanticExecutionManager.VERSION must be 1.7-rc7")
+
+release_candidate_text = read_text(INTEGRATION / "release_candidate.py")
+if 'f"Release Candidate {cls.CANDIDATE.removeprefix(\'rc\')}"' not in (
+    release_candidate_text
+):
+    fail("Release phase name must derive from the explicit RC7 candidate label")
+if '"phase_name": "Release Candidate 6"' in release_candidate_text:
+    fail("Stale RC6 release phase name remains active")
 
 for path in ROOT.rglob("*.json"):
     if path.name.endswith(".example"):
@@ -212,8 +220,13 @@ if len(service_keys) != 66:
     fail(f"Expected 66 service definitions, found {len(service_keys)}")
 if len(set(service_keys)) != len(service_keys):
     fail("Duplicate service keys detected in services.yaml")
-if "notifications.send" not in service_text:
-    fail("services.yaml does not document notifications.send")
+for action_id in (
+    "notifications.send",
+    "notifications.announce",
+    "notifications.route",
+):
+    if action_id not in service_text:
+        fail(f"services.yaml does not document {action_id}")
 
 # Verify capability definitions and semantic actions without importing Home Assistant.
 try:
@@ -241,13 +254,23 @@ try:
         fail(f"Expected 7 unique capabilities, found {len(capabilities)}")
     if "notifications" not in capabilities:
         fail("Missing semantic notifications capability")
-    if len(actions) != 15 or len(set(actions)) != 15:
-        fail(f"Expected 15 unique semantic actions, found {len(actions)}")
-    for action_id in ("notifications.snapshot", "notifications.send"):
+    if len(actions) != 17 or len(set(actions)) != 17:
+        fail(f"Expected 17 unique semantic actions, found {len(actions)}")
+    for action_id in (
+        "notifications.snapshot",
+        "notifications.send",
+        "notifications.announce",
+        "notifications.route",
+    ):
         if action_id not in actions:
             fail(f"Missing semantic notification action: {action_id}")
-    if confirmation.get("notifications.send") is not False:
-        fail("notifications.send must not require confirmation")
+    for action_id in (
+        "notifications.send",
+        "notifications.announce",
+        "notifications.route",
+    ):
+        if confirmation.get(action_id) is not False:
+            fail(f"{action_id} must not require confirmation")
     for action_id in ("garage.open", "garage.close", "openings.lock", "openings.unlock"):
         if confirmation.get(action_id) is not True:
             fail(f"{action_id} must require explicit confirmation")
@@ -274,8 +297,8 @@ try:
                 "required": keyword_literal(node, "required_parameter_keys", ()),
             }
 
-    if len(contracts) != 9:
-        fail(f"Expected 9 unique canonical real contracts, found {len(contracts)}")
+    if len(contracts) != 11:
+        fail(f"Expected 11 unique canonical real contracts, found {len(contracts)}")
     notification_contract = contracts.get("notifications.send")
     if notification_contract is None:
         fail("Missing canonical notifications.send contract")
@@ -285,12 +308,39 @@ try:
         if notification_contract["required"] != ("message",):
             fail("notifications.send required parameters must contain only message")
 
+    announcement_contract = contracts.get("notifications.announce")
+    if announcement_contract is None:
+        fail("Missing canonical notifications.announce contract")
+    else:
+        if announcement_contract["allowed"] != ("message", "level"):
+            fail("notifications.announce allowed parameters must be message,level")
+        if announcement_contract["required"] != ("message",):
+            fail("notifications.announce required parameters must contain only message")
+
+    route_contract = contracts.get("notifications.route")
+    if route_contract is None:
+        fail("Missing canonical notifications.route contract")
+    else:
+        if route_contract["allowed"] != (
+            "message",
+            "title",
+            "priority",
+            "profile",
+            "source",
+            "category",
+        ):
+            fail("notifications.route allowed parameter envelope changed")
+        if route_contract["required"] != ("message",):
+            fail("notifications.route required parameters must contain only message")
+
     action_contract_text = read_text(
         INTEGRATION / "executions" / "action_contracts.py"
     )
     for marker in (
         "parameters.message must be a non-empty string.",
         "parameters.title must be a string or null.",
+        "parameters.level must be one of: info, notice, warning, alarm.",
+        "parameters.priority must be one of:",
     ):
         if marker not in action_contract_text:
             fail(f"Missing notification request guard: {marker}")
@@ -306,12 +356,24 @@ for marker in (
     'return "provider.core.notifications"',
     'return ("notifications",)',
     '"notify", "send_message"',
+    '"tts",\n                    "speak"',
+    '"media_player",\n                    "play_media"',
+    '"announce": True',
+    '"restore_strategy": "sonos_native_announce"',
+    'f"media-source://tts/{target.tts_entity_id}?{query}"',
+    '_ACTION_ANNOUNCE = "notifications.announce"',
+    '_ACTION_ROUTE = "notifications.route"',
     'verification_scope="dispatch"',
     '"delivery_receipt_claimed": False',
     '"read_receipt_claimed": False',
+    '"playback_heard_claimed": False',
 ):
     if marker not in notification_provider_text:
         fail(f"Missing notification provider contract marker: {marker}")
+if '"sonos",\n                        "snapshot"' in notification_provider_text:
+    fail("Native Sonos announcements must not take a second framework snapshot")
+if '"sonos",\n                            "restore"' in notification_provider_text:
+    fail("Native Sonos announcements must not send a second framework restore")
 
 collector_text = read_text(
     INTEGRATION / "qualification" / "execution_qualification_collector.py"
@@ -343,34 +405,58 @@ notification_scope = re.search(
     release_scope_text,
 )
 if notification_scope is None:
-    fail("Notifications must be active and in RC6 release scope")
+    fail("Notifications must be active and in RC7 release scope")
+
+try:
+    registry_namespace = runpy.run_path(
+        str(INTEGRATION / "domain" / "notification.py")
+    )
+    registry = registry_namespace["load_notification_registry"](
+        ROOT / "configuration" / "notification_targets.yaml"
+    )
+    if len(registry.notification_targets) != 1:
+        fail("Reference registry must contain one direct notification target")
+    if len(registry.announcement_targets) != 2:
+        fail("Reference registry must contain office and house announcements")
+    if len(registry.notification_routes) != 1:
+        fail("Reference registry must contain one native notification route")
+    house_target = registry.announcement_targets.get("announcement.target.house")
+    if house_target is None or house_target.tts_entity_id != "tts.google_translate_de_at":
+        fail("Reference house announcement must use Google Translate de-at")
+    if house_target is not None and house_target.levels["alarm"].volume != 0.55:
+        fail("Reference alarm announcement volume must remain 0.55")
+except Exception as exc:
+    fail(f"Native notification registry validation failed: {exc}")
 
 current_doc_markers = {
-    ROOT / "README.md": ("1.0.0-rc6", "LIVE VERIFIED", "notifications.send"),
+    ROOT / "README.md": (
+        "1.0.0-rc7",
+        "LIVE VERIFIED",
+        "notifications.route",
+    ),
     ROOT / "REPOSITORY_STATUS.md": (
-        "1.0.0-rc6",
-        "WP-4.7.13.1",
+        "1.0.0-rc7",
+        "WP-4.7.13.2",
         "17 active domains",
     ),
     ROOT / "docs" / "FEATURE_MATRIX.md": (
-        "1.0.0-rc6",
+        "1.0.0-rc7",
         "Notifications",
-        "LIVE VERIFIED RC6",
+        "notifications.announce",
     ),
     ROOT / "docs" / "ROADMAP.md": (
-        "RC6",
-        "Notification routing / announcements",
+        "RC7",
+        "Notification routing / announcements qualification",
         "Climate / temperature semantics",
     ),
     ROOT / "docs" / "RELEASE_STATUS.md": (
-        "1.0.0-rc6",
+        "1.0.0-rc7",
         "LIVE VERIFIED",
-        "PUBLICATION PENDING",
     ),
-    INTEGRATION / "README.md": ("1.0.0-rc6", "notifications.send"),
+    INTEGRATION / "README.md": ("1.0.0-rc7", "notifications.route"),
     INTEGRATION / "docs" / "FEATURE_MATRIX.md": (
-        "1.0.0-rc6",
-        "LIVE VERIFIED RC6",
+        "1.0.0-rc7",
+        "notifications.announce",
     ),
 }
 for path, markers in current_doc_markers.items():
@@ -379,11 +465,11 @@ for path, markers in current_doc_markers.items():
     text = read_text(path)
     for marker in markers:
         if marker not in text:
-            fail(f"{path.relative_to(ROOT)} missing RC6 marker: {marker}")
+            fail(f"{path.relative_to(ROOT)} missing current RC7 marker: {marker}")
 
-checksum_file = ROOT / "checksums" / "rc6_source.sha256"
+checksum_file = ROOT / "checksums" / "rc7_source.sha256"
 if not checksum_file.exists():
-    fail("Missing RC6 source checksum catalogue: checksums/rc6_source.sha256")
+    fail("Missing RC7 source checksum catalogue: checksums/rc7_source.sha256")
 else:
     checksum_paths: list[str] = []
     for line_number, line in enumerate(
@@ -412,7 +498,7 @@ else:
         if path.is_file() and "__pycache__" not in path.parts
     )
     if checksum_paths != expected_source_paths:
-        fail("RC6 checksum catalogue must list every integration file exactly once")
+        fail("RC7 checksum catalogue must list every integration file exactly once")
 
 if (ROOT / "hacs.json").exists():
     fail("hacs.json is active, but this candidate remains pre-publication")
@@ -430,9 +516,10 @@ print(
 )
 print(f"- services: {len(service_keys)}")
 print("- capabilities: 7")
-print("- semantic actions: 15")
-print("- canonical real contracts: 9")
+print("- semantic actions: 17")
+print("- canonical real contracts: 11")
+print("- native notification routing/announcements: static contract PASS")
 print("- notifications: dispatch-scoped qualification guard PASS")
-print("- RC6 LF-normalized source checksums: PASS")
+print("- RC7 LF-normalized source checksums: PASS")
 print(f"- Git whitespace hygiene: {git_whitespace_status}")
 print("- active HACS metadata: intentionally disabled")

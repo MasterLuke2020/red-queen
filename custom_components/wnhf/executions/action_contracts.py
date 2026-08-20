@@ -82,14 +82,57 @@ class CanonicalActionExecutionContract:
                 + "."
             )
 
-        if self.action_id == "notifications.send":
+        if self.action_id in {
+            "notifications.send",
+            "notifications.announce",
+            "notifications.route",
+        }:
             message = parameters.get("message")
             if not isinstance(message, str) or not message.strip():
                 errors.append("parameters.message must be a non-empty string.")
+
+        if self.action_id in {"notifications.send", "notifications.route"}:
             if "title" in parameters:
                 title = parameters.get("title")
                 if title is not None and not isinstance(title, str):
                     errors.append("parameters.title must be a string or null.")
+
+        if self.action_id == "notifications.announce" and "level" in parameters:
+            level = parameters.get("level")
+            if level not in {"info", "notice", "warning", "alarm"}:
+                errors.append(
+                    "parameters.level must be one of: info, notice, warning, alarm."
+                )
+
+        if self.action_id == "notifications.route":
+            if "priority" in parameters and parameters.get("priority") not in {
+                "debug",
+                "info",
+                "warning",
+                "critical",
+            }:
+                errors.append(
+                    "parameters.priority must be one of: debug, info, warning, "
+                    "critical."
+                )
+            if "profile" in parameters and parameters.get("profile") not in {
+                "standard",
+                "silent",
+                "voice",
+                "mobile",
+                "broadcast",
+            }:
+                errors.append(
+                    "parameters.profile must be one of: standard, silent, voice, "
+                    "mobile, broadcast."
+                )
+            for key in ("source", "category"):
+                if key in parameters:
+                    value = parameters.get(key)
+                    if not isinstance(value, str) or not value.strip():
+                        errors.append(
+                            f"parameters.{key} must be a non-empty string."
+                        )
 
         return tuple(errors)
 
@@ -157,6 +200,29 @@ _CANONICAL_ACTION_CONTRACTS = {
         required_target_keys=("object_id",),
         allowed_target_keys=("object_id",),
         allowed_parameter_keys=("message", "title"),
+        required_parameter_keys=("message",),
+    ),
+    "notifications.announce": CanonicalActionExecutionContract(
+        action_id="notifications.announce",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=("message", "level"),
+        required_parameter_keys=("message",),
+    ),
+    "notifications.route": CanonicalActionExecutionContract(
+        action_id="notifications.route",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=(
+            "message",
+            "title",
+            "priority",
+            "profile",
+            "source",
+            "category",
+        ),
         required_parameter_keys=("message",),
     ),
 }

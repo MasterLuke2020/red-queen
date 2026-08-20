@@ -1,22 +1,30 @@
-# Known Limitations and Deliberate RC6 Boundaries
+# Known Limitations and Deliberate RC7 Candidate Boundaries
 
 ## Canonical execution remains intentionally bounded
 
 The canonical real-execution surface contains lighting on/off, directional cover
-open/close, confirmed garage open/close, confirmed door lock/unlock and semantic
-notification dispatch. Other semantic/read capabilities do not automatically imply
-productive actuation.
+open/close, confirmed garage open/close, confirmed door lock/unlock, semantic
+notification dispatch, native announcements and notification routing. Other
+semantic/read capabilities do not automatically imply productive actuation.
 
 ## Notifications
 
-RC6 supports `notifications.send` with a required non-empty `message` and optional
-`title`. It does not yet support announcements/TTS, priority or category routing,
-presence-based routing, multiple recipients in one target, or arbitrary
-provider-specific data.
+RC7 retains `notifications.send` and adds native `notifications.announce` and
+`notifications.route`. Installation-specific targets require explicit registry
+configuration; Red Queen deliberately does not auto-select speakers or recipients.
+Context-aware voice routing currently consumes optional configured Home Assistant
+quiet-mode and house-state entities. A first-class resident/presence model remains
+future work.
 
 A successful result proves that Home Assistant accepted the notify service call. It
-does not prove handset delivery or a read receipt. Qualification is therefore
-framework-verified at dispatch scope and not hardware-verified.
+does not prove handset delivery or a read receipt. Likewise, successful TTS dispatch
+does not prove that a speaker was audible or a resident heard the message.
+Qualification is framework-verified at dispatch scope and not hardware-verified.
+
+Generic TTS targets can restore volume but cannot promise vendor-specific playback
+or grouping restoration. `home_assistant_tts_sonos` uses the Home Assistant
+media-player Sonos `announce` overlay. Sonos owns ducking and restoration; Red Queen
+qualifies only dispatch and does not claim that restoration has completed.
 
 ## Covers
 

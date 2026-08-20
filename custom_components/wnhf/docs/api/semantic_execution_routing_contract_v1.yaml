@@ -15,3 +15,5 @@ enabled_real_actions:
 - openings.lock
 - openings.unlock
 - notifications.send
+- notifications.announce
+- notifications.route

@@ -5,15 +5,16 @@ The roadmap is directional rather than a promise of exact release numbers or dat
 ## 1.0 release-candidate line
 
 The 1.0 RC line expands only through bounded, independently qualified capability
-packets. RC6 adds the live-verified Semantic Notifications Core while preserving the
-previously verified lighting, cover, door lock/unlock and garage contracts.
+packets. RC7 candidate WP-4.7.13.2 adds native notification routing and announcements
+on top of the live-verified RC6 Semantic Notifications Core.
 
 ## Next candidates
 
-### Notification routing / announcements
+### Notification routing / announcements qualification
 
-A possible WP-4.7.13.2 may add context-based routing, multiple semantic recipients,
-house announcements and TTS/Sonos delivery. These are not part of RC6.
+WP-4.7.13.2 implements provider-neutral announcement targets, native TTS/Sonos
+delivery and profile/priority channel routing. Static and reference-installation live
+qualification must complete before RC7 publication.
 
 ### Climate / temperature semantics
 

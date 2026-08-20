@@ -2,20 +2,26 @@
 
 ## Current candidate
 
-**Red Queen 1.0.0-rc6 — LIVE VERIFIED / PUBLICATION PENDING**
+**Red Queen 1.0.0-rc7 — LIVE VERIFIED / RELEASE PREPARATION READY**
 
-RC6 is based on the released RC5 baseline and adds WP-4.7.13.1 Semantic
-Notifications Core. Existing lighting, cover, garage and door lock/unlock canonical
-behavior is intentionally preserved. WP-4.7.13.1 passed live reference-installation
-verification on 2026-08-17.
+RC7 is based on the published, live-verified RC6 baseline and adds WP-4.7.13.2 Native
+Notification Routing / Announcements. Existing lighting, cover, garage, door
+lock/unlock and direct notification behavior is intentionally preserved.
 
-Final observed runtime state:
+Reference-installation live qualification passed on 2026-08-20 with:
 
 - `status: healthy`
 - `runtime_ready: true`
 - `health_score: 100`
 - `error_count: 0`
 - `warning_count: 0`
+
+- all four announcement levels on Office and five-speaker house targets;
+- all five routing profiles and all four priority-to-voice mappings;
+- Quiet Mode suppression and broadcast override;
+- direct RC6 notification compatibility plus physical-action dry-run regressions;
+- persistent dispatch-scoped evidence for notification send, announce and route;
+- no Red Queen errors or warnings after the completed test sequence.
 
 ## RC policy
 

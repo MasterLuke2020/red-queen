@@ -1,7 +1,7 @@
 contract:
   id: wnhf.generic_execution
   version: '1.1'
-  implementation: 1.7-rc6
+  implementation: 1.8-rc7
 dry_run_enabled: true
 hardware_dispatch_in_dry_run: false
 real_execution_enabled_actions:
@@ -29,6 +29,36 @@ real_execution_enabled_actions:
     allowed_parameter_keys:
     - message
     - title
+    required_parameter_keys:
+    - message
+    confirmation_required: false
+    idempotent: false
+  notifications.announce:
+    target_mode: single_object
+    required_target_keys:
+    - object_id
+    allowed_target_keys:
+    - object_id
+    allowed_parameter_keys:
+    - message
+    - level
+    required_parameter_keys:
+    - message
+    confirmation_required: false
+    idempotent: false
+  notifications.route:
+    target_mode: single_object
+    required_target_keys:
+    - object_id
+    allowed_target_keys:
+    - object_id
+    allowed_parameter_keys:
+    - message
+    - title
+    - priority
+    - profile
+    - source
+    - category
     required_parameter_keys:
     - message
     confirmation_required: false

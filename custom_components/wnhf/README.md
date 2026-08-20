@@ -1,4 +1,4 @@
-# Red Queen 1.0.0-rc6
+# Red Queen 1.0.0-rc7
 
 Red Queen is a semantic home framework for Home Assistant. It models the house as
 objects and state, evaluates context/rules/policies/decisions, resolves capabilities
@@ -19,25 +19,31 @@ automations.
 ## Release status
 
 - Product: Red Queen
-- Version: `1.0.0-rc6`
+- Version: `1.0.0-rc7`
 - Channel: `release_candidate`
 - Phase: `rc`
-- Candidate: `rc6`
-- Candidate development baseline: WNHF `1.32.0` / `WP-4.7.13.1`
-- Status: LIVE VERIFIED on 2026-08-17
+- Candidate: `rc7`
+- Candidate development baseline: WNHF `1.33.0` / `WP-4.7.13.2`
+- Status: LIVE VERIFIED on 2026-08-20; release preparation ready
 
 ## Stable 1.0 RC scope
 
 Canonical mutating execution currently includes `lighting.turn_on`,
 `lighting.turn_off`, `covers.open`, `covers.close`, `garage.open`,
 `garage.close`, `openings.lock`, `openings.unlock` and
-`notifications.send`.
+`notifications.send`, `notifications.announce` and `notifications.route`.
 
 `notifications.send` targets one provider-neutral semantic notification target. It
 requires a non-empty `message`, accepts an optional string/null `title`, needs no
 confirmation and is non-idempotent. Successful execution proves Home Assistant
 dispatch only; delivery/read and hardware verification are not claimed. Qualification
 evidence never persists message/title text.
+
+`notifications.announce` natively owns TTS playback, urgency profiles and optional
+Sonos-native announce overlays without a Home Assistant helper script. `notifications.route`
+owns priority/profile channel selection for log, dashboard, mobile and voice outputs.
+Installation-specific TTS and speaker entity IDs remain in the optional semantic
+notification registry, never in the public action request.
 
 Garage open/close targets exactly one semantic `garage_door` opening object. Both
 actions require `confirmed: true`. The residential OSC pulse is dispatched only from
@@ -49,7 +55,7 @@ objective lock feedback and a closed door contact. Directional cover execution i
 guarded by objective end-state and movement feedback; automatic reversal remains
 blocked.
 
-See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc6.md`.
+See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc7.md`.
 
 ## Qualification
 

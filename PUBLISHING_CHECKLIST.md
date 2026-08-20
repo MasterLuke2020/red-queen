@@ -1,36 +1,37 @@
 # Publishing Checklist
 
-## RC6 source preparation
+## RC7 verified-candidate preparation
 
 - [x] Start from the live-verified
   `Red_Queen_1.0.0-rc6_Candidate_WP-4.7.13.1.zip` runtime source.
-- [x] Update `SemanticExecutionManager.VERSION` to `1.6-rc6`.
-- [x] Update RC6 repository and integration documentation.
-- [x] Add the RC6 static repository verifier.
-- [x] Add `checksums/rc6_source.sha256` with LF-normalized source hashes.
-- [ ] Apply this branch-update package to `C:\Git\red-queen`.
-- [ ] Run `python tools/verify_repository.py`.
+- [x] Implement native semantic announcement targets and notification routes.
+- [x] Preserve direct `notifications.send` compatibility.
+- [x] Port the historical profile, priority and context-routing semantics.
+- [x] Update the canonical contracts and RC7 documentation.
+- [x] Add and verify `checksums/rc7_source.sha256`.
+- [x] Build the replaceable Home Assistant test package.
+- [x] Complete the controlled live-qualification plan.
 
-## GitHub release flow
+## GitHub web release flow after live qualification
 
-- [ ] Create/update the RC6 release branch from RC5 main commit
-  `8d6990c9ebd13f7ecfa37c5f604581e8ce029ac9`.
-- [ ] Commit the complete RC6 branch update intentionally.
-- [ ] Push the release branch.
+- [ ] Apply the verified RC7 source to the local repository checkout.
+- [ ] Create `release/1.0.0-rc7` locally and commit intentionally.
+- [ ] Push the release branch with Git.
 - [ ] Confirm the static repository check passes.
 - [ ] Confirm Home Assistant hassfest passes.
-- [ ] Fast-forward `main` to the verified RC6 release commit.
-- [ ] Create annotated tag `v1.0.0-rc6` on that exact commit.
-- [ ] Publish GitHub Pre-Release `v1.0.0-rc6`.
-- [ ] Use `custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc6.md` as the
-  release-note basis.
+- [ ] Fast-forward `main` to the verified RC7 release commit.
+- [ ] Create annotated tag `v1.0.0-rc7` on that exact commit.
+- [ ] Create and publish GitHub Pre-Release `v1.0.0-rc7` in the web interface.
+- [ ] Use `custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc7.md` as the
+  release-note basis in the GitHub web interface.
 - [ ] Record final commit, tag object and release artifact checksums.
 
 ## Compatibility and publication boundaries
 
 - Do not rename the `wnhf` integration domain or `wnhf.*` service IDs.
-- Do not modify the published RC5 tag or release.
-- Do not add notification announcements/TTS/routing to the RC6 core packet.
+- Do not modify the published RC1–RC6 tags or releases.
+- Do not publish RC7 before native announcement/routing live qualification passes.
+- Do not depend on `script.notify_house` or the historical channel automations.
 - Do not claim handset delivery/read or hardware verification for notification
   dispatch.
 - Do not activate `hacs.json` until the independent publication requirements are

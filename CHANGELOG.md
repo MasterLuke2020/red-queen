@@ -4,6 +4,48 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0-rc7 candidate — WP-4.7.13.2
+
+#### Added
+
+- Native canonical `notifications.announce` with four announcement levels.
+- Native canonical `notifications.route` with priority/profile channel routing.
+- Provider-neutral announcement targets and notification routes in the existing
+  optional notification registry.
+- Native Home Assistant TTS execution; Sonos targets use a TTS Media Source through
+  `media_player.play_media` with `announce: true`.
+- Context-guarded standard/voice routing plus explicit broadcast override.
+- Per-channel log, dashboard, mobile and voice execution results.
+
+#### Changed
+
+- Canonical real-execution surface now contains eleven actions.
+- Semantic action catalogue now contains seventeen actions.
+- The historical WNHF notification/voice scripts are behavior references only and
+  are no longer runtime dependencies.
+
+#### Safety and privacy
+
+- Raw TTS, speaker and notify entity IDs remain installation configuration and are
+  rejected from the provider-neutral public request envelope.
+- Invalid priority/profile/level values and empty messages reject before dispatch.
+- Announcements are serialized per semantic target. Sonos owns native overlay
+  ducking/restoration; Red Queen deliberately sends no second snapshot or restore
+  command.
+- Qualification remains dispatch-scoped and claims neither delivery/read nor audible
+  playback.
+
+#### Validation
+
+- Static verification and isolated provider behavior validation passed.
+- Reference-installation live qualification passed on 2026-08-20.
+- Office and five-speaker house announcements passed for all four levels; native
+  Sonos restoration resumed music exactly once without a second interruption.
+- All five routing profiles, all four priority mappings, Quiet Mode suppression and
+  broadcast override passed with log/dashboard/mobile/voice channel evidence.
+- Request guards and lighting, cover, garage and opening dry-run regressions passed.
+- Final system health: 100, runtime ready, zero Red Queen errors and zero warnings.
+
 ### 1.0.0-rc6 candidate — WP-4.7.13.1
 
 #### Added

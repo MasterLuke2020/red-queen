@@ -113,6 +113,97 @@ data:
 
 The action needs no confirmation and identical requests are separate sends.
 
+The same optional file may define native TTS announcement targets and semantic
+notification routes. No Home Assistant script or event automation is required.
+
+```yaml
+announcement_targets:
+  - id: announcement.target.house
+    name: Whole-house announcement
+    enabled: true
+    provider: home_assistant_tts_sonos
+    tts_entity_id: tts.google_translate_de_at
+    cache: false
+    with_group: true
+    levels:
+      info:
+        speakers: [media_player.office]
+        volume: 0.35
+        prefix: null
+      notice:
+        speakers: [media_player.office]
+        volume: 0.35
+        prefix: Hinweis.
+      warning:
+        speakers: [media_player.office]
+        volume: 0.45
+        prefix: Warnung.
+      alarm:
+        speakers: [media_player.office]
+        volume: 0.55
+        prefix: Achtung!
+
+notification_routes:
+  - id: notification.route.house
+    name: House notification route
+    enabled: true
+    notification_target_ids: [notification.target.lukas]
+    announcement_target_id: announcement.target.house
+    log_enabled: true
+    dashboard_enabled: true
+    context:
+      quiet_mode_entity_id: binary_sensor.quiet_mode
+      house_state_entity_id: sensor.house_presence_state
+      voice_blocked_states: [away, vacation, unknown, unavailable]
+```
+
+`provider: home_assistant_tts_sonos` uses `media_player.play_media` with a TTS
+Media Source, `announce: true` and the level volume in `extra.volume`. Sonos owns
+music ducking and restoration; Red Queen deliberately sends no second snapshot or
+restore command. The retained `with_group` field is accepted for registry
+compatibility but is not used by the native announce path. The portable
+`home_assistant_tts` provider retains/restores speaker volume but cannot promise
+vendor-specific playback restoration.
+
+Direct announcement example:
+
+```yaml
+action: wnhf.execution_execute
+data:
+  action_id: notifications.announce
+  target:
+    object_id: announcement.target.house
+  parameters:
+    message: Die Garage ist noch geöffnet.
+    level: warning
+```
+
+Native route example:
+
+```yaml
+action: wnhf.execution_execute
+data:
+  action_id: notifications.route
+  target:
+    object_id: notification.route.house
+  parameters:
+    message: Die Garage ist noch geöffnet.
+    title: Garage
+    priority: warning
+    profile: standard
+    source: garage_monitor
+    category: security
+```
+
+Routing profiles preserve the original WNHF prototype semantics: `standard` uses
+dashboard/mobile plus context-allowed voice; `silent` suppresses voice; `voice`
+uses dashboard plus context-allowed voice; `mobile` selects mobile only;
+`broadcast` selects every channel and deliberately bypasses the voice context guard.
+
+The dashboard channel creates a persistent Home Assistant notification only for
+`warning` and `critical`. Lower priorities remain visible in route diagnostics and
+the log channel without creating a persistent dashboard message.
+
 ## Rules
 
 Directory:

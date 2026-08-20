@@ -189,7 +189,7 @@ def register_core_capabilities(
         ),
         CapabilityDefinition(
             capability_id="notifications",
-            version="1.0.0",
+            version="1.1.0",
             name="Notifications",
             description=(
                 "Semantic notification targets and provider-neutral message dispatch."
@@ -214,6 +214,26 @@ def register_core_capabilities(
                     description=(
                         "Dispatch one explicit message to exactly one semantic "
                         "notification target."
+                    ),
+                ),
+                CapabilityAction(
+                    action_id="notifications.announce",
+                    name="Play house announcement",
+                    mutating=True,
+                    confirmation_required=False,
+                    description=(
+                        "Play one native TTS announcement through exactly one "
+                        "semantic announcement target."
+                    ),
+                ),
+                CapabilityAction(
+                    action_id="notifications.route",
+                    name="Route notification",
+                    mutating=True,
+                    confirmation_required=False,
+                    description=(
+                        "Route one semantic notification request through the "
+                        "installation's log, dashboard, mobile and voice channels."
                     ),
                 ),
             ),

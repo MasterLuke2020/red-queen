@@ -1,7 +1,7 @@
 contract:
   id: wnhf.generic_real_execution
   api_version: '1.0'
-  execution_contract: 1.8-rc6
+  execution_contract: 1.9-rc7
 canonical_service: wnhf.execution_execute
 enabled_actions:
 - lighting.turn_on
@@ -13,6 +13,8 @@ enabled_actions:
 - openings.lock
 - openings.unlock
 - notifications.send
+- notifications.announce
+- notifications.route
 target_mode: single_object
 validation_before_dispatch: true
 provider_preflight_before_dispatch: true
@@ -42,6 +44,34 @@ notification_semantics:
   delivery_receipt_claimed: false
   read_receipt_claimed: false
   persistent_message_or_title: false
+announcement_semantics:
+  levels:
+  - info
+  - notice
+  - warning
+  - alarm
+  explicit_confirmation_required: false
+  native_tts_dispatch: true
+  semantic_target_only: true
+  raw_media_player_parameters_allowed: false
+  sonos_native_announce_supported: true
+  framework_snapshot_restore_used: false
+  playback_heard_claimed: false
+routing_semantics:
+  priorities:
+  - debug
+  - info
+  - warning
+  - critical
+  profiles:
+  - standard
+  - silent
+  - voice
+  - mobile
+  - broadcast
+  context_guarded_voice: true
+  broadcast_overrides_voice_context_guard: true
+  partial_channel_failure_is_failure: true
 cover_directional_semantics:
   open_success_confirmation: opening_or_fully_open
   close_success_confirmation: closing_or_fully_closed
