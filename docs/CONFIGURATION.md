@@ -66,13 +66,19 @@ For an enabled `toggle` light, missing command or missing feedback is reported a
 
 `covers.yaml` contains a `covers:` list. The current registry supports `type: venetian_blind`. The current loader requires command entity IDs for open/close/blades-open/blades-close and feedback entity IDs for open/closed/opening/closing, plus a non-empty `capabilities` list.
 
-The semantic/read surface and canonical `covers.open` / `covers.close` execution are active; position and blade commands remain non-canonical.
+The semantic/read surface and canonical `covers.open`, `covers.close`,
+`covers.blades_open` and `covers.blades_close` execution are active. Blade actions
+require their matching capability entry and command entity but no blade-position
+feedback. Canonical set-position remains disabled.
 
 ## Openings
 
 `openings.yaml` models `window`, `sliding_door`, `door` and `garage_door` objects. Ordinary openings use state feedback plus configured open-state values. Door objects may additionally define lock feedback/commands and an electric door opener. Garage doors may define two-sensor feedback plus toggle/optional stop commands.
 
-Some Access execution services remain legacy/development surfaces. Canonical garage open/close and door lock/unlock should use `wnhf.execution_execute` for new automations.
+Canonical garage open/close, door lock/unlock and confirmed electric door release
+should use `wnhf.execution_execute` for new automations. A door intended for
+`openings.release` requires `door_opener.enabled: true`, a command entity and an
+available state contact that proves the door is closed before dispatch.
 
 ## Notification targets
 

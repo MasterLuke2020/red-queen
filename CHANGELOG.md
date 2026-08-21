@@ -4,6 +4,43 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0-rc8 candidate — WP-4.7.14.0
+
+#### Added
+
+- Canonical `covers.blades_open` and `covers.blades_close` using the existing
+  installation-owned venetian-blind command mappings.
+- Canonical `openings.release` mapped to the existing electric door-opener
+  capability and semantic door objects.
+- Closed-door, command-availability and explicit-confirmation guards for electric
+  door release.
+- Dispatch-scoped qualification metadata for blade and door-opener execution.
+
+#### Changed
+
+- Canonical real-execution surface now contains fourteen actions.
+- Semantic action catalogue now contains twenty actions.
+- Cover blade commands are no longer native-only; objective blade-position feedback
+  is intentionally not required.
+
+#### Safety and qualification
+
+- Blade commands are blocked while a cover reports opening or closing.
+- `openings.release` sends exactly one configured pulse only when the semantic door
+  is available, proven closed and the request is explicitly confirmed.
+- Successful blade execution does not claim blade angle or final blade state.
+- Successful door release does not claim latch release or physical door opening.
+- Both feature groups record framework verification at dispatch scope and remain
+  `hardware_verified: false`.
+
+#### Validation
+
+- Static contract, syntax, semantic-action and mapping validation passed.
+- Reference-installation live qualification passed on 2026-08-21.
+- Blade open/close dispatch, moving-cover rejection, both confirmed electric
+  door-openers, missing-confirmation rejection and open-door rejection passed.
+- Final runtime health was 100 with zero Red Queen errors and warnings.
+
 ### 1.0.0-rc7 candidate — WP-4.7.13.2
 
 #### Added

@@ -342,6 +342,8 @@ class CoversCapabilityProvider(_BaseProvider):
     _EXECUTABLE_ACTIONS = {
         "covers.open",
         "covers.close",
+        "covers.blades_open",
+        "covers.blades_close",
     }
 
     def __init__(self, engine) -> None:
@@ -359,7 +361,30 @@ class CoversCapabilityProvider(_BaseProvider):
                 cover,
                 snapshot,
             )
+        if action_id == "covers.blades_open":
+            return ExecutionCapabilityAdapter.resolve_cover_blades_open(
+                cover,
+                snapshot,
+            )
+        if action_id == "covers.blades_close":
+            return ExecutionCapabilityAdapter.resolve_cover_blades_close(
+                cover,
+                snapshot,
+            )
         return None
+
+    @staticmethod
+    def _is_blade_action(action_id: str) -> bool:
+        return action_id in {
+            "covers.blades_open",
+            "covers.blades_close",
+        }
+
+    def _command_entity_available(self, entity_id: str | None) -> bool:
+        if not entity_id:
+            return False
+        state = self.engine.hass.states.get(entity_id)
+        return state is not None and state.state != "unavailable"
 
     @staticmethod
     def _opposite_movement(action_id: str, snapshot) -> bool:
@@ -439,6 +464,33 @@ class CoversCapabilityProvider(_BaseProvider):
                 errors=(capability.reason,),
                 technical_capability=capability.as_dict(),
             )
+
+        if self._is_blade_action(action_id):
+            if not self._command_entity_available(
+                capability.command_entity_id
+            ):
+                return ProviderExecutionValidationResult(
+                    valid=False,
+                    reason="Configured blade command entity is unavailable.",
+                    errors=(
+                        "The configured blade command entity is missing or "
+                        "unavailable.",
+                    ),
+                    technical_capability=capability.as_dict(),
+                )
+            if snapshot.is_opening or snapshot.is_closing:
+                return ProviderExecutionValidationResult(
+                    valid=False,
+                    reason=(
+                        "Cover is currently moving; blade commands are "
+                        "permitted only from a stable cover state."
+                    ),
+                    errors=(
+                        "Wait until cover movement has stopped before changing "
+                        "the blades.",
+                    ),
+                    technical_capability=capability.as_dict(),
+                )
 
         if self._opposite_movement(action_id, snapshot):
             return ProviderExecutionValidationResult(
@@ -528,6 +580,82 @@ class CoversCapabilityProvider(_BaseProvider):
                     feedback_confirmed=False,
                     reason=capability.reason,
                     technical_capability=capability.as_dict(),
+                )
+
+            if self._is_blade_action(action_id):
+                if not self._command_entity_available(
+                    capability.command_entity_id
+                ):
+                    return ProviderExecutionResult(
+                        status="rejected",
+                        executed=False,
+                        command_sent=False,
+                        feedback_confirmed=False,
+                        reason=(
+                            "Configured blade command entity is unavailable."
+                        ),
+                        technical_capability=capability.as_dict(),
+                        feedback_before=snapshot.as_dict(),
+                        verification_scope="dispatch",
+                    )
+
+                if snapshot.is_opening or snapshot.is_closing:
+                    return ProviderExecutionResult(
+                        status="rejected",
+                        executed=False,
+                        command_sent=False,
+                        feedback_confirmed=False,
+                        reason=(
+                            "Cover is moving; wait for a stable state before "
+                            "changing the blades."
+                        ),
+                        technical_capability=capability.as_dict(),
+                        feedback_before=snapshot.as_dict(),
+                        verification_scope="dispatch",
+                    )
+
+                command_outcome = (
+                    await self.engine.command_dispatcher.async_dispatch(
+                        capability
+                    )
+                )
+                if not command_outcome.completed:
+                    return ProviderExecutionResult(
+                        status="failed",
+                        executed=False,
+                        command_sent=bool(command_outcome.dispatched),
+                        feedback_confirmed=False,
+                        reason=f"{action_id} command dispatch failed.",
+                        error=command_outcome.message,
+                        technical_capability=capability.as_dict(),
+                        feedback_before=snapshot.as_dict(),
+                        verification_scope="dispatch",
+                    )
+
+                requested_state = (
+                    "open"
+                    if action_id == "covers.blades_open"
+                    else "closed"
+                )
+                return ProviderExecutionResult(
+                    status="succeeded",
+                    executed=True,
+                    command_sent=True,
+                    feedback_confirmed=True,
+                    reason=(
+                        "Blade command dispatch completed. Objective blade "
+                        "position and final blade state are not claimed."
+                    ),
+                    technical_capability=capability.as_dict(),
+                    feedback_before=snapshot.as_dict(),
+                    feedback_after={
+                        "object_id": object_id,
+                        "requested_blade_state": requested_state,
+                        "blade_position_confirmed": False,
+                        "verification_scope": "dispatch",
+                    },
+                    feedback_wait_ms=0.0,
+                    verification_scope="dispatch",
                 )
 
             if self._opposite_movement(action_id, snapshot):
@@ -634,7 +762,8 @@ class CoversCapabilityProvider(_BaseProvider):
                 "moving": sum(1 for item in snapshots if item.is_moving),
                 "errors": len(errors),
                 "canonical_actions": sorted(self._EXECUTABLE_ACTIONS),
-                "canonical_blade_execution": False,
+                "canonical_blade_execution": True,
+                "blade_verification_scope": "dispatch",
             },
         )
 
@@ -647,10 +776,12 @@ class OpeningsCapabilityProvider(_BaseProvider):
     _EXECUTABLE_ACTIONS = {
         "openings.lock",
         "openings.unlock",
+        "openings.release",
     }
     _TECHNICAL_ACTIONS = {
         "openings.lock": "access.lock",
         "openings.unlock": "access.unlock",
+        "openings.release": "access.door_open",
     }
 
     def __init__(self, engine) -> None:
@@ -667,6 +798,12 @@ class OpeningsCapabilityProvider(_BaseProvider):
         if action_id == "openings.unlock":
             return "unlocked"
         return None
+
+    def _command_entity_available(self, entity_id: str | None) -> bool:
+        if not entity_id:
+            return False
+        state = self.engine.hass.states.get(entity_id)
+        return state is not None and state.state != "unavailable"
 
     @classmethod
     def _resolve_execution_capability(cls, action_id: str, opening, runtime):
@@ -687,7 +824,7 @@ class OpeningsCapabilityProvider(_BaseProvider):
         parameters: dict,
         confirmed: bool,
     ) -> ProviderExecutionValidationResult:
-        """Validate canonical lock/unlock execution without dispatch."""
+        """Validate canonical lock, unlock or door-release execution."""
         if action_id not in self._EXECUTABLE_ACTIONS:
             return await super().async_validate_execution(
                 action_id=action_id,
@@ -713,7 +850,7 @@ class OpeningsCapabilityProvider(_BaseProvider):
             return ProviderExecutionValidationResult(
                 valid=False,
                 reason=f"{action_id} requires explicit confirmation.",
-                errors=("confirmed must be true for canonical lock execution.",),
+                errors=("confirmed must be true for this canonical action.",),
             )
 
         try:
@@ -757,6 +894,39 @@ class OpeningsCapabilityProvider(_BaseProvider):
                 technical_capability=capability.as_dict(),
             )
 
+        if action_id == "openings.release":
+            if not runtime.is_closed:
+                return ProviderExecutionValidationResult(
+                    valid=False,
+                    reason=(
+                        "Door opener dispatch requires a proven closed door."
+                    ),
+                    errors=(
+                        "Door contact must report closed before release.",
+                    ),
+                    technical_capability=capability.as_dict(),
+                )
+            if not self._command_entity_available(
+                capability.command_entity_id
+            ):
+                return ProviderExecutionValidationResult(
+                    valid=False,
+                    reason="Configured door-opener command is unavailable.",
+                    errors=(
+                        "The configured door-opener command entity is missing "
+                        "or unavailable.",
+                    ),
+                    technical_capability=capability.as_dict(),
+                )
+            return ProviderExecutionValidationResult(
+                valid=True,
+                reason=(
+                    "Door-opener target, explicit confirmation, closed-door "
+                    "guard and command availability are valid."
+                ),
+                technical_capability=capability.as_dict(),
+            )
+
         if runtime.is_open:
             return ProviderExecutionValidationResult(
                 valid=False,
@@ -793,7 +963,7 @@ class OpeningsCapabilityProvider(_BaseProvider):
         parameters: dict,
         confirmed: bool,
     ) -> ProviderExecutionResult:
-        """Execute one confirmed canonical lock/unlock action."""
+        """Execute one confirmed canonical lock, unlock or release action."""
         if action_id not in self._EXECUTABLE_ACTIONS:
             return await super().async_execute(
                 action_id=action_id,
@@ -847,7 +1017,7 @@ class OpeningsCapabilityProvider(_BaseProvider):
             )
             desired_state = self._desired_lock_state(action_id)
 
-            if capability is None or desired_state is None:
+            if capability is None:
                 return ProviderExecutionResult(
                     status="unsupported",
                     executed=False,
@@ -869,6 +1039,83 @@ class OpeningsCapabilityProvider(_BaseProvider):
                     reason=capability.reason,
                     technical_capability=capability.as_dict(),
                     feedback_before=runtime.as_dict(),
+                )
+
+            if action_id == "openings.release":
+                if not runtime.is_closed:
+                    return ProviderExecutionResult(
+                        status="rejected",
+                        executed=False,
+                        command_sent=False,
+                        feedback_confirmed=False,
+                        reason=(
+                            "Door opener dispatch requires a proven closed door."
+                        ),
+                        technical_capability=capability.as_dict(),
+                        feedback_before=runtime.as_dict(),
+                        verification_scope="dispatch",
+                    )
+                if not self._command_entity_available(
+                    capability.command_entity_id
+                ):
+                    return ProviderExecutionResult(
+                        status="rejected",
+                        executed=False,
+                        command_sent=False,
+                        feedback_confirmed=False,
+                        reason="Configured door-opener command is unavailable.",
+                        technical_capability=capability.as_dict(),
+                        feedback_before=runtime.as_dict(),
+                        verification_scope="dispatch",
+                    )
+
+                command_outcome = (
+                    await self.engine.command_dispatcher.async_dispatch(
+                        capability
+                    )
+                )
+                if not command_outcome.completed:
+                    return ProviderExecutionResult(
+                        status="failed",
+                        executed=False,
+                        command_sent=bool(command_outcome.dispatched),
+                        feedback_confirmed=False,
+                        reason="openings.release command dispatch failed.",
+                        error=command_outcome.message,
+                        technical_capability=capability.as_dict(),
+                        feedback_before=runtime.as_dict(),
+                        verification_scope="dispatch",
+                    )
+
+                runtime_after = self.engine.access_object_snapshot(object_id)
+                return ProviderExecutionResult(
+                    status="succeeded",
+                    executed=True,
+                    command_sent=True,
+                    feedback_confirmed=True,
+                    reason=(
+                        "Door-opener pulse dispatch completed. Door release "
+                        "and subsequent physical opening are not claimed."
+                    ),
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                    feedback_after={
+                        **runtime_after.as_dict(),
+                        "door_release_confirmed": False,
+                        "physical_opening_claimed": False,
+                        "verification_scope": "dispatch",
+                    },
+                    feedback_wait_ms=0.0,
+                    verification_scope="dispatch",
+                )
+
+            if desired_state is None:
+                return ProviderExecutionResult(
+                    status="unsupported",
+                    executed=False,
+                    command_sent=False,
+                    feedback_confirmed=False,
+                    reason=f"No lock-state target exists for {action_id}.",
                 )
 
             if runtime.is_open:
@@ -1007,6 +1254,8 @@ class OpeningsCapabilityProvider(_BaseProvider):
                     "secure": access.secure,
                     "locked_doors": access.locked_doors,
                     "unlocked_doors": access.unlocked_doors,
+                    "canonical_actions": sorted(self._EXECUTABLE_ACTIONS),
+                    "door_opener_verification_scope": "dispatch",
                     "garage": {
                         "open": access.garage_open,
                         "closed": access.garage_closed,

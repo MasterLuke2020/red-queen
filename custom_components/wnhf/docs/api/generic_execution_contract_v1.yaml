@@ -1,7 +1,7 @@
 contract:
   id: wnhf.generic_execution
   version: '1.1'
-  implementation: 1.8-rc7
+  implementation: 1.9-rc8
 dry_run_enabled: true
 hardware_dispatch_in_dry_run: false
 real_execution_enabled_actions:
@@ -16,10 +16,15 @@ real_execution_enabled_actions:
   lighting.turn_off: *single_object_no_parameters
   covers.open: *single_object_no_parameters
   covers.close: *single_object_no_parameters
+  covers.blades_open: *single_object_no_parameters
+  covers.blades_close: *single_object_no_parameters
   garage.open: *single_object_no_parameters
   garage.close: *single_object_no_parameters
   openings.lock: *single_object_no_parameters
   openings.unlock: *single_object_no_parameters
+  openings.release:
+    <<: *single_object_no_parameters
+    confirmation_required: true
   notifications.send:
     target_mode: single_object
     required_target_keys:

@@ -1,4 +1,4 @@
-# Red Queen 1.0.0-rc7
+# Red Queen 1.0.0-rc8
 
 Red Queen is a semantic home framework for Home Assistant. It models the house as
 objects and state, evaluates context/rules/policies/decisions, resolves capabilities
@@ -19,18 +19,19 @@ automations.
 ## Release status
 
 - Product: Red Queen
-- Version: `1.0.0-rc7`
+- Version: `1.0.0-rc8`
 - Channel: `release_candidate`
 - Phase: `rc`
-- Candidate: `rc7`
-- Candidate development baseline: WNHF `1.33.0` / `WP-4.7.13.2`
-- Status: LIVE VERIFIED on 2026-08-20; release preparation ready
+- Candidate: `rc8`
+- Candidate development baseline: WNHF `1.34.0` / `WP-4.7.14.0`
+- Status: STATIC VERIFIED; live qualification pending
 
 ## Stable 1.0 RC scope
 
 Canonical mutating execution currently includes `lighting.turn_on`,
-`lighting.turn_off`, `covers.open`, `covers.close`, `garage.open`,
-`garage.close`, `openings.lock`, `openings.unlock` and
+`lighting.turn_off`, `covers.open`, `covers.close`, `covers.blades_open`,
+`covers.blades_close`, `garage.open`, `garage.close`, `openings.lock`,
+`openings.unlock`, `openings.release` and
 `notifications.send`, `notifications.announce` and `notifications.route`.
 
 `notifications.send` targets one provider-neutral semantic notification target. It
@@ -55,7 +56,12 @@ objective lock feedback and a closed door contact. Directional cover execution i
 guarded by objective end-state and movement feedback; automatic reversal remains
 blocked.
 
-See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc7.md`.
+Blade actions are non-idempotent and dispatch-scoped because objective blade-position
+feedback is not required. Door release requires explicit confirmation, a closed-door
+contact and an available configured command; successful execution does not claim
+latch release or subsequent physical opening.
+
+See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc8.md`.
 
 ## Qualification
 

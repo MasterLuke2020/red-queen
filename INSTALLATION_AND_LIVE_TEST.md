@@ -1,136 +1,145 @@
-# Red Queen 1.0.0-rc7 — Installation and live qualification
+# Red Queen 1.0.0-rc8 — Installation and live qualification
 
-Status: live verified for WP-4.7.13.2 on 2026-08-20. Publication still requires the
-repository, CI, tag and GitHub web release steps from `PUBLISHING_CHECKLIST.md`.
+Status: static verified for WP-4.7.14.0. Reference-installation live qualification
+is required before publication.
 
 ## 1. Back up the current installation
 
 Back up these paths before replacing anything:
 
 - `/config/custom_components/wnhf`
+- `/config/wnhf/house/registry/covers.yaml`
+- `/config/wnhf/house/registry/openings.yaml`
 - `/config/wnhf/house/registry/notification_targets.yaml`, if present
 
-The historical `script.notify_house`, `WNHF Notify` script and the three channel
-automations may remain during comparison testing. RC7 neither calls nor requires
-them.
+RC8 does not require new helper scripts or automations.
 
-## 2. Install the verified candidate
+## 2. Registry requirements
+
+Every cover intended for canonical blade execution requires:
+
+```yaml
+commands:
+  blades_open_entity_id: button.example_blades_open
+  blades_close_entity_id: button.example_blades_close
+capabilities:
+  - blades_open
+  - blades_close
+```
+
+Objective blade-position feedback is not required.
+
+Every door intended for canonical electric release requires a normal state contact
+plus:
+
+```yaml
+door_opener:
+  enabled: true
+  command:
+    entity_id: button.example_door_opener
+```
+
+The state contact must provide a proven closed state before release is permitted.
+
+## 3. Install the candidate
 
 1. Replace `/config/custom_components/wnhf` with the packaged
    `custom_components/wnhf` directory.
-2. Review `configuration/notification_targets.yaml` from this package.
-3. Copy or merge it into
-   `/config/wnhf/house/registry/notification_targets.yaml`.
-4. Verify every installation-specific entity ID before restart, especially:
-   - `tts.google_translate_de_at`
-   - the five `media_player.*` Sonos entities
-   - `notify.motorola_edge_40_neo`
-   - `binary_sensor.wnhf_quiet_mode_active`
-   - `sensor.wnhf_house_state`
-5. Restart Home Assistant completely.
+2. Keep the installation-owned registry files already verified for this house.
+3. Restart Home Assistant completely.
+4. Open **Developer tools → Actions** for controlled tests.
 
-For a different house, change only the installation registry. Red Queen's source
-must not contain that house's speaker, TTS, mobile or context entity IDs.
-
-## 3. Post-restart preflight
+## 4. Post-restart preflight
 
 Confirm that Red Queen reports:
 
-- Red Queen `1.0.0-rc7`
-- WNHF `1.33.0`
-- release baseline `WP-4.7.13.2`
-- runtime ready with no new Red Queen setup errors
-- notification capability available
+- Red Queen `1.0.0-rc8`;
+- WNHF `1.34.0`;
+- release baseline `WP-4.7.14.0`;
+- phase name `Release Candidate 8`;
+- runtime ready with no Red Queen setup errors;
+- cover and openings capabilities resolved, available and healthy.
 
-## 4. Controlled office announcement
-
-Run a dry-run first:
+## 5. Cover blade dry-run
 
 ```yaml
 action: wnhf.execution_dry_run
 data:
-  action_id: notifications.announce
+  action_id: covers.blades_open
   target:
-    object_id: announcement.target.office
-  parameters:
-    message: Red Queen Testdurchsage. Die lokale Sprachausgabe funktioniert.
-    level: info
+    object_id: cover.eg.bathroom_wc.main
+  parameters: {}
 ```
 
-Expected: accepted dry-run, no sound and no provider call.
+Expected: `EXE-100`, executable, no command sent and technical strategy
+`dispatch_scoped_blade_pulse`.
 
-Then run the real action:
+Repeat with `covers.blades_close`.
+
+## 6. Cover blade real execution
 
 ```yaml
 action: wnhf.execution_execute
 data:
-  action_id: notifications.announce
+  action_id: covers.blades_open
   target:
-    object_id: announcement.target.office
-  parameters:
-    message: Red Queen Testdurchsage. Die lokale Sprachausgabe funktioniert.
-    level: info
+    object_id: cover.eg.bathroom_wc.main
+  parameters: {}
 ```
 
-Expected: only the Office speaker plays the message at volume `0.35`; Sonos native
-announce restores previous playback and volume exactly once without a second
-interruption.
+Expected: `EXE-000`, exactly one configured command dispatch and visible blade
+movement. Repeat with `covers.blades_close`.
 
-## 5. Level qualification
+Successful qualification must report `framework_verified: true`,
+`hardware_verified: false` and `verification_scope: dispatch`.
 
-Repeat the office action with these levels and verify spoken prefix and volume:
+## 7. Door release dry-run
 
-| Level | Prefix | Volume |
-|---|---|---:|
-| `info` | none | 0.35 |
-| `notice` | `Hinweis.` | 0.35 |
-| `warning` | `Warnung.` | 0.45 |
-| `alarm` | `Achtung!` | 0.55 |
+```yaml
+action: wnhf.execution_dry_run
+data:
+  action_id: openings.release
+  target:
+    object_id: opening.eg.vestibule.door.courtyard
+  parameters: {}
+  confirmed: true
+```
 
-## 6. Native route qualification
+Expected: `EXE-100`, executable, no pulse sent and technical strategy
+`confirmed_dispatch_scoped_momentary_pulse`.
 
-Use this request and change `profile` and `priority` according to the matrix below:
+## 8. Door release real execution
 
 ```yaml
 action: wnhf.execution_execute
 data:
-  action_id: notifications.route
+  action_id: openings.release
   target:
-    object_id: notification.route.house
-  parameters:
-    message: Dies ist ein kontrollierter Red Queen Routentest.
-    title: Red Queen Test
-    priority: warning
-    profile: standard
-    source: live_test
-    category: system
+    object_id: opening.eg.vestibule.door.courtyard
+  parameters: {}
+  confirmed: true
 ```
 
-| Profile | Log | Dashboard | Mobile | Voice |
-|---|---:|---:|---:|---:|
-| `standard` | yes | yes | yes | only when context allows |
-| `silent` | yes | yes | yes | no |
-| `voice` | yes | yes | no | only when context allows |
-| `mobile` | yes | no | yes | no |
-| `broadcast` | yes | yes | yes | yes, context override |
+Expected: `EXE-000` and exactly one physically observable electric door-opener pulse.
+Repeat for `opening.eg.vestibule.door.street`.
 
-Dashboard creates a persistent notification only for `warning` and `critical`.
-Priority maps to voice level as follows:
+Successful qualification must report `framework_verified: true`,
+`hardware_verified: false` and `verification_scope: dispatch`.
 
-| Priority | Voice level |
-|---|---|
-| `debug` | `notice` |
-| `info` | `info` |
-| `warning` | `warning` |
-| `critical` | `alarm` |
+## 9. Guard tests
 
-## 7. Guard and regression qualification
+Verify without unintended commands:
 
-Verify that empty messages, invalid enums, unknown semantic targets and raw provider
-entity IDs are rejected before dispatch. Then repeat the existing direct
-`notifications.send` live test and the lighting, cover, garage and opening dry-run
-regressions.
+- blade action while the selected cover is moving;
+- blade action for an unknown semantic target;
+- door release with `confirmed: false`;
+- door release while the selected door contact reports open;
+- door release for an unknown semantic target;
+- raw `button.*` or `cover.*` provider entity used as the semantic target.
 
-Observed results are recorded in `docs/RC7_CANDIDATE_VALIDATION.md`. Every live
-acceptance item passed; RC7 may proceed to repository and GitHub web publication
-preparation.
+## 10. Regression and final health
+
+Repeat representative lighting, directional cover, garage, lock/unlock and
+notification dry-runs. Confirm final system health 100, runtime ready and no Red
+Queen errors or warnings. Record every observed result in
+`docs/RC8_CANDIDATE_VALIDATION.md`.

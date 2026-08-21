@@ -47,7 +47,7 @@ def register_core_capabilities(
         ),
         CapabilityDefinition(
             capability_id="covers",
-            version="1.0.0",
+            version="1.1.0",
             name="Covers",
             description=(
                 "Semantic cover state and movement domain."
@@ -81,12 +81,32 @@ def register_core_capabilities(
                         "Start closing exactly one semantic cover object."
                     ),
                 ),
+                CapabilityAction(
+                    action_id="covers.blades_open",
+                    name="Open cover blades",
+                    mutating=True,
+                    confirmation_required=False,
+                    description=(
+                        "Dispatch the configured blade-open command for "
+                        "exactly one semantic venetian-blind object."
+                    ),
+                ),
+                CapabilityAction(
+                    action_id="covers.blades_close",
+                    name="Close cover blades",
+                    mutating=True,
+                    confirmation_required=False,
+                    description=(
+                        "Dispatch the configured blade-close command for "
+                        "exactly one semantic venetian-blind object."
+                    ),
+                ),
             ),
             required_provider_capabilities=("covers",),
         ),
         CapabilityDefinition(
             capability_id="openings",
-            version="1.1.0",
+            version="1.2.0",
             name="Openings",
             description=(
                 "Semantic windows, doors, locks and garage domain."
@@ -120,6 +140,16 @@ def register_core_capabilities(
                     description=(
                         "Unlock exactly one semantic door object with "
                         "closed-door and lock-feedback guards."
+                    ),
+                ),
+                CapabilityAction(
+                    action_id="openings.release",
+                    name="Release door opener",
+                    mutating=True,
+                    confirmation_required=True,
+                    description=(
+                        "Dispatch exactly one configured electric door-opener "
+                        "pulse for one semantic closed door."
                     ),
                 ),
             ),

@@ -1,16 +1,17 @@
-# Known Limitations and Deliberate RC7 Candidate Boundaries
+# Known Limitations and Deliberate RC8 Candidate Boundaries
 
 ## Canonical execution remains intentionally bounded
 
 The canonical real-execution surface contains lighting on/off, directional cover
 open/close, confirmed garage open/close, confirmed door lock/unlock, semantic
-notification dispatch, native announcements and notification routing. Other
+blade open/close, confirmed electric door release, notification dispatch, native
+announcements and notification routing. Other
 semantic/read capabilities do not automatically imply productive actuation.
 
 ## Notifications
 
-RC7 retains `notifications.send` and adds native `notifications.announce` and
-`notifications.route`. Installation-specific targets require explicit registry
+RC8 inherits the live-verified `notifications.send`, `notifications.announce` and
+`notifications.route` contracts. Installation-specific targets require explicit registry
 configuration; Red Queen deliberately does not auto-select speakers or recipients.
 Context-aware voice routing currently consumes optional configured Home Assistant
 quiet-mode and house-state entities. A first-class resident/presence model remains
@@ -28,10 +29,11 @@ qualifies only dispatch and does not claim that restoration has completed.
 
 ## Covers
 
-Cover open/close is canonical. Automatic reversal while movement in the opposite
-direction is active remains blocked. Position feedback may be exposed read-only, but
-canonical set-position and blade-position execution remain disabled because no
-objective command/feedback contract is qualified for them.
+Cover open/close and blade open/close are canonical. Automatic reversal while
+movement in the opposite direction is active remains blocked, and blade commands are
+blocked while the cover is moving. Position feedback may be exposed read-only, but
+canonical set-position execution remains disabled. Blade actions prove dispatch only;
+they do not claim an objective blade angle or final blade state.
 
 ## Garage
 
@@ -42,8 +44,10 @@ Canonical garage stop/toggle is intentionally not exposed.
 
 ## Door opener
 
-Electric door-opener commands remain outside canonical real execution. Existing
-Access-level functionality is a legacy/development surface only.
+`openings.release` is canonical and requires explicit confirmation, a configured
+available command entity and a proven closed door contact. Success proves only that
+Home Assistant completed the configured command dispatch; latch release and physical
+door opening are not claimed.
 
 ## Climate / temperature and media
 

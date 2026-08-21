@@ -5,9 +5,10 @@ execution surface. It validates semantic/provider readiness, the action-specific
 request envelope, the semantic target object, confirmation requirements and provider
 technical capability. It never dispatches a command.
 
-RC7 candidate real-execution-enabled actions are `lighting.turn_on`, `lighting.turn_off`,
-`covers.open`, `covers.close`, `garage.open`, `garage.close`,
-`openings.lock`, `openings.unlock`, `notifications.send`,
+RC8 candidate real-execution-enabled actions are `lighting.turn_on`, `lighting.turn_off`,
+`covers.open`, `covers.close`, `covers.blades_open`, `covers.blades_close`,
+`garage.open`, `garage.close`, `openings.lock`, `openings.unlock`,
+`openings.release`, `notifications.send`,
 `notifications.announce` and `notifications.route`. Every action requires exactly
 one `target.object_id`.
 
@@ -17,6 +18,8 @@ accepts `level`; routing accepts `title`, `priority`, `profile`, `source` and
 `category`. Unknown keys and unknown enum values are rejected.
 
 Directional cover preflight blocks unavailable/contradictory feedback and opposite
-movement. Garage and lock preflight enforce their confirmation and feedback guards.
+movement. Blade preflight requires a healthy stable cover and an available configured
+command entity. Door release additionally requires explicit confirmation and a proven
+closed door. Garage and lock preflight enforce their confirmation and feedback guards.
 Notification preflight reloads the semantic registry and validates notify entities,
 TTS engines, speaker entities, Sonos native-announce dependencies and route context.

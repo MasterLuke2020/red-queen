@@ -580,11 +580,11 @@ execution_dry_run:
 
 execution_execute:
   name: Execute canonical semantic action
-  description: Canonical Red Queen real-execution entry. Lighting, covers, garage, locks, direct notification dispatch, native TTS announcements and semantic notification routing are enabled for exactly one semantic object.
+  description: Canonical Red Queen real-execution entry. Lighting, directional and blade cover commands, garage, locks, confirmed electric door release, direct notification dispatch, native TTS announcements and semantic notification routing are enabled for exactly one semantic object.
   fields:
     action_id:
       name: Action ID
-      description: Stable semantic action ID. The current real-execution surface additionally enables notifications.send, notifications.announce and notifications.route.
+      description: Stable semantic action ID. The current real-execution surface additionally enables covers.blades_open, covers.blades_close, openings.release, notifications.send, notifications.announce and notifications.route.
       required: true
       example: lighting.turn_off
       selector:

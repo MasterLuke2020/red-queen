@@ -1,11 +1,11 @@
-# Red Queen 1.0.0-rc7 Verified Feature Matrix
+# Red Queen 1.0.0-rc8 Candidate Feature Matrix
 
-| Domain | Semantic model/state | Stable snapshot/diagnostics | Canonical mutating execution | RC7 candidate status |
+| Domain | Semantic model/state | Stable snapshot/diagnostics | Canonical mutating execution | RC8 candidate status |
 |---|---:|---:|---:|---|
 | Rooms | Yes | Yes | N/A | Stable |
 | Lighting | Yes | Yes | `lighting.turn_on`, `lighting.turn_off` | Live-verified baseline |
-| Openings | Yes | `openings.snapshot` | `openings.lock`, `openings.unlock` | Live-verified baseline |
-| Covers | Yes | `covers.snapshot`, continuous position feedback | `covers.open`, `covers.close` | Live-verified baseline |
+| Openings | Yes | `openings.snapshot` | `openings.lock`, `openings.unlock`, `openings.release` | Door release live qualification pending |
+| Covers | Yes | `covers.snapshot`, continuous position feedback | `covers.open`, `covers.close`, `covers.blades_open`, `covers.blades_close` | Blade live qualification pending |
 | Garage | Yes | `garage.snapshot` / Access state | `garage.open`, `garage.close` | Live-verified baseline |
 | Notifications | Yes | direct, announcement and route diagnostics | `notifications.send`, `notifications.announce`, `notifications.route` | Live verified on 2026-08-20 |
 | Security | Yes | `security.snapshot` | No | Stable read surface |
@@ -28,5 +28,6 @@ and media-player IDs out of the public action envelope. Route targets select log
 dashboard, mobile and voice channels through priority/profile policy. Success remains
 dispatch-scoped; delivery, read and audible playback are not claimed.
 
-Garage stop/toggle, cover set-position/blade execution and electric door-opener
-execution remain outside the canonical surface.
+Blade and electric door-opener success are dispatch-scoped and deliberately do not
+claim unobservable hardware state. Garage stop/toggle and cover set-position remain
+outside the canonical surface.

@@ -1,16 +1,21 @@
 # WNHF Canonical Real Execution Contract
 
-The stable real-execution entry is `wnhf.execution_execute`. RC7 enables eleven
+The stable real-execution entry is `wnhf.execution_execute`. RC8 enables fourteen
 semantic actions: `lighting.turn_on`, `lighting.turn_off`, `covers.open`,
-`covers.close`, `garage.open`, `garage.close`, `openings.lock`,
-`openings.unlock`, `notifications.send`, `notifications.announce` and
+`covers.close`, `covers.blades_open`, `covers.blades_close`, `garage.open`,
+`garage.close`, `openings.lock`, `openings.unlock`, `openings.release`,
+`notifications.send`, `notifications.announce` and
 `notifications.route`. Each targets one semantic object through `target.object_id`.
 
 Every real execution first passes dry-run validation and provider preflight. Only a
 promoted validation plan can reach the Semantic Execution Router.
 
-Lighting, covers, garage and locks preserve their existing feedback-aware safety and
-idempotency contracts. Notification send instead requires a non-empty message, needs
+Lighting, directional covers, garage and locks preserve their feedback-aware safety
+and idempotency contracts. Blade actions are deliberately non-idempotent and prove
+only dispatch because typical venetian blinds expose no blade-position feedback.
+Door release requires explicit confirmation plus a closed door contact and proves
+only dispatch; it does not claim latch release or subsequent physical opening.
+Notification send requires a non-empty message, needs
 no confirmation and is deliberately non-idempotent. Successful notification
 execution proves completion of the Home Assistant dispatch call only. It records
 framework verification at dispatch scope and does not claim hardware, delivery or

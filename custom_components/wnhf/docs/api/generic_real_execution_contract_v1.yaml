@@ -1,17 +1,20 @@
 contract:
   id: wnhf.generic_real_execution
   api_version: '1.0'
-  execution_contract: 1.9-rc7
+  execution_contract: 2.0-rc8
 canonical_service: wnhf.execution_execute
 enabled_actions:
 - lighting.turn_on
 - lighting.turn_off
 - covers.open
 - covers.close
+- covers.blades_open
+- covers.blades_close
 - garage.open
 - garage.close
 - openings.lock
 - openings.unlock
+- openings.release
 - notifications.send
 - notifications.announce
 - notifications.route
@@ -79,7 +82,13 @@ cover_directional_semantics:
   automatic_reversal_while_opposite_movement: false
   canonical_open_execution: true
   canonical_close_execution: true
-  canonical_blade_execution: false
+  canonical_blade_execution: true
+  blade_actions:
+  - covers.blades_open
+  - covers.blades_close
+  blade_position_feedback_required: false
+  blade_verification_scope: dispatch
+  blade_hardware_state_claimed: false
   set_position_execution: false
 garage_directional_semantics:
   explicit_confirmation_required: true
@@ -98,3 +107,12 @@ door_lock_semantics:
   stable_lock_feedback_required: true
   feedback_confirmation_required: true
   already_satisfied_sends_command: false
+door_opener_semantics:
+  action: openings.release
+  explicit_confirmation_required: true
+  closed_door_required: true
+  command_entity_availability_required: true
+  idempotent: false
+  verification_scope: dispatch
+  door_release_claimed: false
+  physical_opening_claimed: false

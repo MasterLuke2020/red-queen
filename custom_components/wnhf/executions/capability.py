@@ -167,6 +167,12 @@ class ExecutionCapabilityAdapter:
         if capability_id == "covers.close":
             return cls.resolve_cover_close(semantic_object, snapshot)
 
+        if capability_id == "covers.blades_open":
+            return cls.resolve_cover_blades_open(semantic_object, snapshot)
+
+        if capability_id == "covers.blades_close":
+            return cls.resolve_cover_blades_close(semantic_object, snapshot)
+
         if capability_id in {"access.lock", "access.unlock"}:
             return cls._resolve_access_lock_operation(
                 semantic_object,
@@ -417,6 +423,93 @@ class ExecutionCapabilityAdapter:
         )
 
     @classmethod
+    def _resolve_cover_blades(
+        cls,
+        cover,
+        snapshot,
+        *,
+        action_id: str,
+        command_entity_id: str,
+        registry_capability: str,
+    ) -> ExecutionCapability:
+        """Resolve one dispatch-scoped venetian-blind blade command."""
+        if registry_capability not in cover.capabilities:
+            return cls._unsupported(
+                object_id=cover.object_id,
+                capability_id=action_id,
+                command_entity_id=command_entity_id,
+                reason=(
+                    "Registry cover does not declare capability "
+                    f"{registry_capability!r}."
+                ),
+            )
+
+        if snapshot is None:
+            return cls._unsupported(
+                object_id=cover.object_id,
+                capability_id=action_id,
+                command_entity_id=command_entity_id,
+                reason="No runtime cover snapshot exists.",
+            )
+
+        available = bool(snapshot.available)
+        healthy = available and not bool(snapshot.is_error)
+        return ExecutionCapability(
+            capability_id=action_id,
+            provider_id="provider.core.covers.blades",
+            object_id=cover.object_id,
+            supported=True,
+            available=available,
+            healthy=healthy,
+            strategy="dispatch_scoped_blade_pulse",
+            command_domain="button",
+            command_service="press",
+            command_entity_id=command_entity_id,
+            feedback_required=False,
+            feedback_entity_ids=(),
+            idempotency="non_idempotent_dispatch",
+            rollback_supported=False,
+            confirmation_policy=ConfirmationPolicy(
+                required_before_dispatch=False,
+                effect_confirmation=EffectConfirmationMode.NONE,
+            ),
+            reason=(
+                "Configured blade command is dispatch-qualified. No objective "
+                "blade-position feedback or final blade state is claimed."
+            ),
+        )
+
+    @classmethod
+    def resolve_cover_blades_open(
+        cls,
+        cover,
+        snapshot=None,
+    ) -> ExecutionCapability:
+        """Resolve canonical covers.blades_open execution."""
+        return cls._resolve_cover_blades(
+            cover,
+            snapshot,
+            action_id="covers.blades_open",
+            command_entity_id=cover.blades_open_command_entity_id,
+            registry_capability="blades_open",
+        )
+
+    @classmethod
+    def resolve_cover_blades_close(
+        cls,
+        cover,
+        snapshot=None,
+    ) -> ExecutionCapability:
+        """Resolve canonical covers.blades_close execution."""
+        return cls._resolve_cover_blades(
+            cover,
+            snapshot,
+            action_id="covers.blades_close",
+            command_entity_id=cover.blades_close_command_entity_id,
+            registry_capability="blades_close",
+        )
+
+    @classmethod
     def _resolve_garage_direction(
         cls,
         opening,
@@ -591,23 +684,22 @@ class ExecutionCapabilityAdapter:
             supported=True,
             available=available,
             healthy=available and bool(feedback_entity_ids),
-            strategy="observable_confirmed_momentary_pulse",
+            strategy="confirmed_dispatch_scoped_momentary_pulse",
             command_domain="button",
             command_service="press",
             command_entity_id=opener.command_entity_id,
             feedback_required=False,
             feedback_entity_ids=feedback_entity_ids,
-            idempotency="non_idempotent_confirmed_pulse",
+            idempotency="non_idempotent_dispatch",
             rollback_supported=False,
             confirmation_policy=ConfirmationPolicy(
                 required_before_dispatch=True,
-                effect_confirmation=EffectConfirmationMode.OPTIONAL,
-                observe_timeout_ms=5000,
-                observe_interval_ms=100,
+                effect_confirmation=EffectConfirmationMode.NONE,
             ),
             reason=(
-                "Explicit confirmation is required. Door-contact feedback "
-                "is observed optionally after dispatch."
+                "Explicit confirmation and a closed, available door contact "
+                "are required before dispatch. Successful execution proves "
+                "only the configured door-opener pulse dispatch."
             ),
         )
 

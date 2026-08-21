@@ -1,7 +1,7 @@
 contract:
   id: wnhf.execution_manager
   version: '1.1'
-  implementation: 1.7-rc7
+  implementation: 1.8-rc8
 execution_enabled: true
 read_only: false
 readiness_dimensions:
@@ -10,16 +10,19 @@ readiness_dimensions:
 - real_execution_enabled
 - executable_now
 capability_count: 7
-semantic_action_count: 17
+semantic_action_count: 20
 real_execution_enabled_actions:
 - lighting.turn_on
 - lighting.turn_off
 - covers.open
 - covers.close
+- covers.blades_open
+- covers.blades_close
 - garage.open
 - garage.close
 - openings.lock
 - openings.unlock
+- openings.release
 - notifications.send
 - notifications.announce
 - notifications.route

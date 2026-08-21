@@ -48,18 +48,22 @@ class Cover:
 
     @property
     def supported_capability_ids(self) -> tuple[str, ...]:
-        """Return semantic capabilities backed by objective feedback.
+        """Return configured semantic cover capabilities.
 
-        Slat/blade commands exist in the native Home Assistant cover adapter,
-        but the current installation has no objective blade-position feedback.
-        They are therefore intentionally not promoted to canonical real
-        execution yet.
+        Directional travel capabilities are effect-qualified through objective
+        movement/end-state feedback. Blade commands are intentionally exposed
+        with dispatch-scoped qualification because blade-position feedback is
+        uncommon for venetian blinds.
         """
         result = ["covers.monitor_state"]
         if "open" in self.capabilities:
             result.append("covers.open")
         if "close" in self.capabilities:
             result.append("covers.close")
+        if "blades_open" in self.capabilities:
+            result.append("covers.blades_open")
+        if "blades_close" in self.capabilities:
+            result.append("covers.blades_close")
         return tuple(result)
 
     def object_capabilities(self) -> tuple[ObjectCapability, ...]:
@@ -77,6 +81,12 @@ class Cover:
                 commands = (self.open_command_entity_id,)
             elif capability_id == "covers.close":
                 commands = (self.close_command_entity_id,)
+            elif capability_id == "covers.blades_open":
+                commands = (self.blades_open_command_entity_id,)
+                feedback = ()
+            elif capability_id == "covers.blades_close":
+                commands = (self.blades_close_command_entity_id,)
+                feedback = ()
 
             result.append(ObjectCapability(
                 object_id=self.object_id,
@@ -90,7 +100,16 @@ class Cover:
                 reason=(
                     "Objective cover movement/end-state feedback is configured."
                     if capability_id == "covers.monitor_state"
-                    else "Directional cover command and feedback are configured."
+                    else (
+                        "Configured blade command is available; execution is "
+                        "qualified at dispatch scope without claiming a blade "
+                        "position."
+                        if capability_id in {
+                            "covers.blades_open",
+                            "covers.blades_close",
+                        }
+                        else "Directional cover command and feedback are configured."
+                    )
                 ),
             ))
 
@@ -119,5 +138,8 @@ class Cover:
             },
             "capabilities": list(self.capabilities),
             "semantic_capabilities": list(self.supported_capability_ids),
-            "canonical_blade_execution_available": False,
+            "canonical_blade_execution_available": all(
+                capability in self.capabilities
+                for capability in ("blades_open", "blades_close")
+            ),
         }

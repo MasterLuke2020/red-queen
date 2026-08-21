@@ -2,13 +2,13 @@
 
 ## Current candidate
 
-**Red Queen 1.0.0-rc7 — LIVE VERIFIED / RELEASE PREPARATION READY**
+**Red Queen 1.0.0-rc8 — LIVE VERIFIED**
 
-RC7 is based on the published, live-verified RC6 baseline and adds WP-4.7.13.2 Native
-Notification Routing / Announcements. Existing lighting, cover, garage, door
-lock/unlock and direct notification behavior is intentionally preserved.
+RC8 is based on the published, live-verified RC7 baseline and adds WP-4.7.14.0
+Canonical Cover Blades / Electric Door Release. Existing lighting, directional cover,
+garage, door lock/unlock and notification behavior is intentionally preserved.
 
-Reference-installation live qualification passed on 2026-08-20 with:
+The inherited RC7 reference-installation baseline passed on 2026-08-20 with:
 
 - `status: healthy`
 - `runtime_ready: true`
@@ -16,12 +16,14 @@ Reference-installation live qualification passed on 2026-08-20 with:
 - `error_count: 0`
 - `warning_count: 0`
 
-- all four announcement levels on Office and five-speaker house targets;
-- all five routing profiles and all four priority-to-voice mappings;
-- Quiet Mode suppression and broadcast override;
-- direct RC6 notification compatibility plus physical-action dry-run regressions;
-- persistent dispatch-scoped evidence for notification send, announce and route;
-- no Red Queen errors or warnings after the completed test sequence.
+RC8 live qualification passed on 2026-08-21 and verified:
+
+- blade open and blade close on one reference venetian blind;
+- moving-cover rejection without a blade pulse;
+- confirmed courtyard and street door-opener dispatch with one physical pulse each;
+- missing-confirmation and open-door rejection without a pulse;
+- dispatch-scoped evidence with `hardware_verified: false` for blades and release;
+- final health 100 with no Red Queen errors or warnings.
 
 ## RC policy
 

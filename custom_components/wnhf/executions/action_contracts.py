@@ -166,6 +166,20 @@ _CANONICAL_ACTION_CONTRACTS = {
         allowed_target_keys=("object_id",),
         allowed_parameter_keys=(),
     ),
+    "covers.blades_open": CanonicalActionExecutionContract(
+        action_id="covers.blades_open",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=(),
+    ),
+    "covers.blades_close": CanonicalActionExecutionContract(
+        action_id="covers.blades_close",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=(),
+    ),
     "garage.open": CanonicalActionExecutionContract(
         action_id="garage.open",
         target_mode="single_object",
@@ -189,6 +203,13 @@ _CANONICAL_ACTION_CONTRACTS = {
     ),
     "openings.unlock": CanonicalActionExecutionContract(
         action_id="openings.unlock",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=(),
+    ),
+    "openings.release": CanonicalActionExecutionContract(
+        action_id="openings.release",
         target_mode="single_object",
         required_target_keys=("object_id",),
         allowed_target_keys=("object_id",),

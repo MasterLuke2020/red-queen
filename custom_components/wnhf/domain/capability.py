@@ -134,8 +134,8 @@ class CapabilityCatalog:
             CapabilityDefinition("covers.monitor_state", "covers", "monitor_state", m, "Read cover movement/end state.", False, True),
             CapabilityDefinition("covers.open", "covers", "open", a, "Open cover.", True, True),
             CapabilityDefinition("covers.close", "covers", "close", a, "Close cover.", True, True),
-            CapabilityDefinition("covers.blades_open", "covers", "blades_open", a, "Open slats.", True, True),
-            CapabilityDefinition("covers.blades_close", "covers", "blades_close", a, "Close slats.", True, True),
+            CapabilityDefinition("covers.blades_open", "covers", "blades_open", a, "Open slats.", True, False),
+            CapabilityDefinition("covers.blades_close", "covers", "blades_close", a, "Close slats.", True, False),
         ))
 
 

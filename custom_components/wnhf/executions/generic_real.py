@@ -92,7 +92,7 @@ class GenericExecutionEngine:
     """
 
     API_VERSION = "1.0"
-    VERSION = "1.9-rc7"
+    VERSION = "2.0-rc8"
     ENABLED_ACTIONS = REAL_EXECUTION_ENABLED_ACTIONS
 
     def __init__(
