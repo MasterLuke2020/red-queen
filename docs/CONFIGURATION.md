@@ -93,7 +93,7 @@ Plant Care domain. When present, its root `plants:` list accepts:
 - `location` — required installation description;
 - `watering_interval_days` — required positive integer;
 - `enabled` — optional boolean, default `true`;
-- `moisture_sensor_entity_id` — reserved optional field; RC9 does not evaluate it.
+- `moisture_sensor_entity_id` — reserved optional field; it is not yet evaluated.
 
 Example:
 
@@ -138,6 +138,25 @@ history mutation; it does not prove physical watering or soil moisture.
 Both entities are attached to the existing Red Queen room device identified by the
 plant's `room` field. They therefore appear beside the room's native light and cover
 entities instead of under a central Plant Care device.
+
+## Native room entity projection
+
+RC10 projects existing semantic registry objects onto their configured Red Queen room
+devices. No extra mapping file is required:
+
+- every enabled opening creates one native binary sensor;
+- every configured motor lock creates one native lock entity;
+- every configured electric door opener creates one native button;
+- every garage opening creates a native garage cover;
+- every capable venetian blind creates explicit blade-open and blade-close buttons
+  in addition to the native cover tilt controls;
+- lights, covers and Plant Care entities retain their existing room association.
+
+Native productive controls invoke `wnhf.execution_execute`. Dedicated lock,
+door-release and garage entity service calls form the explicit confirmation boundary;
+dashboard confirmation remains recommended. Raw Home Assistant provider entity IDs
+stay inside installation registries and are never accepted in the semantic request
+envelope.
 
 For a dashboard, add the native button with an explicit confirmation to protect the
 non-idempotent history event from accidental taps:

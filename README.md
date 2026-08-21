@@ -5,20 +5,20 @@ as semantic objects and state, evaluates context/rules/policies/decisions, resol
 capabilities and providers, and executes explicitly supported actions through
 contracts and feedback-aware guards.
 
-> **Current candidate:** `1.0.0-rc9` — LIVE VERIFIED<br>
+> **Current candidate:** `1.0.0-rc10` — LIVE VERIFIED<br>
 > **Technical Home Assistant domain:** `wnhf`<br>
-> **Development lineage:** WNHF `1.35.0` / `WP-4.7.15.0`
+> **Development lineage:** WNHF `1.36.0` / `WP-4.7.16.0`
 
-## RC9 candidate changes
+## RC10 candidate changes
 
-- Preserves the live-verified RC8 device and notification contracts.
-- Adds optional semantic `plants.yaml` registry support.
-- Adds `plants.snapshot` and canonical `plants.record_watering`.
-- Persists watering history atomically and exposes one dashboard sensor plus one
-  native record-watering button per plant, attached to its Red Queen room device.
-- Starts plants at `unknown` until a real watering event is recorded.
-- Qualifies the persistent state change without claiming physical watering or soil
-  moisture observation.
+- Preserves the published, live-verified RC9 semantic and execution contracts.
+- Adds one room-associated native state entity for every enabled opening.
+- Adds native room controls for motor locks, electric door release and the garage
+  door, plus explicit blade-open/blade-close buttons for every capable blind.
+- Routes native light, cover, blade, lock, door-release, garage and Plant Care
+  controls through the canonical execution service.
+- Keeps central health, security and aggregate diagnostics on their existing module
+  devices while placing physical object state and controls in their semantic rooms.
 
 ## Current canonical real-execution surface
 
@@ -45,10 +45,10 @@ Dry-run entry point: `wnhf.execution_dry_run`
 
 ## Candidate status
 
-`1.0.0-rc9` and WP-4.7.15.0 preserve the live-verified RC8 baseline. Static and live
-qualification of the new Plant Care domain passed on 2026-08-21.
+`1.0.0-rc10` and WP-4.7.16.0 preserve the published, live-verified RC9 baseline.
+Static and reference-installation live qualification passed on 2026-08-21.
 
-See `docs/RC9_CANDIDATE_VALIDATION.md` for the qualification plan.
+See `docs/RC10_CANDIDATE_VALIDATION.md` for the qualification plan.
 
 ## Installation
 

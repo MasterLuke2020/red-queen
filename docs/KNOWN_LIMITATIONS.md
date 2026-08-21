@@ -1,4 +1,4 @@
-# Known Limitations and Deliberate RC9 Candidate Boundaries
+# Known Limitations and Deliberate RC10 Candidate Boundaries
 
 ## Canonical execution remains intentionally bounded
 
@@ -10,7 +10,7 @@ semantic/read capabilities do not automatically imply productive actuation.
 
 ## Plant Care
 
-RC9 uses configured care intervals and persistent manual watering history. It does
+Plant Care uses configured care intervals and persistent manual watering history. It does
 not infer an initial watering time, evaluate soil moisture, adjust intervals for
 season/light/climate, or automatically dispatch reminders. A successful
 `plants.record_watering` result proves the persistent state event only; it does not
@@ -21,7 +21,7 @@ an accidental second press, so dashboard confirmation is recommended.
 
 ## Notifications
 
-RC9 inherits the live-verified `notifications.send`, `notifications.announce` and
+RC10 inherits the live-verified `notifications.send`, `notifications.announce` and
 `notifications.route` contracts. Installation-specific targets require explicit registry
 configuration; Red Queen deliberately does not auto-select speakers or recipients.
 Context-aware voice routing currently consumes optional configured Home Assistant
@@ -59,6 +59,14 @@ Canonical garage stop/toggle is intentionally not exposed.
 available command entity and a proven closed door contact. Success proves only that
 Home Assistant completed the configured command dispatch; latch release and physical
 door opening are not claimed.
+
+## Native room controls
+
+A dedicated native lock, door-release or garage entity service call is the explicit
+confirmation boundary for the corresponding canonical action. Dashboard confirmation
+is still recommended for access controls. Rejected guards are surfaced as Home
+Assistant errors and do not dispatch a command. Central aggregates and diagnostics
+remain outside room devices by design.
 
 ## Climate / temperature and media
 

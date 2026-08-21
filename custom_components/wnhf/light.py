@@ -20,6 +20,7 @@ from .const import (
 from .device import room_device_info
 from .domain.light import Light
 from .engine import WNHFEngine
+from .native_execution import async_execute_canonical
 
 
 async def _async_setup_entities(
@@ -147,15 +148,19 @@ class WNHFLightEntity(LightEntity):
         ).is_on
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        """Request ON; the engine sends an impulse only when currently off."""
-        await self.engine.async_light_turn_on(
-            self.light_object.object_id
+        """Request ON through canonical guarded semantic execution."""
+        await async_execute_canonical(
+            self.hass,
+            action_id="lighting.turn_on",
+            object_id=self.light_object.object_id,
         )
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        """Request OFF; the engine sends an impulse only when currently on."""
-        await self.engine.async_light_turn_off(
-            self.light_object.object_id
+        """Request OFF through canonical guarded semantic execution."""
+        await async_execute_canonical(
+            self.hass,
+            action_id="lighting.turn_off",
+            object_id=self.light_object.object_id,
         )
 
     @property

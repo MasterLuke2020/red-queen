@@ -1,7 +1,7 @@
 contract:
   id: wnhf.generic_execution
   version: '1.1'
-  implementation: 2.0-rc9
+  implementation: 2.1-rc10
 dry_run_enabled: true
 hardware_dispatch_in_dry_run: false
 real_execution_enabled_actions:

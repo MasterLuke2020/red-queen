@@ -1,38 +1,34 @@
 # Publishing Checklist
 
-## RC9 candidate preparation
+## RC10 candidate preparation
 
-- [x] Start from the published, live-verified RC8 source.
-- [x] Add the optional 13-plant semantic registry.
-- [x] Add persistent watering history, dashboard-ready plant sensors and native
-  canonical record-watering buttons.
-- [x] Add canonical `plants.record_watering` with state-scoped qualification.
-- [x] Preserve all RC8 contracts.
-- [x] Add and verify `checksums/rc9_source.sha256`.
+- [x] Start from the published, live-verified RC9 source.
+- [x] Add native room state for every enabled opening.
+- [x] Add native lock, door-release, garage and explicit blade controls.
+- [x] Route native productive controls through canonical execution.
+- [x] Preserve 8 capabilities, 22 semantic actions, 15 canonical real contracts and
+  67 Home Assistant services.
+- [x] Add and verify `checksums/rc10_source.sha256`.
 - [x] Build the replaceable Home Assistant test package.
-- [x] Complete the controlled live-qualification plan.
+- [x] Complete controlled reference-installation live qualification.
 
 ## GitHub web release flow
 
-- [ ] Apply the verified RC9 source to the local repository checkout.
-- [ ] Create `release/1.0.0-rc9` locally and commit intentionally.
+- [ ] Apply the verified RC10 source to the local repository checkout.
+- [ ] Create `release/1.0.0-rc10` locally and commit intentionally.
 - [ ] Push the release branch with Git.
-- [ ] Confirm the static repository check passes.
-- [ ] Confirm Home Assistant hassfest passes.
-- [ ] Fast-forward `main` to the verified RC9 release commit.
-- [ ] Create annotated tag `v1.0.0-rc9` on that exact commit.
-- [ ] Create and publish GitHub Pre-Release `v1.0.0-rc9` in the web interface.
-- [ ] Use `custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc9.md` as the
-  release-note basis in the GitHub web interface.
+- [ ] Confirm static repository checks and hassfest pass.
+- [ ] Fast-forward `main` to the verified RC10 release commit.
+- [ ] Create annotated tag `v1.0.0-rc10` on that exact commit.
+- [ ] Publish GitHub Pre-Release `v1.0.0-rc10` using
+  `custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc10.md`.
 - [ ] Record final commit, tag object and release artifact checksums.
 
-## Compatibility and publication boundaries
+## Boundaries
 
-- Do not rename the `wnhf` integration domain or `wnhf.*` service IDs.
-- Do not modify the published RC1–RC7 tags or releases.
-- Do not publish RC9 before Plant Care live qualification and restart persistence pass.
-- Do not claim blade position, latch release, physical door opening or hardware
-  verification from dispatch-scoped success.
-- Do not activate `hacs.json` until the independent publication requirements are
-  deliberately completed.
-- Do not use third-party franchise artwork, logos or character likenesses.
+- Do not rename the `wnhf` domain, public services, semantic IDs or persisted paths.
+- Do not publish RC10 before native-room live qualification and restart regression.
+- Do not claim blade position, latch release, physical opening or unobserved garage
+  direction.
+- Keep central health/security/aggregate diagnostics central.
+- Keep climate deferred and HACS metadata inactive.

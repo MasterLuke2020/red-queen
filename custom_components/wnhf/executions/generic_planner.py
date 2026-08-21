@@ -20,7 +20,7 @@ class GenericExecutionPlanner:
     """Validate and plan canonical real-execution requests without dispatch."""
 
     API_VERSION = "1.1"
-    CONTRACT_VERSION = "2.0-rc9"
+    CONTRACT_VERSION = "2.1-rc10"
 
     def __init__(self, execution_manager: Any, provider_registry: Any) -> None:
         self._execution_manager = execution_manager

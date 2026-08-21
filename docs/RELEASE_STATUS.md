@@ -2,11 +2,11 @@
 
 ## Current candidate
 
-**Red Queen 1.0.0-rc9 — LIVE VERIFIED**
+**Red Queen 1.0.0-rc10 — LIVE VERIFIED**
 
-RC9 is based on the published, live-verified RC8 baseline and adds WP-4.7.15.0
-Semantic Plant Care Core. Existing lighting, cover, garage, opening and notification
-behavior is intentionally preserved.
+RC10 is based on the published, live-verified RC9 baseline and adds WP-4.7.16.0
+Native Room Completeness. Existing semantic action IDs and provider contracts are
+intentionally preserved.
 
 The inherited RC7 reference-installation baseline passed on 2026-08-20 with:
 
@@ -35,6 +35,17 @@ The RC9 qualification passed on 2026-08-21 and verified:
 - watering history, due time and sensor state survived a full restart;
 - the bounded Context sensor produced no Recorder oversized-attribute warning;
 - final runtime health was 100 with no Red Queen errors or warnings.
+
+The RC10 qualification passed on 2026-08-21 and verified:
+
+- native opening state and room placement across the reference house;
+- office native lighting and explicit blade controls through canonical execution;
+- entrance lock/unlock, electric door release and contact-based access guards;
+- native garage open/close from stable end positions;
+- corrected installation-owned Gang EG/Gang OG room associations;
+- restart with 23 rooms, 43 lights, 17 covers, 21 openings and 13 plants;
+- valid Registry/validation, runtime ready, health 100 and no Red Queen errors or
+  warnings.
 
 ## RC policy
 

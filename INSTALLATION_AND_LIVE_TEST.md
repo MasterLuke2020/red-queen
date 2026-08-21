@@ -1,103 +1,84 @@
-# Red Queen 1.0.0-rc9 — Installation and live qualification
+# Red Queen 1.0.0-rc10 — Installation and live qualification
 
 Status: static verification and reference-installation live qualification required
-for WP-4.7.15.0.
+for WP-4.7.16.0.
 
-## 1. Back up the installation
+## 1. Back up and install
 
-Back up `/config/custom_components/wnhf` and `/config/wnhf`. RC9 never overwrites
-installation-owned registry data automatically.
+1. Back up `/config/custom_components/wnhf` and `/config/wnhf`.
+2. Replace `/config/custom_components/wnhf` with the packaged RC10 integration.
+3. Preserve every installation-owned registry and persistent-state file below
+   `/config/wnhf`.
+4. Restart Home Assistant completely.
 
-## 2. Add the Plant Care registry
+RC10 does not add or rewrite registry files. Existing `rooms.yaml`, `lights.yaml`,
+`covers.yaml`, `openings.yaml`, optional `plants.yaml` and notification targets remain
+installation-owned.
 
-Copy repository file `configuration/plants.yaml` to:
-
-```text
-/config/wnhf/house/registry/plants.yaml
-```
-
-Do not create `/config/wnhf/plant_care/watering_history.json` manually. Red Queen
-creates it atomically after the first real `plants.record_watering` action. If the
-file does not exist, all plants correctly start as `unknown`.
-
-## 3. Install the candidate
-
-1. Replace `/config/custom_components/wnhf` with the packaged RC9 integration.
-2. Preserve all other installation-owned `/config/wnhf` files.
-3. Restart Home Assistant completely.
-4. Open **Developer tools → Actions**.
-
-## 4. Post-restart preflight
+## 2. Post-restart preflight
 
 Confirm:
 
-- Red Queen `1.0.0-rc9`;
-- WNHF `1.35.0`;
-- release baseline `WP-4.7.15.0`;
-- phase name `Release Candidate 9`;
+- Red Queen `1.0.0-rc10`;
+- WNHF `1.36.0` / `WP-4.7.16.0`;
+- phase name `Release Candidate 10`;
 - runtime ready, health 100 and no Red Queen errors/warnings;
-- `plants` capability resolved through `provider.core.plants`;
-- `wnhf.plants_snapshot` returns 13 plants and every plant is initially `unknown`
-  when no history file existed;
-- 13 `sensor.wnhf_plant_care_*` entities exist;
-- 13 `button.wnhf_plant_water_*` entities exist;
-- every plant sensor/button pair is attached to the configured Red Queen room
-  device, for example Drachenbaum Büro under `Red Queen Room (office)`.
+- 8 capabilities, 22 semantic actions and 15 canonical real contracts;
+- the `lock` entity platform loaded without setup errors.
 
-## 5. Dry-run
+## 3. Native room inventory
 
-```yaml
-action: wnhf.execution_dry_run
-data:
-  action_id: plants.record_watering
-  target:
-    object_id: plant.eg.office.dragon_tree
-  parameters: {}
-```
+For the Weidnerhome reference registry, confirm:
 
-Expected: `EXE-100`, executable, no command sent, strategy
-`persistent_verified_state_event`, verification scope `state`.
+- 21 native `binary_sensor.wnhf_opening_*` entities;
+- 2 native `lock.wnhf_lock_*` entities;
+- 2 native `button.wnhf_door_release_*` entities;
+- 34 native `button.wnhf_blades_open_*` / `wnhf_blades_close_*` entities;
+- 1 native `cover.wnhf_garage_*` entity;
+- the existing 13 Plant Care sensors and 13 watering buttons;
+- existing native room lights and venetian-blind covers remain present.
 
-## 6. Record a real watering event
+Open representative Red Queen room devices (office, vestibule, dining room,
+bathroom, gallery, hobby room and garage). Every physical object and control must be
+attached to its configured room. Central health, security and aggregate diagnostics
+must remain on their central module devices.
 
-Only perform this after the selected plant has actually been watered:
+## 4. Passive state tests
 
-Press the corresponding native button, for example
-`button.wnhf_plant_water_eg_office_dragon_tree`. The button routes through the
-same canonical `plants.record_watering` execution contract. Do not press the button
-and then also run the following service request for the same physical watering.
+Open and close representative windows, doors and the garage door. Confirm that the
+corresponding native opening binary sensor follows objective feedback. Lock/unlock
+feedback must update the native lock entity. No native adapter may invent a garage
+direction or blade position that is not objectively observable.
 
-The equivalent direct canonical request is:
+## 5. Native control tests
 
-```yaml
-action: wnhf.execution_execute
-data:
-  action_id: plants.record_watering
-  target:
-    object_id: plant.eg.office.dragon_tree
-  parameters: {}
-```
+Run only safe, observed actions:
 
-Expected: `EXE-000`, one persistent event, sensor changes to `ok`, watering count
-increments once, `framework_verified: true`, `hardware_verified: false`, and
-`verification_scope: state`.
+1. Toggle one native Red Queen light off/on.
+2. Open/close one native Red Queen blind.
+3. Press its explicit blade-open and blade-close buttons while stationary.
+4. Lock/unlock one closed test door through its native lock entity.
+5. Press one door-release button only while the door is proven closed.
+6. Open/close the garage from the required opposite stable end positions.
+7. Record a watering event only after that plant was physically watered.
 
-The button means **record watering completed**. It does not control irrigation and
-must only be pressed after a person has actually watered the plant.
+Each action must appear as `wnhf.execution_execute` evidence with the correct semantic
+action ID. Exactly one technical command may be dispatched per accepted request.
 
-## 7. Guard tests
+## 6. Rejection tests
 
-Dry-run an unknown semantic plant ID and a request with an unexpected parameter.
-Expected: `EXE-203` and `EXE-204` respectively, with no history change.
+Confirm that these native requests reject visibly and dispatch no command:
 
-## 8. Persistence test
+- blade action while its cover is moving;
+- door release while the door contact reports open;
+- lock/unlock while the door is open;
+- garage direction from moving, intermediate, unavailable or contradictory state.
 
-Restart Home Assistant completely. Confirm that the recorded plant retains
-`last_watered_at`, `due_at`, status and watering count while all untouched plants
-remain `unknown`.
+## 7. Restart and regression
 
-## 9. Regression and final health
+Restart Home Assistant completely. Confirm entity/device/area associations remain
+stable, Plant Care history persists, and representative notification routes plus
+canonical dry-runs for every existing domain still pass.
 
-Repeat representative lighting, cover, garage, opening and notification dry-runs.
-Confirm final system health 100, runtime ready and no Red Queen errors or warnings.
-Record only observed results in `docs/RC9_CANDIDATE_VALIDATION.md`.
+Record only observed results in `docs/RC10_CANDIDATE_VALIDATION.md`. Publication
+requires final health 100, runtime ready, zero Red Queen errors and zero warnings.

@@ -1,6 +1,6 @@
 # WNHF Canonical Real Execution Contract
 
-The stable real-execution entry is `wnhf.execution_execute`. RC9 enables fifteen
+The stable real-execution entry is `wnhf.execution_execute`. RC10 enables fifteen
 semantic actions: `lighting.turn_on`, `lighting.turn_off`, `covers.open`,
 `covers.close`, `covers.blades_open`, `covers.blades_close`, `garage.open`,
 `garage.close`, `openings.lock`, `openings.unlock`, `openings.release`,

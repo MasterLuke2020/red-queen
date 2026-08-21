@@ -1,7 +1,7 @@
 contract:
   id: wnhf.generic_real_execution
   api_version: '1.0'
-  execution_contract: 2.1-rc9
+  execution_contract: 2.2-rc10
 canonical_service: wnhf.execution_execute
 enabled_actions:
 - lighting.turn_on

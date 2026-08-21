@@ -52,7 +52,7 @@ class DiagnosticClassification:
 class ReleaseScopeManager:
     """Central immutable Red Queen release-candidate profile and warning classifier."""
 
-    VERSION = "2.9-rc9"
+    VERSION = "3.0-rc10"
     CHANNEL = RELEASE_CHANNEL
     PHASE = RELEASE_PHASE
 

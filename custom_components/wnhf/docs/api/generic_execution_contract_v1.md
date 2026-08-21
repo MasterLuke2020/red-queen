@@ -5,7 +5,7 @@ execution surface. It validates semantic/provider readiness, the action-specific
 request envelope, the semantic target object, confirmation requirements and provider
 technical capability. It never dispatches a command.
 
-RC9 candidate real-execution-enabled actions are `lighting.turn_on`, `lighting.turn_off`,
+RC10 candidate real-execution-enabled actions are `lighting.turn_on`, `lighting.turn_off`,
 `covers.open`, `covers.close`, `covers.blades_open`, `covers.blades_close`,
 `garage.open`, `garage.close`, `openings.lock`, `openings.unlock`,
 `openings.release`, `notifications.send`,

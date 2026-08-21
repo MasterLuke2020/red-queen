@@ -1,15 +1,15 @@
-# Red Queen 1.0.0-rc9 Candidate Feature Matrix
+# Red Queen 1.0.0-rc10 Candidate Feature Matrix
 
-| Domain | Semantic model/state | Snapshot/diagnostics | Canonical execution | RC9 candidate status |
+| Domain | Semantic model/state | Native room surface | Canonical execution | RC10 candidate status |
 |---|---:|---:|---:|---|
 | Rooms | Yes | Yes | N/A | Stable |
-| Lighting | Yes | Yes | `lighting.turn_on`, `lighting.turn_off` | Live-verified baseline |
-| Openings | Yes | `openings.snapshot` | `openings.lock`, `openings.unlock` | Live-verified baseline |
-| Door opener | Yes | Access diagnostics / closed-door guard | `openings.release` | Dispatch-scoped live verified in RC8 |
-| Garage | Yes | `garage.snapshot` / Access state | `garage.open`, `garage.close` | Live-verified baseline |
-| Covers | Yes | `covers.snapshot`, continuous position | `covers.open`, `covers.close` | Live-verified baseline |
+| Lighting | Yes | Native light per controllable object | `lighting.turn_on`, `lighting.turn_off` | RC10 live verified |
+| Openings | Yes | Native state per enabled window/door | `openings.lock`, `openings.unlock` | RC10 live verified |
+| Door opener | Yes | Native confirmed button | `openings.release` | RC10 live verified |
+| Garage | Yes | Native cover plus opening state | `garage.open`, `garage.close` | RC10 live verified |
+| Covers | Yes | Native cover | `covers.open`, `covers.close` | RC10 live verified |
 | Cover position | Read-only feedback | `closed_percent`, HA current position | No `SET_POSITION` | Feedback-only |
-| Cover blades/slats | Native commands | No objective blade-position feedback required | `covers.blades_open`, `covers.blades_close` | Dispatch-scoped live verified in RC8 |
+| Cover blades/slats | Native tilt plus explicit buttons | No objective blade-position feedback required | `covers.blades_open`, `covers.blades_close` | RC10 live verified |
 | Notifications | Yes | targets, announcement routes, channel diagnostics | `notifications.send`, `notifications.announce`, `notifications.route` | Live verified on 2026-08-20 |
 | Plant Care | Optional registry and persistent history | `plants.snapshot`, `plants_snapshot`, one sensor and record-watering button per plant | `plants.record_watering` | State-scoped live verified on 2026-08-21 |
 | Security | Yes | `security.snapshot` | No | Stable read surface |

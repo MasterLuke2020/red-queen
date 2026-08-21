@@ -3,19 +3,19 @@
 ## Product
 
 - Name: **Red Queen**
-- Version: `1.0.0-rc9`
+- Version: `1.0.0-rc10`
 - Status: **LIVE VERIFIED**
 - Channel: `release_candidate`
-- Candidate: `rc9`
+- Candidate: `rc10`
 
 ## Technical compatibility
 
 - Home Assistant domain: `wnhf`
 - Canonical execution service: `wnhf.execution_execute`
 - Canonical execution API: `1.0`
-- Canonical dry-run contract: `2.0-rc9`
-- Canonical real-execution contract: `2.1-rc9`
-- Development baseline: WNHF `1.35.0` / `WP-4.7.15.0`
+- Canonical dry-run contract: `2.1-rc10`
+- Canonical real-execution contract: `2.2-rc10`
+- Development baseline: WNHF `1.36.0` / `WP-4.7.16.0`
 
 ## Verified release surface
 
@@ -28,23 +28,22 @@
 - Native announcement and notification routing are live verified for RC7.
 - Notification qualification is dispatch-scoped and does not claim delivery/read or
   hardware verification.
-- RC9 adds optional semantic Plant Care, persistent watering history, dashboard
-  sensors and canonical per-plant record-watering buttons without requiring
-  soil-moisture hardware.
-- Existing lighting, directional cover, openings/locks, garage and notification
-  contracts remain unchanged.
+- RC10 adds native room entities for openings, locks, electric door release, garage
+  and explicit blade controls.
+- Native productive controls route through canonical execution; public action IDs,
+  capability counts, service counts and provider contracts remain unchanged.
 
 ## Release preparation state
 
-- Runtime source originated from the published, live-verified RC7 artifact.
-- WP-4.7.15.0 introduces Semantic Plant Care on the published RC8 baseline.
+- Runtime source originated from the published, live-verified RC9 artifact.
+- WP-4.7.16.0 introduces Native Room Completeness on that baseline.
 - Static verification and reference-installation live qualification passed on
   2026-08-21.
 - Repository owner: `MasterLuke2020`.
 - Repository: `MasterLuke2020/red-queen`.
-- Intended release after qualification: annotated tag `v1.0.0-rc9` and GitHub
+- Intended release after qualification: annotated tag `v1.0.0-rc10` and GitHub
   Pre-Release.
 - HACS support remains intentionally inactive.
 - Independent brand assets remain intentionally unresolved.
 
-This document describes the live-verified RC9 candidate before GitHub publication.
+This document describes the live-verified RC10 candidate before GitHub publication.

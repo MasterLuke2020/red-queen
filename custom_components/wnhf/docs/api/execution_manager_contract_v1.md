@@ -3,7 +3,7 @@
 The Execution Manager separates four concepts: declared, semantically ready, real
 execution enabled and executable now.
 
-Current RC9 candidate baseline: twenty-two semantic actions across eight capabilities
+Current RC10 candidate baseline: twenty-two semantic actions across eight capabilities
 are declared. Fifteen actions are enabled through `wnhf.execution_execute`:
 `lighting.turn_on`,
 `lighting.turn_off`, `covers.open`, `covers.close`, `covers.blades_open`,

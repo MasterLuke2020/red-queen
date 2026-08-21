@@ -745,7 +745,7 @@ def _load_plants(
         if moisture_sensor_entity_id is not None:
             warnings.append(
                 f"Plant '{object_id}' has a moisture sensor configured, but "
-                "RC9 uses interval/history status only."
+                "Plant Care uses interval/history status only."
             )
 
     return plants, warnings

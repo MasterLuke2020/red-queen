@@ -1,7 +1,7 @@
 contract:
   id: wnhf.execution_manager
   version: '1.1'
-  implementation: 1.9-rc9
+  implementation: 2.0-rc10
 execution_enabled: true
 read_only: false
 readiness_dimensions:

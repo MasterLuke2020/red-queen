@@ -4,6 +4,36 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0-rc10 candidate — WP-4.7.16.0
+
+#### Added
+
+- One native room-associated opening state entity for every enabled opening.
+- Native room locks, electric door-release buttons and garage cover controls.
+- Explicit blade-open and blade-close buttons for capable venetian blinds.
+
+#### Changed
+
+- Native lights, covers, blades, locks, door release, garage and Plant Care buttons
+  route through the canonical execution service and surface rejected guards as Home
+  Assistant errors.
+- Central health, security and aggregate diagnostics remain central by design.
+
+#### Compatibility and safety
+
+- No public action, service, capability or registry schema was added or renamed.
+- Access controls preserve explicit confirmation and objective feedback guards.
+- Blade position, latch release, physical door opening and unobserved garage
+  direction remain unclaimed.
+
+#### Validation
+
+- Static repository and packaged-source verification passed.
+- Reference-installation native room, lighting, blade, lock, door-release and garage
+  tests passed on 2026-08-21.
+- Restart completed with 23 rooms, valid Registry/validation, runtime ready, health
+  100 and zero Red Queen errors or warnings.
+
 ### 1.0.0-rc9 candidate — WP-4.7.15.0
 
 #### Added

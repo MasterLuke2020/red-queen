@@ -5,8 +5,8 @@ The roadmap is directional rather than a promise of exact release numbers or dat
 ## 1.0 release-candidate line
 
 The 1.0 RC line expands only through bounded, independently qualified capability
-packets. RC9 candidate WP-4.7.15.0 introduces Semantic Plant Care on top of the
-live-verified RC8 baseline.
+packets. RC10 candidate WP-4.7.16.0 completes the native room entity surface on top
+of the published, live-verified RC9 baseline.
 
 ## Next candidates
 
@@ -17,12 +17,19 @@ WP-4.7.14.0 adds `openings.release`, `covers.blades_open` and
 all three actions use dispatch-scoped qualification where the final physical effect
 is not objectively observable.
 
-### Semantic Plant Care — RC9 candidate
+### Semantic Plant Care — completed in RC9
 
-RC9 introduces semantic plant objects with species, room/location, persistent
+RC9 introduced semantic plant objects with species, room/location, persistent
 watering history, care intervals and dashboard-ready sensors. Later extensions may
 incorporate season, indoor climate, light conditions, soil-moisture sensors,
 fertilizing, repotting and vacation-aware care reminders.
+
+### Native room completeness — RC10 candidate
+
+RC10 places every enabled opening on its semantic room device and adds native lock,
+door-release, garage and explicit blade controls. Native productive controls enter
+the same canonical execution surface as service calls; central diagnostics remain
+central.
 
 ### Configuration and commissioning
 

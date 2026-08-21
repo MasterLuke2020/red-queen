@@ -1,4 +1,4 @@
-# Red Queen 1.0.0-rc9
+# Red Queen 1.0.0-rc10
 
 Red Queen is a semantic home framework for Home Assistant. It models the house as
 objects and state, evaluates context/rules/policies/decisions, resolves capabilities
@@ -19,11 +19,11 @@ automations.
 ## Release status
 
 - Product: Red Queen
-- Version: `1.0.0-rc9`
+- Version: `1.0.0-rc10`
 - Channel: `release_candidate`
 - Phase: `rc`
-- Candidate: `rc9`
-- Candidate development baseline: WNHF `1.35.0` / `WP-4.7.15.0`
+- Candidate: `rc10`
+- Candidate development baseline: WNHF `1.36.0` / `WP-4.7.16.0`
 - Status: LIVE VERIFIED
 
 ## Stable 1.0 RC scope
@@ -69,7 +69,12 @@ button presses use the canonical execution service. A new plant remains
 `unknown` until `plants.record_watering` records a real event. State-scoped success
 does not claim independently observed physical watering or soil moisture.
 
-See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc9.md`.
+RC10 adds a native room surface for every enabled opening, configured motor locks,
+electric door releases, the garage door and explicit blade controls. Native lights,
+covers, blades, access controls and Plant Care buttons all call the canonical
+execution service; they do not bypass semantic guards or qualification.
+
+See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc10.md`.
 
 ## Qualification
 

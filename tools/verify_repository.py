@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static repository checks for the Red Queen 1.0.0-rc9 candidate."""
+"""Static repository checks for the Red Queen 1.0.0-rc10 candidate."""
 from __future__ import annotations
 
 import ast
@@ -115,11 +115,16 @@ required_paths = [
     ROOT / "docs" / "KNOWN_LIMITATIONS.md",
     ROOT / "docs" / "RELEASE_STATUS.md",
     ROOT / "docs" / "ROADMAP.md",
-    ROOT / "docs" / "RC9_CANDIDATE_VALIDATION.md",
+    ROOT / "docs" / "RC10_CANDIDATE_VALIDATION.md",
     ROOT / "configuration" / "notification_targets.yaml",
     ROOT / "configuration" / "plants.yaml",
     INTEGRATION / "__init__.py",
+    INTEGRATION / "binary_sensor.py",
     INTEGRATION / "button.py",
+    INTEGRATION / "cover.py",
+    INTEGRATION / "light.py",
+    INTEGRATION / "lock.py",
+    INTEGRATION / "native_execution.py",
     INTEGRATION / "manifest.json",
     INTEGRATION / "RELEASE.json",
     INTEGRATION / "services.yaml",
@@ -130,7 +135,7 @@ required_paths = [
     INTEGRATION / "providers" / "plants.py",
     INTEGRATION / "plant_care.py",
     INTEGRATION / "domain" / "plant.py",
-    INTEGRATION / "docs" / "RELEASE_NOTES_1.0.0-rc9.md",
+    INTEGRATION / "docs" / "RELEASE_NOTES_1.0.0-rc10.md",
 ]
 for path in required_paths:
     if not path.exists():
@@ -147,7 +152,7 @@ except Exception as exc:
 expected_manifest = {
     "domain": "wnhf",
     "name": "Red Queen",
-    "version": "1.0.0-rc9",
+    "version": "1.0.0-rc10",
     "documentation": "https://github.com/MasterLuke2020/red-queen#readme",
     "issue_tracker": "https://github.com/MasterLuke2020/red-queen/issues",
     "codeowners": ["@MasterLuke2020"],
@@ -164,12 +169,12 @@ except Exception as exc:
 
 expected_release = {
     "product_name": "Red Queen",
-    "version": "1.0.0-rc9",
-    "candidate": "rc9",
-    "development_baseline_version": "1.35.0",
-    "release_baseline": "WP-4.7.15.0",
+    "version": "1.0.0-rc10",
+    "candidate": "rc10",
+    "development_baseline_version": "1.36.0",
+    "release_baseline": "WP-4.7.16.0",
     "canonical_execution_api_version": "1.0",
-    "canonical_execution_contract": "2.1-rc9",
+    "canonical_execution_contract": "2.2-rc10",
 }
 for key, value in expected_release.items():
     if release.get(key) != value:
@@ -177,33 +182,33 @@ for key, value in expected_release.items():
 
 const_text = read_text(INTEGRATION / "const.py")
 for marker in (
-    'DEVELOPMENT_BASELINE_VERSION = "1.35.0"',
-    'RELEASE_BASELINE = "WP-4.7.15.0"',
-    'GENERIC_EXECUTION_CONTRACT_VERSION = "2.0-rc9"',
-    'GENERIC_REAL_EXECUTION_VERSION = "2.1-rc9"',
-    'CANONICAL_EXECUTION_CONTRACT_VERSION = "2.1-rc9"',
-    'PLATFORMS = ("binary_sensor", "sensor", "cover", "light", "button")',
+    'DEVELOPMENT_BASELINE_VERSION = "1.36.0"',
+    'RELEASE_BASELINE = "WP-4.7.16.0"',
+    'GENERIC_EXECUTION_CONTRACT_VERSION = "2.1-rc10"',
+    'GENERIC_REAL_EXECUTION_VERSION = "2.2-rc10"',
+    'CANONICAL_EXECUTION_CONTRACT_VERSION = "2.2-rc10"',
+    '"lock",',
 ):
     if marker not in const_text:
         fail(f"Missing release/version marker: {marker}")
 
 planner_text = read_text(INTEGRATION / "executions" / "generic_planner.py")
-if 'CONTRACT_VERSION = "2.0-rc9"' not in planner_text:
-    fail("GenericExecutionPlanner.CONTRACT_VERSION must be 2.0-rc9")
+if 'CONTRACT_VERSION = "2.1-rc10"' not in planner_text:
+    fail("GenericExecutionPlanner.CONTRACT_VERSION must be 2.1-rc10")
 
 real_text = read_text(INTEGRATION / "executions" / "generic_real.py")
-if 'VERSION = "2.1-rc9"' not in real_text:
-    fail("GenericExecutionEngine.VERSION must be 2.1-rc9")
+if 'VERSION = "2.2-rc10"' not in real_text:
+    fail("GenericExecutionEngine.VERSION must be 2.2-rc10")
 
 manager_text = read_text(INTEGRATION / "executions" / "generic_manager.py")
-if 'VERSION = "1.9-rc9"' not in manager_text:
-    fail("SemanticExecutionManager.VERSION must be 1.9-rc9")
+if 'VERSION = "2.0-rc10"' not in manager_text:
+    fail("SemanticExecutionManager.VERSION must be 2.0-rc10")
 
 release_candidate_text = read_text(INTEGRATION / "release_candidate.py")
 if 'f"Release Candidate {cls.CANDIDATE.removeprefix(\'rc\')}"' not in (
     release_candidate_text
 ):
-    fail("Release phase name must derive from the explicit RC9 candidate label")
+    fail("Release phase name must derive from the explicit RC10 candidate label")
 if '"phase_name": "Release Candidate 6"' in release_candidate_text:
     fail("Stale RC6 release phase name remains active")
 
@@ -475,7 +480,7 @@ notification_scope = re.search(
     release_scope_text,
 )
 if notification_scope is None:
-    fail("Notifications must remain active in RC9 release scope")
+    fail("Notifications must remain active in RC10 release scope")
 
 plant_scope = re.search(
     r'"plants":\s*DomainReleaseState\(\s*"plants",\s*'
@@ -483,7 +488,7 @@ plant_scope = re.search(
     release_scope_text,
 )
 if plant_scope is None:
-    fail("Plant Care must be active in RC9 release scope")
+    fail("Plant Care must be active in RC10 release scope")
 
 plant_provider_text = read_text(INTEGRATION / "providers" / "plants.py")
 for marker in (
@@ -505,16 +510,76 @@ for marker in ("NamedTemporaryFile", "os.fsync", "os.replace", "schema_version")
 plant_button_text = read_text(INTEGRATION / "button.py")
 for marker in (
     "class WNHFRecordPlantWateringButton",
-    "SERVICE_EXECUTION_EXECUTE",
-    '"action_id": "plants.record_watering"',
+    "async_execute_canonical",
+    'action_id="plants.record_watering"',
     'f"wnhf_plant_water_{slug}"',
-    "blocking=True",
     '"physical_watering_claimed": False',
 ):
     if marker not in plant_button_text:
         fail(f"Missing native Plant Care button contract marker: {marker}")
 if "engine.async_record_plant_watering" in plant_button_text:
     fail("Plant Care button must not bypass the canonical execution service")
+
+native_execution_text = read_text(INTEGRATION / "native_execution.py")
+for marker in (
+    "SERVICE_EXECUTION_EXECUTE",
+    "return_response=True",
+    'payload.get("state") != "succeeded"',
+    "raise HomeAssistantError(reason)",
+):
+    if marker not in native_execution_text:
+        fail(f"Missing response-aware native execution marker: {marker}")
+
+binary_sensor_text = read_text(INTEGRATION / "binary_sensor.py")
+for marker in (
+    "class WNHFNativeOpeningState",
+    "house.enabled_openings",
+    "room_device_info(engine, opening.room_id)",
+    "BinarySensorDeviceClass.GARAGE_DOOR",
+    "access_object_snapshot",
+):
+    if marker not in binary_sensor_text:
+        fail(f"Missing native room opening marker: {marker}")
+
+lock_text = read_text(INTEGRATION / "lock.py")
+for marker in (
+    "class WNHFDoorLockEntity",
+    'action_id="openings.lock"',
+    'action_id="openings.unlock"',
+    "confirmed=True",
+    "room_device_info(engine, opening.room_id)",
+):
+    if marker not in lock_text:
+        fail(f"Missing native room lock marker: {marker}")
+
+for marker in (
+    "class WNHFCoverBladeButton",
+    "class WNHFDoorReleaseButton",
+    'action_id="openings.release"',
+    '"native_button_press"',
+):
+    if marker not in plant_button_text:
+        fail(f"Missing native room button marker: {marker}")
+
+cover_entity_text = read_text(INTEGRATION / "cover.py")
+for marker in (
+    "class WNHFGarageDoorEntity",
+    '"garage.open"',
+    '"garage.close"',
+    "CoverDeviceClass.GARAGE",
+    "async_execute_canonical",
+):
+    if marker not in cover_entity_text:
+        fail(f"Missing native garage/canonical cover marker: {marker}")
+
+light_entity_text = read_text(INTEGRATION / "light.py")
+for marker in (
+    "async_execute_canonical",
+    'action_id="lighting.turn_on"',
+    'action_id="lighting.turn_off"',
+):
+    if marker not in light_entity_text:
+        fail(f"Missing canonical native light marker: {marker}")
 
 entity_text = read_text(INTEGRATION / "entity.py")
 for marker in (
@@ -555,7 +620,7 @@ try:
     if len(set(plant_ids)) != 13:
         fail("Reference Plant Care registry contains duplicate plant IDs")
     if any(item.get("moisture_sensor_entity_id") for item in plants):
-        fail("RC9 reference plants must remain sensor-independent")
+        fail("RC10 reference plants must remain sensor-independent")
     intervals = {item.get("watering_interval_days") for item in plants}
     if intervals != {7, 14}:
         fail(f"Reference watering intervals changed: {sorted(intervals)}")
@@ -585,37 +650,37 @@ except Exception as exc:
 
 current_doc_markers = {
     ROOT / "README.md": (
-        "1.0.0-rc9",
+        "1.0.0-rc10",
         "plants.record_watering",
         "Plant Care",
     ),
     ROOT / "REPOSITORY_STATUS.md": (
-        "1.0.0-rc9",
-        "WP-4.7.15.0",
+        "1.0.0-rc10",
+        "WP-4.7.16.0",
         "Plant Care",
     ),
     ROOT / "docs" / "FEATURE_MATRIX.md": (
-        "1.0.0-rc9",
+        "1.0.0-rc10",
         "plants.snapshot",
         "plants.record_watering",
-        "record-watering buttons",
+        "Native room controls",
     ),
     ROOT / "docs" / "ROADMAP.md": (
-        "RC9",
+        "RC10",
         "Semantic Plant Care",
         "Climate / temperature semantics",
     ),
     ROOT / "docs" / "RELEASE_STATUS.md": (
-        "1.0.0-rc9",
+        "1.0.0-rc10",
         "LIVE VERIFIED",
     ),
     INTEGRATION / "README.md": (
-        "1.0.0-rc9",
+        "1.0.0-rc10",
         "plants.record_watering",
-        "record-watering buttons",
+        "native room surface",
     ),
     INTEGRATION / "docs" / "FEATURE_MATRIX.md": (
-        "1.0.0-rc9",
+        "1.0.0-rc10",
         "plants.record_watering",
     ),
 }
@@ -625,11 +690,11 @@ for path, markers in current_doc_markers.items():
     text = read_text(path)
     for marker in markers:
         if marker not in text:
-            fail(f"{path.relative_to(ROOT)} missing current RC9 marker: {marker}")
+            fail(f"{path.relative_to(ROOT)} missing current RC10 marker: {marker}")
 
-checksum_file = ROOT / "checksums" / "rc9_source.sha256"
+checksum_file = ROOT / "checksums" / "rc10_source.sha256"
 if not checksum_file.exists():
-    fail("Missing RC9 source checksum catalogue: checksums/rc9_source.sha256")
+    fail("Missing RC10 source checksum catalogue: checksums/rc10_source.sha256")
 else:
     checksum_paths: list[str] = []
     for line_number, line in enumerate(
@@ -658,7 +723,7 @@ else:
         if path.is_file() and "__pycache__" not in path.parts
     )
     if checksum_paths != expected_source_paths:
-        fail("RC9 checksum catalogue must list every integration file exactly once")
+        fail("RC10 checksum catalogue must list every integration file exactly once")
 
 if (ROOT / "hacs.json").exists():
     fail("hacs.json is active, but this candidate remains pre-publication")
@@ -678,12 +743,14 @@ print(f"- services: {len(service_keys)}")
 print("- capabilities: 8")
 print("- semantic actions: 22")
 print("- canonical real contracts: 15")
+print("- native room completeness: openings/locks/garage/blades PASS")
+print("- native productive controls: canonical response bridge PASS")
 print("- plant care: persistent watering and native button contract PASS")
 print("- context entity: recorder-bounded attributes PASS")
 print("- cover blades: dispatch-scoped canonical contract PASS")
 print("- door opener: confirmed dispatch-scoped canonical contract PASS")
 print("- native notification routing/announcements: static contract PASS")
 print("- notifications: dispatch-scoped qualification guard PASS")
-print("- RC9 LF-normalized source checksums: PASS")
+print("- RC10 LF-normalized source checksums: PASS")
 print(f"- Git whitespace hygiene: {git_whitespace_status}")
 print("- active HACS metadata: intentionally disabled")
