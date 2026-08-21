@@ -83,6 +83,7 @@ from .domain.house import House
 from .domain.house_state import HouseSnapshot, HouseState
 from .domain.light import Light
 from .domain.light_state import LightSnapshot
+from .domain.plant import PlantCareSnapshot
 from .domain.security import SecurityEngine, SecuritySnapshot
 from .domain.access_state import (
     AccessObjectSnapshot,
@@ -111,6 +112,7 @@ from .qualification import (
     ExecutionQualificationService,
     ProviderQualificationService,
 )
+from .plant_care import PlantWateringHistoryStore
 from .providers import (
     ProviderDiscovery,
     UnifiedProviderDiagnostics,
@@ -140,6 +142,7 @@ from .const import (
     CAPABILITY_EXECUTION_ENGINE,
     CAPABILITY_LIGHTING,
     CAPABILITY_OPENINGS,
+    CAPABILITY_PLANTS,
     CAPABILITY_SECURITY,
     CAPABILITY_VALIDATION,
     MODULE_CORE,
@@ -154,6 +157,7 @@ from .const import (
     MODULE_DIAGNOSTICS,
     MODULE_LIGHTING,
     MODULE_OPENINGS,
+    MODULE_PLANTS,
     MODULE_SECURITY,
     MODULE_VALIDATOR,
     VERSION,
@@ -227,6 +231,7 @@ from .const import (
     REGISTRY_TYPE_LIGHTS,
     REGISTRY_TYPE_ROOMS,
     REGISTRY_TYPE_OPENINGS,
+    REGISTRY_TYPE_PLANTS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -279,6 +284,16 @@ class WNHFEngine:
                 )
             )
         )
+        self.plant_watering_history_store = PlantWateringHistoryStore(
+            Path(
+                hass.config.path(
+                    "wnhf",
+                    "plant_care",
+                    "watering_history.json",
+                )
+            )
+        )
+        self._plant_care_lock = asyncio.Lock()
         self.execution_qualification_collector = (
             ExecutionQualificationCollector()
         )
@@ -808,6 +823,7 @@ class WNHFEngine:
     async def async_prepare_runtime(self) -> None:
         """Prepare blocking-backed runtime resources asynchronously."""
         await self.execution_evidence_store.async_load(self.hass)
+        await self.plant_watering_history_store.async_load(self.hass)
 
     async def async_load_registry(self) -> House:
         """Load the registry, build the House model, and record diagnostics."""
@@ -3718,6 +3734,7 @@ class WNHFEngine:
                 ),
                 "covers": diagnostics.cover_count,
                 "openings": diagnostics.opening_count,
+                "plants": diagnostics.plant_count,
                 "decisions": decision_count,
                 "policies": policy_count,
                 "registry_status": diagnostics.registry_status,
@@ -5226,6 +5243,7 @@ class WNHFEngine:
         light_count = len(house.lights) if house is not None else 0
         opening_count = len(house.openings) if house is not None else 0
         cover_count = len(house.covers) if house is not None else 0
+        plant_count = len(house.plants) if house is not None else 0
         enabled_light_count = (
             len(house.enabled_lights) if house is not None else 0
         )
@@ -5264,6 +5282,7 @@ class WNHFEngine:
             CAPABILITY_SECURITY: registry_loaded,
             CAPABILITY_COVERS: registry_loaded,
             CAPABILITY_GARAGE: registry_loaded,
+            CAPABILITY_PLANTS: registry_loaded,
             CAPABILITY_DIAGNOSTICS: True,
             CAPABILITY_VALIDATION: registry_loaded,
         }
@@ -5389,7 +5408,13 @@ class WNHFEngine:
                 module_id=MODULE_CORE,
                 version=VERSION,
                 status="running" if registry_loaded else "error",
-                objects=room_count + light_count + opening_count + cover_count,
+                objects=(
+                    room_count
+                    + light_count
+                    + opening_count
+                    + cover_count
+                    + plant_count
+                ),
                 services=("reload_registry", "list_registry", "get_object"),
                 entities=(),
             ),
@@ -5455,6 +5480,27 @@ class WNHFEngine:
                     for cover in house.enabled_covers
                 ) if house is not None else (),
             ),
+            MODULE_PLANTS: ModuleDiagnostic(
+                module_id=MODULE_PLANTS,
+                version=VERSION,
+                status=(
+                    "running"
+                    if registry_loaded
+                    else "error"
+                ),
+                objects=plant_count,
+                services=("plants_snapshot",),
+                entities=tuple(
+                    entity_id
+                    for plant in house.enabled_plants
+                    for entity_id in (
+                        "sensor.wnhf_plant_care_"
+                        + plant.object_id.removeprefix("plant.").replace(".", "_"),
+                        "button.wnhf_plant_water_"
+                        + plant.object_id.removeprefix("plant.").replace(".", "_"),
+                    )
+                ) if house is not None else (),
+            ),
             MODULE_VALIDATOR: ModuleDiagnostic(
                 module_id=MODULE_VALIDATOR,
                 version=VERSION,
@@ -5512,6 +5558,7 @@ class WNHFEngine:
             light_count=light_count,
             opening_count=opening_count,
             cover_count=cover_count,
+            plant_count=plant_count,
             enabled_light_count=enabled_light_count,
             controllable_light_count=controllable_light_count,
             warning_count=warning_count,
@@ -5532,6 +5579,8 @@ class WNHFEngine:
             objects = house.list_openings()
         elif registry_type == REGISTRY_TYPE_COVERS:
             objects = house.list_covers()
+        elif registry_type == REGISTRY_TYPE_PLANTS:
+            objects = house.list_plants()
         else:
             raise ValueError(f"Unsupported registry type: {registry_type}")
 
@@ -5553,7 +5602,91 @@ class WNHFEngine:
             result["runtime"] = self.cover_snapshot(object_id).as_dict()
         elif result.get("object_type") == "light":
             result["runtime"] = self.light_snapshot(object_id).as_dict()
+        elif result.get("object_type") == "plant":
+            result["runtime"] = self.plant_care_snapshot(object_id).as_dict()
         return result
+
+    def plant_care_snapshot(
+        self,
+        plant_id: str,
+        *,
+        generated_at: datetime | None = None,
+    ) -> PlantCareSnapshot:
+        """Return interval/history-based care state for one plant."""
+        plant = self._require_house().plant(plant_id)
+        events = self.plant_watering_history_store.events_for(plant_id)
+        last_event = events[-1] if events else None
+        return PlantCareSnapshot(
+            plant=plant,
+            generated_at=generated_at or datetime.now(UTC),
+            last_watered_at=(
+                last_event.recorded_at if last_event is not None else None
+            ),
+            watering_count=len(events),
+        )
+
+    def plants_snapshot(self) -> dict[str, Any]:
+        """Return current Plant Care state without inventing history."""
+        generated_at = datetime.now(UTC)
+        plants = [
+            self.plant_care_snapshot(
+                plant.object_id,
+                generated_at=generated_at,
+            ).as_dict()
+            for plant in sorted(
+                self._require_house().plants.values(),
+                key=lambda item: (item.room_id, item.name, item.object_id),
+            )
+        ]
+        counts = {
+            status: sum(item["status"] == status for item in plants)
+            for status in ("unknown", "ok", "due", "overdue")
+        }
+        return {
+            "api_version": "1.0",
+            "generated_at": generated_at.isoformat(),
+            "count": len(plants),
+            "enabled_count": sum(item["enabled"] for item in plants),
+            "status_counts": counts,
+            "plants": plants,
+            "history_store": self.plant_watering_history_store.snapshot(),
+        }
+
+    async def async_record_plant_watering(
+        self,
+        plant_id: str,
+    ) -> dict[str, Any]:
+        """Persist and verify one real manual watering event."""
+        self._require_house().plant(plant_id)
+        async with self._plant_care_lock:
+            recorded_at = datetime.now(UTC)
+            event = self.plant_watering_history_store.append(
+                plant_id,
+                recorded_at,
+            )
+            try:
+                await self.hass.async_add_executor_job(
+                    partial(
+                        self.plant_watering_history_store.persist,
+                        last_write_at=recorded_at.isoformat(),
+                    )
+                )
+            except Exception:
+                # Restore the last known persistent state after a failed write.
+                await self.plant_watering_history_store.async_load(self.hass)
+                raise
+
+            verified = self.plant_watering_history_store.last_for(plant_id)
+            if verified is None or verified.event_id != event.event_id:
+                raise RuntimeError(
+                    "Persisted watering event could not be verified"
+                )
+        return {
+            "event": event.as_dict(),
+            "plant": self.plant_care_snapshot(plant_id).as_dict(),
+            "verification_scope": "state",
+            "persistent": True,
+        }
 
     async def async_lighting_all_off(self) -> dict[str, Any]:
         """Switch off all controllable lights that currently report on."""

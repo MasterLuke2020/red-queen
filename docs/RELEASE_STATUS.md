@@ -2,11 +2,11 @@
 
 ## Current candidate
 
-**Red Queen 1.0.0-rc8 — LIVE VERIFIED**
+**Red Queen 1.0.0-rc9 — LIVE VERIFIED**
 
-RC8 is based on the published, live-verified RC7 baseline and adds WP-4.7.14.0
-Canonical Cover Blades / Electric Door Release. Existing lighting, directional cover,
-garage, door lock/unlock and notification behavior is intentionally preserved.
+RC9 is based on the published, live-verified RC8 baseline and adds WP-4.7.15.0
+Semantic Plant Care Core. Existing lighting, cover, garage, opening and notification
+behavior is intentionally preserved.
 
 The inherited RC7 reference-installation baseline passed on 2026-08-20 with:
 
@@ -16,7 +16,7 @@ The inherited RC7 reference-installation baseline passed on 2026-08-20 with:
 - `error_count: 0`
 - `warning_count: 0`
 
-RC8 live qualification passed on 2026-08-21 and verified:
+The inherited RC8 qualification passed on 2026-08-21 and verified:
 
 - blade open and blade close on one reference venetian blind;
 - moving-cover rejection without a blade pulse;
@@ -24,6 +24,17 @@ RC8 live qualification passed on 2026-08-21 and verified:
 - missing-confirmation and open-door rejection without a pulse;
 - dispatch-scoped evidence with `hardware_verified: false` for blades and release;
 - final health 100 with no Red Queen errors or warnings.
+
+The RC9 qualification passed on 2026-08-21 and verified:
+
+- all 13 configured plants load with native room-attached sensors and buttons;
+- plants without history remain `unknown` without invented timestamps;
+- the office dragon tree changed to `ok` after exactly one canonical button event;
+- state-scoped evidence persisted without claiming hardware verification;
+- `EXE-203` unknown-target and `EXE-204` invalid-parameter guards wrote no history;
+- watering history, due time and sensor state survived a full restart;
+- the bounded Context sensor produced no Recorder oversized-attribute warning;
+- final runtime health was 100 with no Red Queen errors or warnings.
 
 ## RC policy
 

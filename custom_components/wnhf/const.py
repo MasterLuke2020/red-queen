@@ -5,9 +5,9 @@ from __future__ import annotations
 DOMAIN = "wnhf"
 PRODUCT_NAME = "Red Queen"
 DEVELOPMENT_NAME = "WNHF"
-DEVELOPMENT_BASELINE_VERSION = "1.34.0"
-RELEASE_BASELINE = "WP-4.7.14.0"
-VERSION = "1.0.0-rc8"
+DEVELOPMENT_BASELINE_VERSION = "1.35.0"
+RELEASE_BASELINE = "WP-4.7.15.0"
+VERSION = "1.0.0-rc9"
 
 DATA_ENGINE = "engine"
 
@@ -27,7 +27,7 @@ EVENT_REGISTRY_LOADED = "wnhf_registry_loaded"
 
 
 # Entity platforms exposed by the YAML-configured integration.
-PLATFORMS = ("binary_sensor", "sensor", "cover", "light")
+PLATFORMS = ("binary_sensor", "sensor", "cover", "light", "button")
 
 # Dispatcher signal emitted after a successful registry reload.
 SIGNAL_REGISTRY_RELOADED = "wnhf_registry_reloaded"
@@ -62,23 +62,30 @@ REGISTRY_TYPE_ROOMS = "rooms"
 REGISTRY_TYPE_LIGHTS = "lights"
 REGISTRY_TYPE_OPENINGS = "openings"
 REGISTRY_TYPE_COVERS = "covers"
+REGISTRY_TYPE_PLANTS = "plants"
 
 COVERS_FILE = "covers.yaml"
 MODULE_COVERS = "covers"
 CAPABILITY_COVERS = "covers"
 CAPABILITY_GARAGE = "garage"
 CAPABILITY_NOTIFICATIONS = "notifications"
+CAPABILITY_PLANTS = "plants"
 NOTIFICATION_TARGETS_FILE = "notification_targets.yaml"
 
 OPENINGS_FILE = "openings.yaml"
 MODULE_OPENINGS = "openings"
+MODULE_PLANTS = "plants"
 CAPABILITY_OPENINGS = "openings"
 SUPPORTED_REGISTRY_TYPES = (
     REGISTRY_TYPE_ROOMS,
     REGISTRY_TYPE_LIGHTS,
     REGISTRY_TYPE_OPENINGS,
     REGISTRY_TYPE_COVERS,
+    REGISTRY_TYPE_PLANTS,
 )
+
+SERVICE_PLANTS_SNAPSHOT = "plants_snapshot"
+SIGNAL_PLANTS_UPDATED = "wnhf_plants_updated"
 
 
 
@@ -321,10 +328,10 @@ RELEASE_INFO_API_VERSION = "1.1"
 PUBLIC_API_REGISTRY_VERSION = "1.1"
 QUALIFICATION_API_VERSION = "1.1"
 UPGRADE_CHECK_API_VERSION = "1.1"
-# Red Queen 1.0.0-rc8 is the eighth explicitly assigned public release candidate.
-RELEASE_CANDIDATE = "rc8"
+# Red Queen 1.0.0-rc9 is the ninth explicitly assigned public release candidate.
+RELEASE_CANDIDATE = "rc9"
 CANONICAL_EXECUTION_API_VERSION = "1.0"
-CANONICAL_EXECUTION_CONTRACT_VERSION = "2.0-rc8"
+CANONICAL_EXECUTION_CONTRACT_VERSION = "2.1-rc9"
 LEGACY_PUBLIC_EXECUTION_API_VERSION = "1.3"
 # Compatibility name now follows the canonical public execution entry.
 PUBLIC_EXECUTION_API_VERSION = CANONICAL_EXECUTION_API_VERSION
@@ -477,7 +484,7 @@ CAPABILITY_MANAGER_READ_ONLY = True
 SERVICE_EXECUTION_MANAGER = "execution_manager"
 SERVICE_EXECUTION_ACTION = "execution_action"
 SIGNAL_EXECUTION_MANAGER_UPDATED = "wnhf_execution_manager_updated"
-GENERIC_EXECUTION_MANAGER_VERSION = "1.8-rc8"
+GENERIC_EXECUTION_MANAGER_VERSION = "1.9-rc9"
 GENERIC_EXECUTION_ENABLED = True
 GENERIC_EXECUTION_READ_ONLY = False
 
@@ -485,7 +492,7 @@ GENERIC_EXECUTION_READ_ONLY = False
 # Generic Execution Contract & Dry-Run - WP-4.7.2
 SERVICE_EXECUTION_DRY_RUN = "execution_dry_run"
 SIGNAL_EXECUTION_DRY_RUN_UPDATED = "wnhf_execution_dry_run_updated"
-GENERIC_EXECUTION_CONTRACT_VERSION = "1.9-rc8"
+GENERIC_EXECUTION_CONTRACT_VERSION = "2.0-rc9"
 GENERIC_EXECUTION_DRY_RUN_ENABLED = True
 GENERIC_EXECUTION_HARDWARE_ENABLED = True
 
@@ -493,7 +500,7 @@ GENERIC_EXECUTION_HARDWARE_ENABLED = True
 # First Real Generic Execution - WP-4.7.3
 SERVICE_EXECUTION_EXECUTE = "execution_execute"
 SIGNAL_EXECUTION_EXECUTE_UPDATED = "wnhf_execution_execute_updated"
-GENERIC_REAL_EXECUTION_VERSION = "2.0-rc8"
+GENERIC_REAL_EXECUTION_VERSION = "2.1-rc9"
 GENERIC_REAL_EXECUTION_ENABLED = True
 GENERIC_REAL_EXECUTION_ACTIONS = (
     "lighting.turn_on",
@@ -510,6 +517,7 @@ GENERIC_REAL_EXECUTION_ACTIONS = (
     "notifications.send",
     "notifications.announce",
     "notifications.route",
+    "plants.record_watering",
 )
 
 

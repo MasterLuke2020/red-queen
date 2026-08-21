@@ -4,6 +4,23 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0-rc9 candidate — WP-4.7.15.0
+
+#### Added
+
+- Optional semantic `plants.yaml` registry with 13 Weidnerhome reference plants.
+- `plants.snapshot`, `wnhf.plants_snapshot`, one Home Assistant sensor and one
+  canonical record-watering button per plant.
+- Canonical `plants.record_watering` with atomic persistent watering history.
+- `unknown`, `ok`, `due` and `overdue` interval/history states.
+
+#### Safety and qualification
+
+- No fictional initial watering timestamp is generated.
+- State-scoped success proves persistence but not physical watering or soil moisture.
+- Unknown targets and unexpected parameters reject before the history is changed.
+- Climate control remains deliberately deferred.
+
 ### 1.0.0-rc8 candidate — WP-4.7.14.0
 
 #### Added

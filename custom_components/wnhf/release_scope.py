@@ -52,7 +52,7 @@ class DiagnosticClassification:
 class ReleaseScopeManager:
     """Central immutable Red Queen release-candidate profile and warning classifier."""
 
-    VERSION = "2.8-rc8"
+    VERSION = "2.9-rc9"
     CHANNEL = RELEASE_CHANNEL
     PHASE = RELEASE_PHASE
 
@@ -184,6 +184,15 @@ class ReleaseScopeManager:
                 "canonical non-idempotent notifications.send dispatch, native "
                 "notifications.announce TTS playback and context-aware "
                 "notifications.route channel fan-out."
+            ),
+        ),
+        "plants": DomainReleaseState(
+            "plants",
+            LifecycleStage.ACTIVE,
+            True,
+            (
+                "Optional semantic plant registry, dashboard sensors and "
+                "persistent manual watering history."
             ),
         ),
         "garage": DomainReleaseState(

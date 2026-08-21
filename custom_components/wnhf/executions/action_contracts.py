@@ -246,6 +246,13 @@ _CANONICAL_ACTION_CONTRACTS = {
         ),
         required_parameter_keys=("message",),
     ),
+    "plants.record_watering": CanonicalActionExecutionContract(
+        action_id="plants.record_watering",
+        target_mode="single_object",
+        required_target_keys=("object_id",),
+        allowed_target_keys=("object_id",),
+        allowed_parameter_keys=(),
+    ),
 }
 
 REAL_EXECUTION_ENABLED_ACTIONS = frozenset(_CANONICAL_ACTION_CONTRACTS)

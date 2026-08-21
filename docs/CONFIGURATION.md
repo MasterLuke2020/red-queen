@@ -9,7 +9,8 @@ Red Queen keeps its technical configuration namespace under `/config/wnhf` for c
 ├── rooms.yaml
 ├── lights.yaml
 ├── covers.yaml
-└── openings.yaml
+├── openings.yaml
+└── plants.yaml               # optional
 ```
 
 All registry files use YAML dictionaries at the root and stable semantic object IDs.
@@ -79,6 +80,84 @@ Canonical garage open/close, door lock/unlock and confirmed electric door releas
 should use `wnhf.execution_execute` for new automations. A door intended for
 `openings.release` requires `door_opener.enabled: true`, a command entity and an
 available state contact that proves the door is closed before dispatch.
+
+## Plant Care
+
+`plants.yaml` is optional. When absent, existing installations continue without a
+Plant Care domain. When present, its root `plants:` list accepts:
+
+- `id` — required stable semantic ID beginning with `plant.`;
+- `name` — required display name;
+- `species` — required botanical species/variety string;
+- `room` — required existing semantic room ID;
+- `location` — required installation description;
+- `watering_interval_days` — required positive integer;
+- `enabled` — optional boolean, default `true`;
+- `moisture_sensor_entity_id` — reserved optional field; RC9 does not evaluate it.
+
+Example:
+
+```yaml
+plants:
+  - id: plant.eg.office.dragon_tree
+    name: Drachenbaum Büro
+    species: Dracaena marginata
+    room: house.eg.office
+    location: Büro
+    watering_interval_days: 14
+    enabled: true
+```
+
+Copy the prepared Weidnerhome registry from `configuration/plants.yaml` to
+`/config/wnhf/house/registry/plants.yaml`. Red Queen does not create a fictional
+initial watering date. Until the first real event, the plant sensor state is
+`unknown`.
+
+Read all plants with `wnhf.plants_snapshot`. Record a real manual watering event
+through the canonical execution surface:
+
+```yaml
+action: wnhf.execution_execute
+data:
+  action_id: plants.record_watering
+  target:
+    object_id: plant.eg.office.dragon_tree
+  parameters: {}
+```
+
+The event is atomically persisted at
+`/config/wnhf/plant_care/watering_history.json`. Each enabled plant exposes a
+`sensor.wnhf_plant_care_*` entity with status `unknown`, `ok`, `due` or `overdue`
+and a `button.wnhf_plant_water_*` entity. Pressing the button invokes the same
+canonical `plants.record_watering` action; it does not bypass validation,
+qualification or persistent read-after-write verification. The sensor exposes
+attributes for species, room, location, interval, last watering, due time, days
+until due and watering count. `verification_scope: state` proves only the persistent
+history mutation; it does not prove physical watering or soil moisture.
+
+Both entities are attached to the existing Red Queen room device identified by the
+plant's `room` field. They therefore appear beside the room's native light and cover
+entities instead of under a central Plant Care device.
+
+For a dashboard, add the native button with an explicit confirmation to protect the
+non-idempotent history event from accidental taps:
+
+```yaml
+type: button
+entity: button.wnhf_plant_water_eg_office_dragon_tree
+name: Record watering – Drachenbaum Büro
+icon: mdi:watering-can
+tap_action:
+  action: perform-action
+  perform_action: button.press
+  target:
+    entity_id: button.wnhf_plant_water_eg_office_dragon_tree
+  confirmation:
+    text: Has Drachenbaum Büro actually been watered?
+```
+
+Do not press the entity button and issue a direct canonical request for the same
+physical watering: each successful invocation intentionally appends one event.
 
 ## Notification targets
 

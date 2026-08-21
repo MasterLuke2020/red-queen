@@ -1,7 +1,7 @@
 contract:
   id: wnhf.execution_manager
   version: '1.1'
-  implementation: 1.8-rc8
+  implementation: 1.9-rc9
 execution_enabled: true
 read_only: false
 readiness_dimensions:
@@ -9,8 +9,8 @@ readiness_dimensions:
 - semantically_ready
 - real_execution_enabled
 - executable_now
-capability_count: 7
-semantic_action_count: 20
+capability_count: 8
+semantic_action_count: 22
 real_execution_enabled_actions:
 - lighting.turn_on
 - lighting.turn_off
@@ -26,6 +26,7 @@ real_execution_enabled_actions:
 - notifications.send
 - notifications.announce
 - notifications.route
+- plants.record_watering
 semantic_ready_only_actions: []
 public_actions:
 - wnhf.execution_manager

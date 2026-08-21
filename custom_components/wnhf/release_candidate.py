@@ -32,7 +32,7 @@ from .release_scope import ReleaseScopeManager
 class ReleaseProfile:
     """Immutable product metadata for the Red Queen 1.0 release candidate."""
 
-    VERSION = "2.9-rc8"
+    VERSION = "3.0-rc9"
     CHANNEL = RELEASE_CHANNEL
     PHASE = RELEASE_PHASE
     CANDIDATE = RELEASE_CANDIDATE
@@ -88,6 +88,7 @@ class ReleaseProfile:
         "execution_action",
         "execution_qualification",
         "execution_runtime_health",
+        "plants_snapshot",
     )
 
     LEGACY_OR_DEVELOPMENT_SERVICES = (
@@ -140,7 +141,7 @@ class ReleaseProfile:
             "classified_total": len(flattened),
             "unique_total": len(set(flattened)),
             "duplicates": duplicates,
-            "complete": len(flattened) == len(set(flattened)) == 66,
+            "complete": len(flattened) == len(set(flattened)) == 67,
         }
 
     @classmethod

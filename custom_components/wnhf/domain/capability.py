@@ -136,6 +136,8 @@ class CapabilityCatalog:
             CapabilityDefinition("covers.close", "covers", "close", a, "Close cover.", True, True),
             CapabilityDefinition("covers.blades_open", "covers", "blades_open", a, "Open slats.", True, False),
             CapabilityDefinition("covers.blades_close", "covers", "blades_close", a, "Close slats.", True, False),
+            CapabilityDefinition("plants.monitor_care", "plants", "monitor_care", m, "Read interval/history care state.", False, True),
+            CapabilityDefinition("plants.record_watering", "plants", "record_watering", a, "Persist manual watering event.", True, True),
         ))
 
 

@@ -1,4 +1,4 @@
-# Known Limitations and Deliberate RC8 Candidate Boundaries
+# Known Limitations and Deliberate RC9 Candidate Boundaries
 
 ## Canonical execution remains intentionally bounded
 
@@ -8,9 +8,20 @@ blade open/close, confirmed electric door release, notification dispatch, native
 announcements and notification routing. Other
 semantic/read capabilities do not automatically imply productive actuation.
 
+## Plant Care
+
+RC9 uses configured care intervals and persistent manual watering history. It does
+not infer an initial watering time, evaluate soil moisture, adjust intervals for
+season/light/climate, or automatically dispatch reminders. A successful
+`plants.record_watering` result proves the persistent state event only; it does not
+prove that a person physically watered the plant.
+The per-plant button is deliberately non-idempotent: every successful press appends
+one history event. Red Queen cannot distinguish an intentional second watering from
+an accidental second press, so dashboard confirmation is recommended.
+
 ## Notifications
 
-RC8 inherits the live-verified `notifications.send`, `notifications.announce` and
+RC9 inherits the live-verified `notifications.send`, `notifications.announce` and
 `notifications.route` contracts. Installation-specific targets require explicit registry
 configuration; Red Queen deliberately does not auto-select speakers or recipients.
 Context-aware voice routing currently consumes optional configured Home Assistant

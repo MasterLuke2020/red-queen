@@ -1,0 +1,110 @@
+schema_version: "1.0"
+
+# Installation-owned Plant Care registry for the Weidnerhome reference system.
+# Copy to /config/wnhf/house/registry/plants.yaml. Red Queen never invents an
+# initial watering timestamp; every plant remains "unknown" until its first
+# plants.record_watering event is recorded.
+plants:
+  - id: plant.eg.office.dragon_tree
+    name: Drachenbaum Büro
+    species: Dracaena marginata
+    room: house.eg.office
+    location: Büro
+    watering_interval_days: 14
+    enabled: true
+
+  - id: plant.eg.dining.areca_palm_1
+    name: Goldfruchtpalme Esszimmer 1
+    species: Dypsis lutescens
+    room: house.eg.dining
+    location: Esszimmer, heller Fensterplatz
+    watering_interval_days: 7
+    enabled: true
+
+  - id: plant.eg.dining.areca_palm_2
+    name: Goldfruchtpalme Esszimmer 2
+    species: Dypsis lutescens
+    room: house.eg.dining
+    location: Esszimmer, heller Fensterplatz
+    watering_interval_days: 7
+    enabled: true
+
+  - id: plant.eg.dining.areca_palm_3
+    name: Goldfruchtpalme Esszimmer 3
+    species: Dypsis lutescens
+    room: house.eg.dining
+    location: Esszimmer, heller Fensterplatz
+    watering_interval_days: 7
+    enabled: true
+
+  - id: plant.eg.kitchen.sago_palm
+    name: Palmfarn Küche
+    species: Cycas revoluta
+    room: house.eg.kitchen
+    location: Küche, heller Standort
+    watering_interval_days: 14
+    enabled: true
+
+  - id: plant.og.gallery.yucca_1
+    name: Yucca-Palme Galerie 1
+    species: Yucca gigantea
+    room: house.og.gallery
+    location: Galerie
+    watering_interval_days: 14
+    enabled: true
+
+  - id: plant.og.gallery.yucca_2
+    name: Yucca-Palme Galerie 2
+    species: Yucca gigantea
+    room: house.og.gallery
+    location: Galerie, am Fenster
+    watering_interval_days: 14
+    enabled: true
+
+  - id: plant.og.hobby_room.yucca_1
+    name: Yucca-Palme Hobbyraum 1
+    species: Yucca gigantea
+    room: house.og.hobby_room
+    location: Hobbyraum
+    watering_interval_days: 14
+    enabled: true
+
+  - id: plant.og.hobby_room.yucca_2
+    name: Yucca-Palme Hobbyraum 2
+    species: Yucca gigantea
+    room: house.og.hobby_room
+    location: Hobbyraum
+    watering_interval_days: 14
+    enabled: true
+
+  - id: plant.og.bathroom.ivy_1
+    name: Efeu Bad 1
+    species: Hedera helix, panaschierte Sorte
+    room: house.og.bathroom
+    location: Bad, oberhalb der Dusche
+    watering_interval_days: 7
+    enabled: true
+
+  - id: plant.og.bathroom.ivy_2
+    name: Efeu Bad 2
+    species: Hedera helix, panaschierte Sorte
+    room: house.og.bathroom
+    location: Bad, oberhalb der Dusche
+    watering_interval_days: 7
+    enabled: true
+
+  - id: plant.og.bathroom.ivy_3
+    name: Efeu Bad 3
+    species: Hedera helix, panaschierte Sorte
+    room: house.og.bathroom
+    location: Bad, oberhalb der Dusche
+    watering_interval_days: 7
+    enabled: true
+
+  - id: plant.og.bathroom.ivy_4
+    name: Efeu Bad 4
+    species: Hedera helix, panaschierte Sorte
+    room: house.og.bathroom
+    location: Bad, oberhalb der Dusche
+    watering_interval_days: 7
+    enabled: true

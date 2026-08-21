@@ -47,6 +47,7 @@ class DiagnosticsSnapshot:
     light_count: int
     opening_count: int
     cover_count: int
+    plant_count: int
     enabled_light_count: int
     controllable_light_count: int
     warning_count: int

@@ -1,145 +1,103 @@
-# Red Queen 1.0.0-rc8 — Installation and live qualification
+# Red Queen 1.0.0-rc9 — Installation and live qualification
 
-Status: static verified for WP-4.7.14.0. Reference-installation live qualification
-is required before publication.
+Status: static verification and reference-installation live qualification required
+for WP-4.7.15.0.
 
-## 1. Back up the current installation
+## 1. Back up the installation
 
-Back up these paths before replacing anything:
+Back up `/config/custom_components/wnhf` and `/config/wnhf`. RC9 never overwrites
+installation-owned registry data automatically.
 
-- `/config/custom_components/wnhf`
-- `/config/wnhf/house/registry/covers.yaml`
-- `/config/wnhf/house/registry/openings.yaml`
-- `/config/wnhf/house/registry/notification_targets.yaml`, if present
+## 2. Add the Plant Care registry
 
-RC8 does not require new helper scripts or automations.
+Copy repository file `configuration/plants.yaml` to:
 
-## 2. Registry requirements
-
-Every cover intended for canonical blade execution requires:
-
-```yaml
-commands:
-  blades_open_entity_id: button.example_blades_open
-  blades_close_entity_id: button.example_blades_close
-capabilities:
-  - blades_open
-  - blades_close
+```text
+/config/wnhf/house/registry/plants.yaml
 ```
 
-Objective blade-position feedback is not required.
-
-Every door intended for canonical electric release requires a normal state contact
-plus:
-
-```yaml
-door_opener:
-  enabled: true
-  command:
-    entity_id: button.example_door_opener
-```
-
-The state contact must provide a proven closed state before release is permitted.
+Do not create `/config/wnhf/plant_care/watering_history.json` manually. Red Queen
+creates it atomically after the first real `plants.record_watering` action. If the
+file does not exist, all plants correctly start as `unknown`.
 
 ## 3. Install the candidate
 
-1. Replace `/config/custom_components/wnhf` with the packaged
-   `custom_components/wnhf` directory.
-2. Keep the installation-owned registry files already verified for this house.
+1. Replace `/config/custom_components/wnhf` with the packaged RC9 integration.
+2. Preserve all other installation-owned `/config/wnhf` files.
 3. Restart Home Assistant completely.
-4. Open **Developer tools → Actions** for controlled tests.
+4. Open **Developer tools → Actions**.
 
 ## 4. Post-restart preflight
 
-Confirm that Red Queen reports:
+Confirm:
 
-- Red Queen `1.0.0-rc8`;
-- WNHF `1.34.0`;
-- release baseline `WP-4.7.14.0`;
-- phase name `Release Candidate 8`;
-- runtime ready with no Red Queen setup errors;
-- cover and openings capabilities resolved, available and healthy.
+- Red Queen `1.0.0-rc9`;
+- WNHF `1.35.0`;
+- release baseline `WP-4.7.15.0`;
+- phase name `Release Candidate 9`;
+- runtime ready, health 100 and no Red Queen errors/warnings;
+- `plants` capability resolved through `provider.core.plants`;
+- `wnhf.plants_snapshot` returns 13 plants and every plant is initially `unknown`
+  when no history file existed;
+- 13 `sensor.wnhf_plant_care_*` entities exist;
+- 13 `button.wnhf_plant_water_*` entities exist;
+- every plant sensor/button pair is attached to the configured Red Queen room
+  device, for example Drachenbaum Büro under `Red Queen Room (office)`.
 
-## 5. Cover blade dry-run
-
-```yaml
-action: wnhf.execution_dry_run
-data:
-  action_id: covers.blades_open
-  target:
-    object_id: cover.eg.bathroom_wc.main
-  parameters: {}
-```
-
-Expected: `EXE-100`, executable, no command sent and technical strategy
-`dispatch_scoped_blade_pulse`.
-
-Repeat with `covers.blades_close`.
-
-## 6. Cover blade real execution
-
-```yaml
-action: wnhf.execution_execute
-data:
-  action_id: covers.blades_open
-  target:
-    object_id: cover.eg.bathroom_wc.main
-  parameters: {}
-```
-
-Expected: `EXE-000`, exactly one configured command dispatch and visible blade
-movement. Repeat with `covers.blades_close`.
-
-Successful qualification must report `framework_verified: true`,
-`hardware_verified: false` and `verification_scope: dispatch`.
-
-## 7. Door release dry-run
+## 5. Dry-run
 
 ```yaml
 action: wnhf.execution_dry_run
 data:
-  action_id: openings.release
+  action_id: plants.record_watering
   target:
-    object_id: opening.eg.vestibule.door.courtyard
+    object_id: plant.eg.office.dragon_tree
   parameters: {}
-  confirmed: true
 ```
 
-Expected: `EXE-100`, executable, no pulse sent and technical strategy
-`confirmed_dispatch_scoped_momentary_pulse`.
+Expected: `EXE-100`, executable, no command sent, strategy
+`persistent_verified_state_event`, verification scope `state`.
 
-## 8. Door release real execution
+## 6. Record a real watering event
+
+Only perform this after the selected plant has actually been watered:
+
+Press the corresponding native button, for example
+`button.wnhf_plant_water_eg_office_dragon_tree`. The button routes through the
+same canonical `plants.record_watering` execution contract. Do not press the button
+and then also run the following service request for the same physical watering.
+
+The equivalent direct canonical request is:
 
 ```yaml
 action: wnhf.execution_execute
 data:
-  action_id: openings.release
+  action_id: plants.record_watering
   target:
-    object_id: opening.eg.vestibule.door.courtyard
+    object_id: plant.eg.office.dragon_tree
   parameters: {}
-  confirmed: true
 ```
 
-Expected: `EXE-000` and exactly one physically observable electric door-opener pulse.
-Repeat for `opening.eg.vestibule.door.street`.
+Expected: `EXE-000`, one persistent event, sensor changes to `ok`, watering count
+increments once, `framework_verified: true`, `hardware_verified: false`, and
+`verification_scope: state`.
 
-Successful qualification must report `framework_verified: true`,
-`hardware_verified: false` and `verification_scope: dispatch`.
+The button means **record watering completed**. It does not control irrigation and
+must only be pressed after a person has actually watered the plant.
 
-## 9. Guard tests
+## 7. Guard tests
 
-Verify without unintended commands:
+Dry-run an unknown semantic plant ID and a request with an unexpected parameter.
+Expected: `EXE-203` and `EXE-204` respectively, with no history change.
 
-- blade action while the selected cover is moving;
-- blade action for an unknown semantic target;
-- door release with `confirmed: false`;
-- door release while the selected door contact reports open;
-- door release for an unknown semantic target;
-- raw `button.*` or `cover.*` provider entity used as the semantic target.
+## 8. Persistence test
 
-## 10. Regression and final health
+Restart Home Assistant completely. Confirm that the recorded plant retains
+`last_watered_at`, `due_at`, status and watering count while all untouched plants
+remain `unknown`.
 
-Repeat representative lighting, directional cover, garage, lock/unlock and
-notification dry-runs. Confirm final system health 100, runtime ready and no Red
-Queen errors or warnings. Record every observed result in
-`docs/RC8_CANDIDATE_VALIDATION.md`.
+## 9. Regression and final health
+
+Repeat representative lighting, cover, garage, opening and notification dry-runs.
+Confirm final system health 100, runtime ready and no Red Queen errors or warnings.
+Record only observed results in `docs/RC9_CANDIDATE_VALIDATION.md`.

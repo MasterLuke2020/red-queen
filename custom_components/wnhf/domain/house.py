@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from .cover import Cover
 from .light import Light
 from .opening import Opening
+from .plant import Plant
 from .room import Room
 
 
@@ -20,6 +21,7 @@ class House:
     lights: dict[str, Light]
     openings: dict[str, Opening]
     covers: dict[str, Cover]
+    plants: dict[str, Plant]
 
     def room(self, room_id: str) -> Room:
         """Return a room by stable WNHF ID."""
@@ -45,6 +47,8 @@ class House:
             return self.openings[object_id]
         if object_id in self.covers:
             return self.covers[object_id]
+        if object_id in self.plants:
+            return self.plants[object_id]
         raise KeyError(f"Unknown WNHF object id: {object_id}")
 
     def list_rooms(self) -> list[dict]:
@@ -95,6 +99,27 @@ class House:
                 key=lambda item: (item.room_id, item.object_id),
             )
         ]
+
+    def plant(self, plant_id: str) -> Plant:
+        """Return a plant by stable Red Queen ID."""
+        try:
+            return self.plants[plant_id]
+        except KeyError as err:
+            raise KeyError(f"Unknown Red Queen plant id: {plant_id}") from err
+
+    def list_plants(self) -> list[dict]:
+        """Return all plants in stable room/name order."""
+        return [
+            plant.as_dict()
+            for plant in sorted(
+                self.plants.values(),
+                key=lambda item: (item.room_id, item.name, item.object_id),
+            )
+        ]
+
+    @property
+    def enabled_plants(self) -> tuple[Plant, ...]:
+        return tuple(plant for plant in self.plants.values() if plant.enabled)
 
     @property
     def enabled_covers(self) -> tuple[Cover, ...]:

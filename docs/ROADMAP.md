@@ -5,25 +5,24 @@ The roadmap is directional rather than a promise of exact release numbers or dat
 ## 1.0 release-candidate line
 
 The 1.0 RC line expands only through bounded, independently qualified capability
-packets. RC8 candidate WP-4.7.14.0 promotes the existing venetian-blind blade and
-electric door-opener commands into the canonical execution surface on top of the
-live-verified RC7 baseline.
+packets. RC9 candidate WP-4.7.15.0 introduces Semantic Plant Care on top of the
+live-verified RC8 baseline.
 
 ## Next candidates
 
-### Door opener and cover blades
+### Door opener and cover blades — completed in RC8
 
 WP-4.7.14.0 adds `openings.release`, `covers.blades_open` and
 `covers.blades_close`. Door release is explicitly confirmed and closed-door guarded;
 all three actions use dispatch-scoped qualification where the final physical effect
 is not objectively observable.
 
-### Semantic Plant Care
+### Semantic Plant Care — RC9 candidate
 
-Introduce semantic plant objects with species, room/location, watering history and
-species-dependent care intervals. Later extensions may incorporate season, indoor
-climate, light conditions, soil-moisture sensors, fertilizing, repotting and
-vacation-aware care reminders.
+RC9 introduces semantic plant objects with species, room/location, persistent
+watering history, care intervals and dashboard-ready sensors. Later extensions may
+incorporate season, indoor climate, light conditions, soil-moisture sensors,
+fertilizing, repotting and vacation-aware care reminders.
 
 ### Configuration and commissioning
 

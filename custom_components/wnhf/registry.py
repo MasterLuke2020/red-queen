@@ -11,6 +11,7 @@ from .domain.cover import Cover
 from .domain.house import House
 from .domain.light import Light
 from .domain.opening import DoorLock, DoorOpener, GarageDoor, Opening
+from .domain.plant import Plant
 from .domain.room import Room
 
 
@@ -665,6 +666,91 @@ def _load_openings(
     return openings, warnings
 
 
+def _load_plants(
+    path: Path,
+    rooms: dict[str, Room],
+) -> tuple[dict[str, Plant], list[str]]:
+    """Load the optional, installation-owned plant registry."""
+    if not path.is_file():
+        return {}, []
+
+    raw = _load_yaml(path)
+    plant_list = raw.get("plants")
+    if not isinstance(plant_list, list):
+        raise WNHFRegistryError(f"'plants' in {path} must be a list")
+
+    plants: dict[str, Plant] = {}
+    warnings: list[str] = []
+    for index, item in enumerate(plant_list, start=1):
+        if not isinstance(item, dict):
+            raise WNHFRegistryError(f"Plant entry #{index} must be a dictionary")
+
+        object_id = item.get("id")
+        name = item.get("name")
+        species = item.get("species")
+        room_id = item.get("room")
+        location = item.get("location")
+        interval = item.get("watering_interval_days")
+        enabled = item.get("enabled", True)
+        moisture_sensor_entity_id = item.get("moisture_sensor_entity_id")
+
+        if not isinstance(object_id, str) or not object_id:
+            raise WNHFRegistryError(f"Plant entry #{index} has no valid 'id'")
+        if not object_id.startswith("plant."):
+            raise WNHFRegistryError(
+                f"Plant '{object_id}' must use the semantic 'plant.' ID prefix"
+            )
+        if object_id in plants:
+            raise WNHFRegistryError(f"Duplicate plant id: {object_id}")
+        if not isinstance(name, str) or not name:
+            raise WNHFRegistryError(f"Plant '{object_id}' has no valid 'name'")
+        if not isinstance(species, str) or not species:
+            raise WNHFRegistryError(f"Plant '{object_id}' has no valid 'species'")
+        if not isinstance(room_id, str) or room_id not in rooms:
+            raise WNHFRegistryError(
+                f"Plant '{object_id}' references unknown room '{room_id}'"
+            )
+        if not isinstance(location, str) or not location:
+            raise WNHFRegistryError(f"Plant '{object_id}' has no valid 'location'")
+        if not isinstance(interval, int) or isinstance(interval, bool) or interval < 1:
+            raise WNHFRegistryError(
+                f"Plant '{object_id}': watering_interval_days must be a "
+                "positive integer"
+            )
+        if not isinstance(enabled, bool):
+            raise WNHFRegistryError(
+                f"Plant '{object_id}': 'enabled' must be true or false"
+            )
+        if moisture_sensor_entity_id is not None and (
+            not isinstance(moisture_sensor_entity_id, str)
+            or not moisture_sensor_entity_id
+        ):
+            raise WNHFRegistryError(
+                f"Plant '{object_id}': invalid moisture_sensor_entity_id"
+            )
+
+        plant = Plant(
+            object_id=object_id,
+            name=name,
+            species=species,
+            room_id=room_id,
+            location=location,
+            watering_interval_days=interval,
+            enabled=enabled,
+            moisture_sensor_entity_id=moisture_sensor_entity_id,
+        )
+        plants[object_id] = plant
+        rooms[room_id].add_plant(plant)
+
+        if moisture_sensor_entity_id is not None:
+            warnings.append(
+                f"Plant '{object_id}' has a moisture sensor configured, but "
+                "RC9 uses interval/history status only."
+            )
+
+    return plants, warnings
+
+
 def load_house(registry_dir: Path) -> tuple[House, tuple[str, ...]]:
     """Load, validate, and build the WNHF house domain model."""
     rooms, rooms_raw = _load_rooms(registry_dir / "rooms.yaml")
@@ -675,7 +761,13 @@ def load_house(registry_dir: Path) -> tuple[House, tuple[str, ...]]:
         registry_dir / "openings.yaml", rooms
     )
     covers, cover_warnings = _load_covers(registry_dir / "covers.yaml", rooms)
-    warnings = [*light_warnings, *opening_warnings, *cover_warnings]
+    plants, plant_warnings = _load_plants(registry_dir / "plants.yaml", rooms)
+    warnings = [
+        *light_warnings,
+        *opening_warnings,
+        *cover_warnings,
+        *plant_warnings,
+    ]
 
     building = rooms_raw.get("building", {})
     house_id = building.get("id", "house")
@@ -694,6 +786,7 @@ def load_house(registry_dir: Path) -> tuple[House, tuple[str, ...]]:
             lights=lights,
             openings=openings,
             covers=covers,
+            plants=plants,
         ),
         tuple(warnings),
     )

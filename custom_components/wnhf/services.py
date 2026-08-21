@@ -29,6 +29,7 @@ from .const import (
     SERVICE_LIGHTING_ROOM_OFF,
     SERVICE_LIST_REGISTRY,
     SERVICE_RELOAD_REGISTRY,
+    SERVICE_PLANTS_SNAPSHOT,
     SERVICE_VALIDATE_REGISTRY,
     SERVICE_HOUSE_SNAPSHOT,
     SERVICE_ACCESS_SNAPSHOT,
@@ -132,6 +133,7 @@ from .const import (
     SIGNAL_MULTI_STEP_PLAN_UPDATED,
     SIGNAL_EXECUTION_CAPABILITIES_UPDATED,
     SIGNAL_MULTI_STEP_SIMULATION_UPDATED,
+    SIGNAL_PLANTS_UPDATED,
     SIGNAL_GENERIC_TRANSACTION_UPDATED,
     SIGNAL_REAL_STEP_UPDATED,
     SIGNAL_SEQUENTIAL_ROOM_UPDATED,
@@ -237,6 +239,11 @@ async def async_register_services(
 
     async def handle_get_object(call: ServiceCall) -> dict:
         return engine.get_object(call.data[ATTR_OBJECT_ID])
+
+    async def handle_plants_snapshot(call: ServiceCall) -> dict:
+        result = engine.plants_snapshot()
+        async_dispatcher_send(hass, SIGNAL_PLANTS_UPDATED)
+        return result
 
     async def handle_all_off(call: ServiceCall) -> dict:
         result = await engine.async_lighting_all_off()
@@ -870,6 +877,7 @@ async def async_register_services(
             "lights": len(house.lights),
             "covers": len(house.covers),
             "openings": len(house.openings),
+            "plants": len(house.plants),
             "warnings": list(engine.registry_warnings),
             "validation": report.as_dict(),
         }
@@ -886,6 +894,12 @@ async def async_register_services(
         SERVICE_GET_OBJECT,
         handle_get_object,
         schema=GET_OBJECT_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_PLANTS_SNAPSHOT,
+        handle_plants_snapshot,
         supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(

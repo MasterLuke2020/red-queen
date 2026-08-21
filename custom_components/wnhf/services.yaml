@@ -29,7 +29,12 @@ lighting_object_off:
 
 reload_registry:
   name: Reload registry
-  description: Reloads and validates rooms.yaml and lights.yaml without restarting Home Assistant.
+  description: Reloads and validates the Red Queen house registry without restarting Home Assistant.
+  fields: {}
+
+plants_snapshot:
+  name: Plant Care – Snapshot
+  description: Returns interval- and watering-history-based care state for all semantic plants.
   fields: {}
 
 
@@ -52,6 +57,8 @@ list_registry:
               value: openings
             - label: Covers
               value: covers
+            - label: Plants
+              value: plants
 
 get_object:
   name: Registry – Get object
@@ -584,7 +591,7 @@ execution_execute:
   fields:
     action_id:
       name: Action ID
-      description: Stable semantic action ID. The current real-execution surface additionally enables covers.blades_open, covers.blades_close, openings.release, notifications.send, notifications.announce and notifications.route.
+      description: Stable semantic action ID. The current real-execution surface additionally enables covers.blades_open, covers.blades_close, openings.release, notifications.send, notifications.announce, notifications.route and plants.record_watering.
       required: true
       example: lighting.turn_off
       selector:

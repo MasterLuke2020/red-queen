@@ -116,7 +116,9 @@ class ExecutionQualificationCollector:
         verification_scope = str(
             provider_result.get("verification_scope") or "effect"
         )
-        hardware_verified = verification_scope != "dispatch"
+        # Only an observed device/target effect qualifies as hardware-verified.
+        # "dispatch" and "state" prove framework actions, not physical effects.
+        hardware_verified = verification_scope == "effect"
 
         verified_at = datetime.now(UTC)
         evidence_id = f"auto.execution.{action_id}.{evidence_type}"

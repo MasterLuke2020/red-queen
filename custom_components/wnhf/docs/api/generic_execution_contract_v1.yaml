@@ -1,7 +1,7 @@
 contract:
   id: wnhf.generic_execution
   version: '1.1'
-  implementation: 1.9-rc8
+  implementation: 2.0-rc9
 dry_run_enabled: true
 hardware_dispatch_in_dry_run: false
 real_execution_enabled_actions:
@@ -68,6 +68,7 @@ real_execution_enabled_actions:
     - message
     confirmation_required: false
     idempotent: false
+  plants.record_watering: *single_object_no_parameters
 result_codes:
 - EXE-100
 - EXE-200

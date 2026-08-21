@@ -1,4 +1,4 @@
-# Red Queen 1.0.0-rc8
+# Red Queen 1.0.0-rc9
 
 Red Queen is a semantic home framework for Home Assistant. It models the house as
 objects and state, evaluates context/rules/policies/decisions, resolves capabilities
@@ -19,12 +19,12 @@ automations.
 ## Release status
 
 - Product: Red Queen
-- Version: `1.0.0-rc8`
+- Version: `1.0.0-rc9`
 - Channel: `release_candidate`
 - Phase: `rc`
-- Candidate: `rc8`
-- Candidate development baseline: WNHF `1.34.0` / `WP-4.7.14.0`
-- Status: STATIC VERIFIED; live qualification pending
+- Candidate: `rc9`
+- Candidate development baseline: WNHF `1.35.0` / `WP-4.7.15.0`
+- Status: LIVE VERIFIED
 
 ## Stable 1.0 RC scope
 
@@ -32,7 +32,8 @@ Canonical mutating execution currently includes `lighting.turn_on`,
 `lighting.turn_off`, `covers.open`, `covers.close`, `covers.blades_open`,
 `covers.blades_close`, `garage.open`, `garage.close`, `openings.lock`,
 `openings.unlock`, `openings.release` and
-`notifications.send`, `notifications.announce` and `notifications.route`.
+`notifications.send`, `notifications.announce`, `notifications.route` and
+`plants.record_watering`.
 
 `notifications.send` targets one provider-neutral semantic notification target. It
 requires a non-empty `message`, accepts an optional string/null `title`, needs no
@@ -61,7 +62,14 @@ feedback is not required. Door release requires explicit confirmation, a closed-
 contact and an available configured command; successful execution does not claim
 latch release or subsequent physical opening.
 
-See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc8.md`.
+Plant Care loads an optional `plants.yaml` registry, exposes dashboard-ready status
+sensors plus native record-watering buttons and atomically persists manual watering
+history. Each plant entity pair belongs to its configured Red Queen room device;
+button presses use the canonical execution service. A new plant remains
+`unknown` until `plants.record_watering` records a real event. State-scoped success
+does not claim independently observed physical watering or soil moisture.
+
+See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc9.md`.
 
 ## Qualification
 

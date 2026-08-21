@@ -290,6 +290,38 @@ def register_core_capabilities(
             ),
             required_provider_capabilities=("validator",),
         ),
+        CapabilityDefinition(
+            capability_id="plants",
+            version="1.0.0",
+            name="Plant Care",
+            description=(
+                "Semantic plant registry and persistent watering history."
+            ),
+            kind=CapabilityKind.CORE,
+            actions=(
+                CapabilityAction(
+                    action_id="plants.snapshot",
+                    name="Read plant-care state",
+                    mutating=False,
+                    confirmation_required=False,
+                    description=(
+                        "Read interval- and history-based care state for "
+                        "configured semantic plants."
+                    ),
+                ),
+                CapabilityAction(
+                    action_id="plants.record_watering",
+                    name="Record plant watering",
+                    mutating=True,
+                    confirmation_required=False,
+                    description=(
+                        "Persist one real manual watering event for exactly "
+                        "one semantic plant object."
+                    ),
+                ),
+            ),
+            required_provider_capabilities=("plants",),
+        ),
     )
 
     for definition in definitions:

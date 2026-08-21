@@ -1,16 +1,17 @@
-# Red Queen 1.0.0-rc8 Candidate Feature Matrix
+# Red Queen 1.0.0-rc9 Candidate Feature Matrix
 
-| Domain | Semantic model/state | Snapshot/diagnostics | Canonical execution | RC8 candidate status |
+| Domain | Semantic model/state | Snapshot/diagnostics | Canonical execution | RC9 candidate status |
 |---|---:|---:|---:|---|
 | Rooms | Yes | Yes | N/A | Stable |
 | Lighting | Yes | Yes | `lighting.turn_on`, `lighting.turn_off` | Live-verified baseline |
 | Openings | Yes | `openings.snapshot` | `openings.lock`, `openings.unlock` | Live-verified baseline |
-| Door opener | Yes | Access diagnostics / closed-door guard | `openings.release` | Live qualification pending |
+| Door opener | Yes | Access diagnostics / closed-door guard | `openings.release` | Dispatch-scoped live verified in RC8 |
 | Garage | Yes | `garage.snapshot` / Access state | `garage.open`, `garage.close` | Live-verified baseline |
 | Covers | Yes | `covers.snapshot`, continuous position | `covers.open`, `covers.close` | Live-verified baseline |
 | Cover position | Read-only feedback | `closed_percent`, HA current position | No `SET_POSITION` | Feedback-only |
-| Cover blades/slats | Native commands | No objective blade-position feedback required | `covers.blades_open`, `covers.blades_close` | Dispatch-scoped live qualification pending |
+| Cover blades/slats | Native commands | No objective blade-position feedback required | `covers.blades_open`, `covers.blades_close` | Dispatch-scoped live verified in RC8 |
 | Notifications | Yes | targets, announcement routes, channel diagnostics | `notifications.send`, `notifications.announce`, `notifications.route` | Live verified on 2026-08-20 |
+| Plant Care | Optional registry and persistent history | `plants.snapshot`, `plants_snapshot`, one sensor and record-watering button per plant | `plants.record_watering` | State-scoped live verified on 2026-08-21 |
 | Security | Yes | `security.snapshot` | No | Stable read surface |
 | Providers / Capabilities | Yes | Yes | N/A | Stable core architecture |
 | Qualification / Validation | Yes | Yes | N/A | Stable core architecture |
@@ -22,5 +23,6 @@
 Notification success is dispatch-scoped: framework verification is recorded, while
 remote delivery/read, audible playback and hardware verification are not claimed.
 Native TTS, Sonos restoration and context-aware channel routing were live verified
-for WP-4.7.13.2 on 2026-08-20. RC8 blade and door-release actions remain pending
-reference-installation live qualification.
+for WP-4.7.13.2 on 2026-08-20. RC8 blade and door-release actions were live verified
+on 2026-08-21. Plant Care does not claim objective soil moisture or physical
+watering; only its persistent history mutation is verified.

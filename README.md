@@ -5,23 +5,20 @@ as semantic objects and state, evaluates context/rules/policies/decisions, resol
 capabilities and providers, and executes explicitly supported actions through
 contracts and feedback-aware guards.
 
-> **Current candidate:** `1.0.0-rc8` — LIVE VERIFIED<br>
+> **Current candidate:** `1.0.0-rc9` — LIVE VERIFIED<br>
 > **Technical Home Assistant domain:** `wnhf`<br>
-> **Development lineage:** WNHF `1.34.0` / `WP-4.7.14.0`
+> **Development lineage:** WNHF `1.35.0` / `WP-4.7.15.0`
 
-## RC8 candidate changes
+## RC9 candidate changes
 
-- Preserves the live-verified RC7 notification, lighting, directional cover,
-  garage and lock contracts.
-- Promotes the existing venetian-blind commands to canonical
-  `covers.blades_open` and `covers.blades_close` execution.
-- Adds confirmed canonical `openings.release` execution for configured electric
-  door openers.
-- Treats blade and door-opener success honestly as dispatch-scoped: Red Queen
-  records successful command dispatch without claiming an unobservable blade
-  position, latch release or physical door opening.
-- Blocks blade commands while the cover is moving and blocks door release unless
-  the semantic door is proven closed.
+- Preserves the live-verified RC8 device and notification contracts.
+- Adds optional semantic `plants.yaml` registry support.
+- Adds `plants.snapshot` and canonical `plants.record_watering`.
+- Persists watering history atomically and exposes one dashboard sensor plus one
+  native record-watering button per plant, attached to its Red Queen room device.
+- Starts plants at `unknown` until a real watering event is recorded.
+- Qualifies the persistent state change without claiming physical watering or soil
+  moisture observation.
 
 ## Current canonical real-execution surface
 
@@ -40,6 +37,7 @@ openings.release
 notifications.send
 notifications.announce
 notifications.route
+plants.record_watering
 ```
 
 Canonical execution entry point: `wnhf.execution_execute`<br>
@@ -47,11 +45,10 @@ Dry-run entry point: `wnhf.execution_dry_run`
 
 ## Candidate status
 
-`1.0.0-rc8` and WP-4.7.14.0 preserve the live-verified RC7 baseline. Static
-repository verification and controlled blade/door-opener live qualification passed
-on the reference Home Assistant installation on 2026-08-21.
+`1.0.0-rc9` and WP-4.7.15.0 preserve the live-verified RC8 baseline. Static and live
+qualification of the new Plant Care domain passed on 2026-08-21.
 
-See `docs/RC8_CANDIDATE_VALIDATION.md` for the qualification plan and observed results.
+See `docs/RC9_CANDIDATE_VALIDATION.md` for the qualification plan.
 
 ## Installation
 

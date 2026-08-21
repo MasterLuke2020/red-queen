@@ -88,6 +88,7 @@ async def async_setup_entry(
             lights={},
             openings={},
             covers={},
+            plants={},
         )
         await engine.async_load_rules()
         await engine.async_load_policies()
@@ -108,12 +109,13 @@ async def async_setup_entry(
 
     _LOGGER.info(
         "Red Queen %s started via config entry | Rooms: %s | Lights: %s | "
-        "Covers: %s | Openings: %s | Warnings: %s | Registry: %.2f ms",
+        "Covers: %s | Openings: %s | Plants: %s | Warnings: %s | Registry: %.2f ms",
         VERSION,
         len(house.rooms),
         len(house.lights),
         len(house.covers),
         len(house.openings),
+        len(house.plants),
         len(engine.registry_warnings),
         engine.registry_load_ms or 0.0,
     )
@@ -177,6 +179,7 @@ async def async_setup_entry(
             "lights": len(house.lights),
             "covers": len(house.covers),
             "openings": len(house.openings),
+            "plants": len(house.plants),
             "warnings": list(engine.registry_warnings),
         },
     )

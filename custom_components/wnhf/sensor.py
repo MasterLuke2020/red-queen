@@ -29,6 +29,7 @@ from .entity import (
     WNHFPolicyEntity,
     WNHFDecisionEntity,
     WNHFExecutionEntity,
+    WNHFPlantEntity,
 )
 
 
@@ -100,9 +101,50 @@ async def _async_setup_entities(
             WNHFSystemReadiness(hass, engine),
             WNHFReleaseScope(hass, engine),
             WNHFReleasePhase(hass, engine),
+            *(
+                WNHFPlantCareStatus(hass, engine, plant.object_id)
+                for plant in sorted(
+                    engine._require_house().enabled_plants,
+                    key=lambda item: (item.room_id, item.name, item.object_id),
+                )
+            ),
         ],
         update_before_add=False,
     )
+
+
+class WNHFPlantCareStatus(WNHFPlantEntity, SensorEntity):
+    """Dashboard-ready care status for one semantic plant."""
+
+    _attr_icon = "mdi:sprout"
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        engine: WNHFEngine,
+        plant_id: str,
+    ) -> None:
+        self.plant_id = plant_id
+        plant = engine._require_house().plant(plant_id)
+        slug = plant_id.removeprefix("plant.").replace(".", "_")
+        super().__init__(
+            hass,
+            engine,
+            f"Red Queen Plant Care – {plant.name}",
+            f"wnhf_plant_care_{slug}",
+            f"wnhf_plant_care_{slug}",
+            plant.room_id,
+        )
+
+    @property
+    def native_value(self) -> str:
+        return self.engine.plant_care_snapshot(self.plant_id).status
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        attrs = super().extra_state_attributes
+        attrs.update(self.engine.plant_care_snapshot(self.plant_id).as_dict())
+        return attrs
 
 
 async def async_setup_entry(
@@ -1111,7 +1153,31 @@ class WNHFContext(WNHFContextEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         attrs = super().extra_state_attributes
-        attrs.update(self.engine.context_snapshot().as_dict())
+        snapshot = self.engine.context_snapshot()
+        # The full context snapshot intentionally remains available through
+        # wnhf.context_snapshot. A Home Assistant entity must keep recorder
+        # attributes bounded; rule facts and full match payloads can exceed
+        # Home Assistant's 16 KiB state-attribute limit.
+        attrs.update(
+            {
+                "generated_at": snapshot.generated_at.isoformat(),
+                "state": snapshot.state,
+                "message": snapshot.message,
+                "confidence": snapshot.confidence,
+                "confidence_percent": snapshot.confidence_percent,
+                "priority": snapshot.priority,
+                "rule_id": snapshot.rule_id,
+                "rule_name": snapshot.rule_name,
+                "source": snapshot.source,
+                "scores": snapshot.scores.as_dict(),
+                "reasons": list(snapshot.reasons),
+                "matched_count": snapshot.rule_snapshot.matched_count,
+                "registry_warnings": list(
+                    snapshot.rule_snapshot.registry_warnings
+                ),
+                "full_snapshot_service": "wnhf.context_snapshot",
+            }
+        )
         return attrs
 
 

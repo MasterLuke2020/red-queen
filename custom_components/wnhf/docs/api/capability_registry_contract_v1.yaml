@@ -6,7 +6,10 @@ registered_capabilities:
 - lighting
 - covers
 - openings
+- garage
 - security
+- notifications
+- plants
 - validator
 current_integration:
   resolver_enabled: true

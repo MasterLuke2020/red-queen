@@ -20,6 +20,7 @@ from .core import (
     SecurityCapabilityProvider,
     ValidatorCapabilityProvider,
 )
+from .plants import PlantsCapabilityProvider
 
 __all__ = [
     "ProviderExecutionResult",
@@ -45,6 +46,7 @@ __all__ = [
     "OpeningsCapabilityProvider",
     "SecurityCapabilityProvider",
     "ValidatorCapabilityProvider",
+    "PlantsCapabilityProvider",
 ]
 
 
