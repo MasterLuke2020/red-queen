@@ -630,3 +630,9 @@ execution_runtime_health:
   name: Get generic execution runtime health
   description: Returns aggregate health for the execution manager, semantic router, providers and qualification persistence.
   fields: {}
+
+
+configuration_snapshot:
+  name: Get configuration status
+  description: Returns registry ownership, file checksums and isolated load-validation status without changing any configuration file.
+  fields: {}

@@ -83,10 +83,7 @@ class WNHFCoverEntity(CoverEntity):
     _attr_has_entity_name = False
     _attr_device_class = CoverDeviceClass.BLIND
     _attr_supported_features = (
-        CoverEntityFeature.OPEN
-        | CoverEntityFeature.CLOSE
-        | CoverEntityFeature.OPEN_TILT
-        | CoverEntityFeature.CLOSE_TILT
+        CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
     )
 
     def __init__(
@@ -128,6 +125,17 @@ class WNHFCoverEntity(CoverEntity):
                 async_feedback_changed,
             )
         )
+
+    @property
+    def supported_features(self) -> CoverEntityFeature:
+        """Expose only unambiguous native travel controls.
+
+        Blade pulses remain available through the explicit, named Red Queen
+        blade button entities.  We intentionally do not expose Home Assistant
+        tilt controls because no objective blade-position feedback exists and
+        the four-arrow blind UI makes travel and blade actions ambiguous.
+        """
+        return CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
 
     @property
     def available(self) -> bool:
@@ -243,6 +251,10 @@ class WNHFCoverEntity(CoverEntity):
                 self.cover_object.closed_percent_feedback_entity_id
             ),
             "tilt_position_supported": False,
+            "blade_commands_supported": all(
+                action in self.cover_object.supported_capability_ids
+                for action in ("covers.blades_open", "covers.blades_close")
+            ),
             "framework_version": VERSION,
         }
 
@@ -278,14 +290,17 @@ class WNHFGarageDoorEntity(CoverEntity):
             self.async_write_ha_state()
 
         garage = self.opening_object.garage_door
+        tracked_entities = {
+            garage.open_feedback_entity_id,
+            garage.closed_feedback_entity_id,
+            garage.toggle_command_entity_id,
+        }
+        if garage.stop_command_entity_id:
+            tracked_entities.add(garage.stop_command_entity_id)
         self.async_on_remove(
             async_track_state_change_event(
                 self.hass,
-                {
-                    garage.open_feedback_entity_id,
-                    garage.closed_feedback_entity_id,
-                    garage.toggle_command_entity_id,
-                },
+                tracked_entities,
                 async_feedback_changed,
             )
         )
@@ -313,6 +328,15 @@ class WNHFGarageDoorEntity(CoverEntity):
             return CoverEntityFeature.OPEN
         if snapshot.state == "open":
             return CoverEntityFeature.CLOSE
+        if (
+            snapshot.state == "moving"
+            and self.opening_object.garage_door.stop_command_entity_id
+        ):
+            stop_state = self.hass.states.get(
+                self.opening_object.garage_door.stop_command_entity_id
+            )
+            if stop_state is not None and stop_state.state != "unavailable":
+                return CoverEntityFeature.STOP
         return CoverEntityFeature(0)
 
     @property
@@ -371,6 +395,16 @@ class WNHFGarageDoorEntity(CoverEntity):
     async def async_close_cover(self, **kwargs: Any) -> None:
         await self._async_execute_direction("garage.close")
 
+    async def async_stop_cover(self, **kwargs: Any) -> None:
+        self._requested_direction = None
+        self.async_write_ha_state()
+        await async_execute_canonical(
+            self.hass,
+            action_id="garage.stop",
+            object_id=self.opening_object.object_id,
+            confirmed=True,
+        )
+
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         snapshot = self.engine.access_object_snapshot(
@@ -382,9 +416,14 @@ class WNHFGarageDoorEntity(CoverEntity):
             "normalized_state": snapshot.state,
             "secure": snapshot.secure,
             "garage_elapsed_seconds": snapshot.garage_elapsed_seconds,
-            "canonical_actions": ["garage.open", "garage.close"],
+            "canonical_actions": ([
+                "garage.open",
+                "garage.close",
+            ] + (["garage.stop"] if self.opening_object.garage_door.stop_command_entity_id else [])),
             "explicit_confirmation_boundary": "native_cover_service_call",
-            "stop_supported": False,
+            "stop_supported": bool(
+                self.opening_object.garage_door.stop_command_entity_id
+            ),
             "position_feedback_supported": False,
             "framework_version": VERSION,
         }

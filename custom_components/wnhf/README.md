@@ -1,4 +1,4 @@
-# Red Queen 1.0.0-rc10
+# Red Queen 1.0.0-rc11
 
 Red Queen is a semantic home framework for Home Assistant. It models the house as
 objects and state, evaluates context/rules/policies/decisions, resolves capabilities
@@ -19,18 +19,18 @@ automations.
 ## Release status
 
 - Product: Red Queen
-- Version: `1.0.0-rc10`
+- Version: `1.0.0-rc11`
 - Channel: `release_candidate`
 - Phase: `rc`
-- Candidate: `rc10`
-- Candidate development baseline: WNHF `1.36.0` / `WP-4.7.16.0`
-- Status: LIVE VERIFIED
+- Candidate: `rc11`
+- Candidate development baseline: WNHF `1.37.0` / `WP-4.7.17.0`
+- Status: LIVE VERIFIED / REPOSITORY CI PENDING
 
 ## Stable 1.0 RC scope
 
 Canonical mutating execution currently includes `lighting.turn_on`,
 `lighting.turn_off`, `covers.open`, `covers.close`, `covers.blades_open`,
-`covers.blades_close`, `garage.open`, `garage.close`, `openings.lock`,
+`covers.blades_close`, `garage.open`, `garage.close`, `garage.stop`, `openings.lock`,
 `openings.unlock`, `openings.release` and
 `notifications.send`, `notifications.announce`, `notifications.route` and
 `plants.record_watering`.
@@ -50,7 +50,10 @@ notification registry, never in the public action request.
 Garage open/close targets exactly one semantic `garage_door` opening object. Both
 actions require `confirmed: true`. The residential OSC pulse is dispatched only from
 a proven opposite stable end state; moving, intermediate, unavailable or contradictory
-states reject without a pulse.
+states reject without a pulse. RC11 additionally supports canonical `garage.stop`
+when a dedicated STOP command is configured. STOP is offered only while motion is
+objectively observed and proves dispatch only; Red Queen does not invent a stopped
+position or direction after the pulse.
 
 Door lock/unlock requires explicit confirmation, a healthy motor-lock command,
 objective lock feedback and a closed door contact. Directional cover execution is
@@ -74,7 +77,23 @@ electric door releases, the garage door and explicit blade controls. Native ligh
 covers, blades, access controls and Plant Care buttons all call the canonical
 execution service; they do not bypass semantic guards or qualification.
 
-See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc10.md`.
+RC11 turns the commissioning foundation into a complete managed configurator for
+the currently supported house registries. New installations can create a managed
+base from Home Assistant Areas/Floors and then add rooms, impulse-controlled lights,
+venetian blinds, windows/sliding doors/doors/garage doors and Plant Care objects.
+Semantic IDs are generated automatically from room identity and user-facing names.
+Covers support objective end/movement feedback, optional read-only position feedback
+and optional separate blade commands. Doors may add a guarded motor lock and electric
+door release; garage doors may add a dedicated STOP command; plants may store an
+optional moisture sensor without claiming moisture-driven care decisions.
+
+Existing manual registries remain read-only. Every managed write is validated as a
+complete bundle, staged, backed up and rolled back on failure.
+`wnhf.configuration_snapshot` exposes ownership, file hashes and validation even in
+recovery mode. Native UI guard states and localized errors make blocked actions
+visible without weakening canonical execution safety.
+
+See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc11.md`.
 
 ## Qualification
 

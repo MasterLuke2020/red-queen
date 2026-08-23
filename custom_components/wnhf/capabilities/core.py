@@ -193,6 +193,16 @@ def register_core_capabilities(
                         "end position through its guarded OSC command."
                     ),
                 ),
+                CapabilityAction(
+                    action_id="garage.stop",
+                    name="Stop garage door",
+                    mutating=True,
+                    confirmation_required=True,
+                    description=(
+                        "Dispatch exactly one dedicated STOP pulse while the "
+                        "garage door is objectively in the moving state."
+                    ),
+                ),
             ),
             required_provider_capabilities=("garage",),
         ),

@@ -1,7 +1,7 @@
 contract:
   id: wnhf.generic_real_execution
   api_version: '1.0'
-  execution_contract: 2.2-rc10
+  execution_contract: 2.3-rc11
 canonical_service: wnhf.execution_execute
 enabled_actions:
 - lighting.turn_on
@@ -12,6 +12,7 @@ enabled_actions:
 - covers.blades_close
 - garage.open
 - garage.close
+- garage.stop
 - openings.lock
 - openings.unlock
 - openings.release
@@ -100,7 +101,11 @@ garage_directional_semantics:
   already_satisfied_sends_command: false
   movement_observation_required: true
   terminal_end_feedback_required: true
-  canonical_stop_execution: false
+  canonical_stop_execution: true
+  dedicated_stop_command_required: true
+  stop_moving_state_required: true
+  stop_verification_scope: dispatch
+  stopped_position_claimed: false
   canonical_toggle_execution: false
 door_lock_semantics:
   explicit_confirmation_required: true

@@ -3,11 +3,312 @@
     "step": {
       "user": {
         "title": "Red Queen",
-        "description": "Red Queen mit der lokalen Registry einrichten."
+        "description": "Vorhandene Registry im Modus {mode} unter {registry_path} verwenden. Validierung: {validation}. Räume: {rooms}, Lichter: {lights}, Raffstores: {covers}, Öffnungen: {openings}, Pflanzen: {plants}. Fehler: {validation_error}. Vorhandene Dateien werden nicht verändert."
+      },
+      "commissioning": {
+        "title": "Verwaltete Red-Queen-Registry anlegen",
+        "description": "Nur für eine neue Installation. Wähle die Home-Assistant-Bereiche, aus denen semantische Red-Queen-Räume entstehen sollen.",
+        "data": {
+          "building_id": "Stabile Gebäude-ID",
+          "building_name": "Gebäudename",
+          "areas": "Home-Assistant-Bereiche"
+        }
+      },
+      "review": {
+        "title": "Verwaltete Basis prüfen",
+        "description": "Gebäude: {building_name} ({building_id}). Red Queen legt {room_count} Räume an: {rooms}. Leere Registries für Licht, Raffstores, Öffnungen und Pflanzen werden ebenfalls erzeugt. Keine vorhandene Registry wird überschrieben.",
+        "data": {
+          "confirm": "Diese verwalteten Registry-Dateien anlegen"
+        }
       }
     },
+    "error": {
+      "invalid_commissioning_selection": "Wähle mindestens einen gültigen Home-Assistant-Bereich.",
+      "confirmation_required": "Eine ausdrückliche Bestätigung ist erforderlich.",
+      "cannot_write_registry": "Die Registry konnte nicht sicher validiert oder geschrieben werden. Es blieb keine Teilkonfiguration zurück."
+    },
     "abort": {
-      "single_instance_allowed": "Red Queen ist bereits eingerichtet."
+      "single_instance_allowed": "Red Queen ist bereits eingerichtet.",
+      "commissioning_state_lost": "Der Einrichtungsentwurf ist verloren gegangen. Starte den Dialog erneut.",
+      "no_rooms_configured": "Es sind keine gültigen Red-Queen-Räume konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Red-Queen-Konfigurator",
+        "description": "Registry-Modus: {mode}. Validierung: {validation}. Räume: {rooms}, Lichter: {lights}, Raffstores: {covers}, Öffnungen: {openings}, Pflanzen: {plants}.",
+        "menu_options": {
+          "status": "Konfigurationsstatus",
+          "add_room": "Raum hinzufügen",
+          "add_light": "Licht hinzufügen",
+          "add_cover": "Raffstore hinzufügen",
+          "add_opening": "Öffnung hinzufügen",
+          "add_plant": "Pflanze hinzufügen"
+        }
+      },
+      "status": {
+        "title": "Konfigurationsstatus",
+        "description": "Modus: {mode}. Pfad: {registry_path}. Validierung: {validation}. Fehler: {validation_error}. Räume: {rooms}, Lichter: {lights}, Raffstores: {covers}, Öffnungen: {openings}, Pflanzen: {plants}."
+      },
+      "create_base": {
+        "title": "Verwaltete Red-Queen-Registry anlegen",
+        "description": "Wähle Home-Assistant-Bereiche für eine neue Installation.",
+        "data": {
+          "building_id": "Stabile Gebäude-ID",
+          "building_name": "Gebäudename",
+          "areas": "Home-Assistant-Bereiche"
+        }
+      },
+      "create_base_review": {
+        "title": "Verwaltete Basis prüfen",
+        "description": "Gebäude: {building_name} ({building_id}). Räume ({room_count}): {rooms}.",
+        "data": {
+          "confirm": "Diese verwalteten Registry-Dateien anlegen"
+        }
+      },
+      "add_room": {
+        "title": "Raum aus Home Assistant hinzufügen",
+        "description": "Wähle einen Home-Assistant-Bereich. Raumname und semantische ID werden automatisch erzeugt. Die vorhandene Etagenzuordnung des Bereichs wird automatisch verwendet; nur bei Bereichen ohne Etage kannst du optional eine Home-Assistant-Etage auswählen. Red Queen verändert die HA-Bereichs- oder Etagenregistry dabei nicht.",
+        "data": {
+          "area_id": "Home-Assistant-Bereich",
+          "floor_id": "Home-Assistant-Etage (optional)"
+        },
+        "data_description": {
+          "area_id": "Der Bereichsname wird als Red-Queen-Raumname übernommen.",
+          "floor_id": "Nur nötig, wenn der Bereich in Home Assistant noch keiner Etage zugeordnet ist."
+        }
+      },
+      "add_light": {
+        "title": "Licht hinzufügen",
+        "description": "Lege ein impulsgesteuertes Licht an. Red Queen erzeugt die semantische Licht-ID automatisch aus Raum und Lichtname und verwendet die binäre Rückmeldung als objektiven Zustand.",
+        "data": {
+          "name": "Lichtname",
+          "room_id": "Red-Queen-Raum",
+          "command_entity_id": "Befehlstaster",
+          "feedback_entity_id": "Statusrückmeldung"
+        },
+        "data_description": {
+          "name": "Beispiel: Spots, Deckenlicht oder Arbeitslicht.",
+          "command_entity_id": "Impuls-Entity vom Typ button.*.",
+          "feedback_entity_id": "Objektive Rückmeldung vom Typ binary_sensor.*."
+        }
+      },
+      "add_cover": {
+        "title": "Raffstore hinzufügen",
+        "description": "Wähle Raum, Fahrbefehle und die vier objektiven Zustandsrückmeldungen. Die semantische Raffstore-ID wird automatisch aus Raum und Name erzeugt. Eine Positionsrückmeldung ist optional. Wenn Lamellensteuerung aktiviert wird, folgt ein zweiter Schritt für die beiden Lamellen-Impulsbefehle.",
+        "data": {
+          "cover_name": "Raffstorename",
+          "room_id": "Red-Queen-Raum",
+          "cover_open_command_entity_id": "Befehl AUF",
+          "cover_close_command_entity_id": "Befehl ZU",
+          "cover_open_feedback_entity_id": "Rückmeldung OFFEN",
+          "cover_closed_feedback_entity_id": "Rückmeldung GESCHLOSSEN",
+          "cover_opening_feedback_entity_id": "Rückmeldung FÄHRT AUF",
+          "cover_closing_feedback_entity_id": "Rückmeldung FÄHRT ZU",
+          "cover_closed_percent_feedback_entity_id": "Positionsrückmeldung Geschlossen-% (optional)",
+          "cover_blades_enabled": "Lamellensteuerung konfigurieren"
+        },
+        "data_description": {
+          "cover_name": "Beispiel: Raffstore Straße, Terrassentür oder Fenster links.",
+          "cover_open_command_entity_id": "Impuls-Entity vom Typ button.* für die Auf-Fahrt.",
+          "cover_close_command_entity_id": "Impuls-Entity vom Typ button.* für die Zu-Fahrt.",
+          "cover_open_feedback_entity_id": "Objektive Endlagenrückmeldung vom Typ binary_sensor.*.",
+          "cover_closed_feedback_entity_id": "Objektive Endlagenrückmeldung vom Typ binary_sensor.*.",
+          "cover_opening_feedback_entity_id": "Objektive Bewegungsrückmeldung vom Typ binary_sensor.*.",
+          "cover_closing_feedback_entity_id": "Objektive Bewegungsrückmeldung vom Typ binary_sensor.*.",
+          "cover_closed_percent_feedback_entity_id": "Optionaler sensor.* mit 0 = offen und 100 = geschlossen.",
+          "cover_blades_enabled": "Optional. Aktivieren, wenn separate Impulse für Lamellen öffnen/schließen vorhanden sind."
+        }
+      },
+      "add_cover_blades": {
+        "title": "Optionale Lamellensteuerung",
+        "description": "Wähle die beiden separaten Impulsbefehle für die Lamellen. Red Queen bestätigt hier nur die erfolgreiche Befehlsausgabe; eine Lamellenposition wird ohne objektive Rückmeldung nicht behauptet.",
+        "data": {
+          "cover_blades_open_command_entity_id": "Lamellen ÖFFNEN",
+          "cover_blades_close_command_entity_id": "Lamellen SCHLIESSEN"
+        },
+        "data_description": {
+          "cover_blades_open_command_entity_id": "Impuls-Entity vom Typ button.*.",
+          "cover_blades_close_command_entity_id": "Impuls-Entity vom Typ button.*."
+        }
+      },
+      "add_opening": {
+        "title": "Öffnung hinzufügen",
+        "description": "Wähle die Art der Öffnung. Red Queen erzeugt die semantische ID automatisch aus Raum und Name.",
+        "menu_options": {
+          "add_window": "Fenster",
+          "add_sliding_door": "Schiebetür",
+          "add_door": "Tür",
+          "add_garage_door": "Garagentor"
+        }
+      },
+      "add_window": {
+        "title": "Fenster hinzufügen",
+        "description": "Wähle Raum und objektive Offen/Geschlossen-Rückmeldung. Bei binary_sensor.* gilt on = offen und off = geschlossen.",
+        "data": {
+          "opening_name": "Name",
+          "room_id": "Red-Queen-Raum",
+          "opening_state_entity_id": "Rückmeldung OFFEN"
+        },
+        "data_description": {
+          "opening_name": "Beispiel: Fenster Straße, Terrassentür oder Tür Keller.",
+          "opening_state_entity_id": "Objektive Rückmeldung vom Typ binary_sensor.*. on = offen, off = geschlossen."
+        }
+      },
+      "add_sliding_door": {
+        "title": "Schiebetür hinzufügen",
+        "description": "Wähle Raum und objektive Offen/Geschlossen-Rückmeldung. Bei binary_sensor.* gilt on = offen und off = geschlossen.",
+        "data": {
+          "opening_name": "Name",
+          "room_id": "Red-Queen-Raum",
+          "opening_state_entity_id": "Rückmeldung OFFEN"
+        },
+        "data_description": {
+          "opening_name": "Beispiel: Fenster Straße, Terrassentür oder Tür Keller.",
+          "opening_state_entity_id": "Objektive Rückmeldung vom Typ binary_sensor.*. on = offen, off = geschlossen."
+        }
+      },
+      "add_door": {
+        "title": "Tür hinzufügen",
+        "description": "Wähle Raum und objektive Türkontaktrückmeldung. Motor-Schloss und elektrischer Türöffner sind optional und werden in Folgeschritten konfiguriert.",
+        "data": {
+          "opening_name": "Türname",
+          "room_id": "Red-Queen-Raum",
+          "opening_state_entity_id": "Rückmeldung TÜR OFFEN",
+          "door_lock_enabled": "Motor-Schloss konfigurieren",
+          "door_opener_enabled": "Elektrischen Türöffner konfigurieren"
+        },
+        "data_description": {
+          "opening_name": "Beispiel: Haustür, Kellertür oder Nebeneingang.",
+          "opening_state_entity_id": "Objektiver Türkontakt vom Typ binary_sensor.*. on = offen, off = geschlossen.",
+          "door_lock_enabled": "Optional. Aktivieren, wenn objektive Schlossrückmeldung sowie separate Verriegeln-/Entriegeln-Impulse vorhanden sind.",
+          "door_opener_enabled": "Optional. Aktivieren, wenn ein separater Impuls für den elektrischen Türöffner vorhanden ist."
+        }
+      },
+      "add_door_lock": {
+        "title": "Motor-Schloss konfigurieren",
+        "description": "Wähle objektive Schlossrückmeldung und die beiden separaten Impulsbefehle. Red Queen erlaubt Verriegeln/Entriegeln nur bei objektiv geschlossener Tür.",
+        "data": {
+          "lock_feedback_entity_id": "Rückmeldung VERRIEGELT",
+          "lock_command_entity_id": "Befehl VERRIEGELN",
+          "unlock_command_entity_id": "Befehl ENTRIEGELN"
+        },
+        "data_description": {
+          "lock_feedback_entity_id": "binary_sensor.* mit on = verriegelt und off = entriegelt.",
+          "lock_command_entity_id": "Impuls-Entity vom Typ button.*.",
+          "unlock_command_entity_id": "Impuls-Entity vom Typ button.*."
+        }
+      },
+      "add_door_opener": {
+        "title": "Elektrischen Türöffner konfigurieren",
+        "description": "Wähle den Impuls für den elektrischen Türöffner. Red Queen gibt ihn nur bei objektiv geschlossener Tür frei und behauptet keine physische Türöffnung.",
+        "data": {
+          "door_opener_command_entity_id": "Befehl TÜRÖFFNER"
+        },
+        "data_description": {
+          "door_opener_command_entity_id": "Impuls-Entity vom Typ button.* für die elektrische Fallenfreigabe."
+        }
+      },
+      "add_garage_door": {
+        "title": "Garagentor hinzufügen",
+        "description": "Konfiguriere zwei objektive Endlagenrückmeldungen und den Impulsbefehl. Red Queen fährt nur aus einer eindeutig beobachteten Gegenendlage in die gewünschte Richtung.",
+        "data": {
+          "opening_name": "Garagentorname",
+          "room_id": "Red-Queen-Raum",
+          "garage_open_feedback_entity_id": "Rückmeldung OFFEN",
+          "garage_closed_feedback_entity_id": "Rückmeldung GESCHLOSSEN",
+          "garage_toggle_command_entity_id": "Befehl FAHREN",
+          "garage_stop_command_entity_id": "Befehl STOP (optional)",
+          "garage_movement_timeout_seconds": "Maximale Fahrzeit in Sekunden"
+        },
+        "data_description": {
+          "garage_open_feedback_entity_id": "Objektive Endlagenrückmeldung vom Typ binary_sensor.*.",
+          "garage_closed_feedback_entity_id": "Objektive Endlagenrückmeldung vom Typ binary_sensor.*.",
+          "garage_toggle_command_entity_id": "Impuls-Entity vom Typ button.* für die Garagentorsteuerung.",
+          "garage_stop_command_entity_id": "Optionaler separater STOP-Impuls vom Typ button.*.",
+          "garage_movement_timeout_seconds": "Sicherheitszeit für die beobachtete Fahrt. Zulässig: 1 bis 300 Sekunden."
+        }
+      },
+      "add_plant": {
+        "title": "Pflanze hinzufügen",
+        "description": "Lege eine Pflanze im ausgewählten Red-Queen-Raum an. Die semantische Pflanzen-ID wird automatisch aus Raum und Pflanzenname erzeugt. Plant Care berechnet den Gießstatus aus Gießintervall und bestätigten Gießereignissen.",
+        "data": {
+          "plant_name": "Pflanzenname",
+          "plant_species": "Pflanzenart",
+          "room_id": "Red-Queen-Raum",
+          "plant_location": "Standort im Raum (optional)",
+          "plant_watering_interval_days": "Gießintervall in Tagen",
+          "plant_moisture_sensor_entity_id": "Feuchtigkeitssensor (optional)"
+        },
+        "data_description": {
+          "plant_name": "Individueller Name, z. B. Drachenbaum Büro oder Monstera 1.",
+          "plant_species": "Botanische oder gebräuchliche Pflanzenart.",
+          "plant_location": "Beispiel: Fensterbank, Regal links oder Südseite. Leer = Raumname.",
+          "plant_watering_interval_days": "Nach wie vielen Tagen Red Queen die nächste Gießung als fällig betrachtet. Zulässig: 1 bis 365 Tage.",
+          "plant_moisture_sensor_entity_id": "Optionaler sensor.* wird in der Registry gespeichert. In RC11 bleibt der Plant-Care-Status bewusst intervall-/historienbasiert und leitet aus diesem Sensor noch keine Gießentscheidung ab."
+        }
+      }
+    },
+    "error": {
+      "invalid_commissioning_selection": "Wähle mindestens einen gültigen Home-Assistant-Bereich.",
+      "confirmation_required": "Eine ausdrückliche Bestätigung ist erforderlich.",
+      "cannot_write_registry": "Die Registry konnte nicht sicher validiert oder geschrieben werden.",
+      "cannot_apply_object": "Das Objekt ist ungültig oder kollidiert mit der Registry. Keine Datei wurde verändert.",
+      "invalid_area": "Der ausgewählte Home-Assistant-Bereich existiert nicht mehr.",
+      "invalid_floor": "Die ausgewählte Home-Assistant-Etage existiert nicht mehr.",
+      "area_floor_mismatch": "Der Bereich ist in Home Assistant bereits einer anderen Etage zugeordnet. Lasse das Etagenfeld leer oder wähle die dort hinterlegte Etage.",
+      "room_already_configured": "Dieser Home-Assistant-Bereich ist bereits als Red-Queen-Raum konfiguriert.",
+      "name_required": "Gib einen Namen ein.",
+      "light_already_configured": "In diesem Red-Queen-Raum existiert bereits ein Licht mit diesem Namen.",
+      "cover_already_configured": "In diesem Red-Queen-Raum existiert bereits ein Raffstore mit diesem Namen.",
+      "opening_already_configured": "In diesem Red-Queen-Raum existiert bereits eine Öffnung mit diesem Namen.",
+      "species_required": "Gib eine Pflanzenart ein.",
+      "plant_already_configured": "In diesem Red-Queen-Raum existiert bereits eine Pflanze mit diesem Namen."
+    },
+    "abort": {
+      "commissioning_state_lost": "Der Einrichtungsentwurf ist verloren gegangen. Starte erneut.",
+      "no_rooms_configured": "Es sind keine gültigen Red-Queen-Räume konfiguriert.",
+      "cover_configuration_state_lost": "Der Raffstore-Entwurf ist verloren gegangen. Starte die Konfiguration erneut.",
+      "opening_configuration_state_lost": "Der Öffnungsentwurf ist verloren gegangen. Starte die Konfiguration erneut."
+    }
+  },
+  "exceptions": {
+    "door_open_lock_blocked": {
+      "message": "Die Tür ist geöffnet. Verriegeln oder Entriegeln ist erst bei geschlossener Tür möglich."
+    },
+    "door_open_release_blocked": {
+      "message": "Der Türöffner ist nur bei objektiv geschlossener Tür verfügbar."
+    },
+    "cover_blades_moving": {
+      "message": "Die Lamellen können erst verstellt werden, wenn der Raffstore stillsteht."
+    },
+    "cover_reversal_blocked": {
+      "message": "Der Raffstore fährt bereits in die Gegenrichtung. Warte auf einen stabilen Zustand, bevor du die Richtung wechselst."
+    },
+    "garage_stop_not_moving": {
+      "message": "STOP ist nur verfügbar, während das Garagentor objektiv fährt."
+    },
+    "garage_moving_blocked": {
+      "message": "Das Garagentor fährt bereits. Ein weiterer Fahrimpuls wird aus Sicherheitsgründen blockiert."
+    },
+    "garage_intermediate_blocked": {
+      "message": "Das Garagentor befindet sich zwischen den Endlagen. Red Queen kann die nächste Fahrtrichtung nicht sicher bestimmen."
+    },
+    "garage_feedback_conflict": {
+      "message": "Die Endlagenrückmeldungen des Garagentors widersprechen sich. Es wird kein Fahrbefehl ausgeführt."
+    },
+    "garage_feedback_unavailable": {
+      "message": "Die Endlagenrückmeldung des Garagentors ist nicht verfügbar. Es wird kein Fahrbefehl ausgeführt."
+    },
+    "garage_end_state_required": {
+      "message": "Das Garagentor muss eindeutig als offen oder geschlossen erkannt werden, bevor ein Fahrbefehl möglich ist."
+    },
+    "command_unavailable": {
+      "message": "Die konfigurierte Befehls-Entity ist derzeit nicht verfügbar."
+    },
+    "canonical_action_rejected": {
+      "message": "Red Queen hat die Aktion {action_id} aufgrund des aktuellen Zustands oder einer Sicherheitsregel abgelehnt."
     }
   }
 }

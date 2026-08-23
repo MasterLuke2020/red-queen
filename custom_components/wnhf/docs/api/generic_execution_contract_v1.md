@@ -5,9 +5,9 @@ execution surface. It validates semantic/provider readiness, the action-specific
 request envelope, the semantic target object, confirmation requirements and provider
 technical capability. It never dispatches a command.
 
-RC10 candidate real-execution-enabled actions are `lighting.turn_on`, `lighting.turn_off`,
+RC11 candidate real-execution-enabled actions are `lighting.turn_on`, `lighting.turn_off`,
 `covers.open`, `covers.close`, `covers.blades_open`, `covers.blades_close`,
-`garage.open`, `garage.close`, `openings.lock`, `openings.unlock`,
+`garage.open`, `garage.close`, `garage.stop`, `openings.lock`, `openings.unlock`,
 `openings.release`, `notifications.send`,
 `notifications.announce`, `notifications.route` and `plants.record_watering`.
 Every action requires exactly one `target.object_id`.
@@ -21,7 +21,7 @@ Plant watering accepts no parameters.
 Directional cover preflight blocks unavailable/contradictory feedback and opposite
 movement. Blade preflight requires a healthy stable cover and an available configured
 command entity. Door release additionally requires explicit confirmation and a proven
-closed door. Garage and lock preflight enforce their confirmation and feedback guards.
+closed door. Garage direction, garage STOP and lock preflight enforce their confirmation and feedback guards. Garage STOP additionally requires a configured dedicated STOP command and observed motion.
 Notification preflight reloads the semantic registry and validates notify entities,
 TTS engines, speaker entities, Sonos native-announce dependencies and route context.
 Plant Care preflight validates an enabled semantic plant and an available persistent

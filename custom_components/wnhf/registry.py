@@ -270,12 +270,32 @@ def _load_covers(path: Path, rooms: dict[str, Room]) -> tuple[dict[str, Cover], 
         if not isinstance(feedback,dict): raise WNHFRegistryError(f"Cover '{object_id}': 'feedback' must be a dictionary")
         if not isinstance(capabilities,list) or not capabilities or not all(isinstance(v,str) and v for v in capabilities):
             raise WNHFRegistryError(f"Cover '{object_id}' has no valid capabilities list")
+        blades_open_command = _optional_cover_string(
+            commands, "blades_open_entity_id", object_id, "commands"
+        )
+        blades_close_command = _optional_cover_string(
+            commands, "blades_close_entity_id", object_id, "commands"
+        )
+        blade_capabilities = {"blades_open", "blades_close"} & set(capabilities)
+        if blade_capabilities and blade_capabilities != {"blades_open", "blades_close"}:
+            raise WNHFRegistryError(
+                f"Cover '{object_id}': blade capabilities must be configured as a pair"
+            )
+        if bool(blades_open_command) != bool(blades_close_command):
+            raise WNHFRegistryError(
+                f"Cover '{object_id}': blade command entities must be configured as a pair"
+            )
+        if bool(blade_capabilities) != bool(blades_open_command and blades_close_command):
+            raise WNHFRegistryError(
+                f"Cover '{object_id}': blade capabilities and blade command entities must match"
+            )
+
         cover=Cover(
             object_id=object_id,name=name,room_id=room_id,cover_type=cover_type,enabled=enabled,
             open_command_entity_id=_required_string(commands,"open_entity_id",object_id,"commands"),
             close_command_entity_id=_required_string(commands,"close_entity_id",object_id,"commands"),
-            blades_open_command_entity_id=_required_string(commands,"blades_open_entity_id",object_id,"commands"),
-            blades_close_command_entity_id=_required_string(commands,"blades_close_entity_id",object_id,"commands"),
+            blades_open_command_entity_id=blades_open_command,
+            blades_close_command_entity_id=blades_close_command,
             open_feedback_entity_id=_required_string(feedback,"open_entity_id",object_id,"feedback"),
             closed_feedback_entity_id=_required_string(feedback,"closed_entity_id",object_id,"feedback"),
             opening_feedback_entity_id=_required_string(feedback,"opening_entity_id",object_id,"feedback"),

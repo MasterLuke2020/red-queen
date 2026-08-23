@@ -15,6 +15,7 @@ from .domain.opening import Opening
 from .engine import WNHFEngine
 from .entity import WNHFPlantEntity
 from .native_execution import async_execute_canonical
+from .localization import localized
 
 
 async def _async_setup_entities(
@@ -100,7 +101,12 @@ class WNHFRecordPlantWateringButton(WNHFPlantEntity, ButtonEntity):
         super().__init__(
             hass,
             engine,
-            f"Red Queen Record Watering – {plant.name}",
+            f"Red Queen {plant.name} – "
+            + localized(
+                hass,
+                de="Gießen protokollieren",
+                en="Record watering",
+            ),
             f"wnhf_plant_water_{slug}",
             f"wnhf_plant_water_{slug}",
             plant.room_id,
@@ -150,9 +156,13 @@ class WNHFCoverBladeButton(ButtonEntity):
         self.cover_object = cover
         self.action_id = action_id
         direction = "open" if action_id.endswith("_open") else "close"
-        label = "Open" if direction == "open" else "Close"
+        label = (
+            localized(hass, de="Lamellen öffnen", en="Blades open")
+            if direction == "open"
+            else localized(hass, de="Lamellen schließen", en="Blades close")
+        )
         slug = cover.object_id.removeprefix("cover.").replace(".", "_")
-        self._attr_name = f"Red Queen {cover.name} – Blades {label}"
+        self._attr_name = f"Red Queen {cover.name} – {label}"
         self._attr_unique_id = f"wnhf_blades_{direction}_{slug}"
         self._attr_suggested_object_id = f"wnhf_blades_{direction}_{slug}"
         self._attr_device_info = room_device_info(engine, cover.room_id)
@@ -183,6 +193,8 @@ class WNHFCoverBladeButton(ButtonEntity):
             if self.action_id.endswith("_open")
             else self.cover_object.blades_close_command_entity_id
         )
+        if not command_id:
+            return False
         command = self.hass.states.get(command_id)
         return (
             not snapshot.is_moving
@@ -227,7 +239,10 @@ class WNHFDoorReleaseButton(ButtonEntity):
         self.engine = engine
         self.opening_object = opening
         slug = opening.object_id.removeprefix("opening.").replace(".", "_")
-        self._attr_name = f"Red Queen {opening.name} – Door Release"
+        self._attr_name = (
+            f"Red Queen {opening.name} – "
+            + localized(hass, de="Türöffner", en="Door release")
+        )
         self._attr_unique_id = f"wnhf_door_release_{slug}"
         self._attr_suggested_object_id = f"wnhf_door_release_{slug}"
         self._attr_device_info = room_device_info(engine, opening.room_id)

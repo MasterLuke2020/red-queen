@@ -31,6 +31,7 @@ from .const import (
     SERVICE_RELOAD_REGISTRY,
     SERVICE_PLANTS_SNAPSHOT,
     SERVICE_VALIDATE_REGISTRY,
+    SERVICE_CONFIGURATION_SNAPSHOT,
     SERVICE_HOUSE_SNAPSHOT,
     SERVICE_ACCESS_SNAPSHOT,
     SERVICE_CAPABILITIES_SNAPSHOT,
@@ -146,6 +147,7 @@ from .const import (
     MAX_QUEUE_TIMEOUT_SECONDS,
 )
 from .engine import WNHFEngine
+from .configuration import RegistryConfigurationManager
 from .executions import AccessResultCatalog
 
 _LOGGER = logging.getLogger(__name__)
@@ -855,6 +857,11 @@ async def async_register_services(
         )
         return report.as_dict()
 
+    async def handle_configuration_snapshot(call: ServiceCall) -> dict:
+        """Inspect the on-disk registry even while Red Queen is in recovery."""
+        manager = RegistryConfigurationManager(engine.registry_dir)
+        return await hass.async_add_executor_job(manager.snapshot)
+
     async def handle_reload(call: ServiceCall) -> dict:
         house = await engine.async_load_registry()
         report = await engine.async_validate_registry()
@@ -1318,6 +1325,12 @@ async def async_register_services(
         DOMAIN,
         SERVICE_VALIDATE_REGISTRY,
         handle_validate,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CONFIGURATION_SNAPSHOT,
+        handle_configuration_snapshot,
         supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(

@@ -1280,6 +1280,7 @@ class GarageCapabilityProvider(_BaseProvider):
     _EXECUTABLE_ACTIONS = {
         "garage.open",
         "garage.close",
+        "garage.stop",
     }
     _STABLE_STATES = {"open", "closed"}
     _TERMINAL_TIMEOUT_MS = 60000
@@ -1305,6 +1306,11 @@ class GarageCapabilityProvider(_BaseProvider):
             )
         if action_id == "garage.close":
             return ExecutionCapabilityAdapter.resolve_garage_close(
+                opening,
+                runtime,
+            )
+        if action_id == "garage.stop":
+            return ExecutionCapabilityAdapter.resolve_garage_stop(
                 opening,
                 runtime,
             )
@@ -1425,6 +1431,27 @@ class GarageCapabilityProvider(_BaseProvider):
                 technical_capability=capability.as_dict(),
             )
 
+        if action_id == "garage.stop":
+            if runtime.state != "moving":
+                reason = (
+                    "Garage STOP is permitted only while the door is "
+                    "objectively moving."
+                )
+                return ProviderExecutionValidationResult(
+                    valid=False,
+                    reason=reason,
+                    errors=(reason,),
+                    technical_capability=capability.as_dict(),
+                )
+            return ProviderExecutionValidationResult(
+                valid=True,
+                reason=(
+                    "garage.stop target is a qualified garage door in the "
+                    "moving state; one dedicated STOP pulse may be dispatched."
+                ),
+                technical_capability=capability.as_dict(),
+            )
+
         guard_error = self._runtime_guard_error(runtime)
         if guard_error is not None:
             return ProviderExecutionValidationResult(
@@ -1518,7 +1545,7 @@ class GarageCapabilityProvider(_BaseProvider):
             )
             desired_state = self._desired_state(action_id)
 
-            if capability is None or desired_state is None:
+            if capability is None or (desired_state is None and action_id != "garage.stop"):
                 return ProviderExecutionResult(
                     status="unsupported",
                     executed=False,
@@ -1540,6 +1567,51 @@ class GarageCapabilityProvider(_BaseProvider):
                     reason=capability.reason,
                     technical_capability=capability.as_dict(),
                     feedback_before=runtime.as_dict(),
+                )
+
+            if action_id == "garage.stop":
+                if runtime.state != "moving":
+                    return ProviderExecutionResult(
+                        status="rejected",
+                        executed=False,
+                        command_sent=False,
+                        feedback_confirmed=False,
+                        reason=(
+                            "Garage STOP is permitted only while the door is "
+                            "objectively moving."
+                        ),
+                        technical_capability=capability.as_dict(),
+                        feedback_before=runtime.as_dict(),
+                    )
+                command_outcome = (
+                    await self.engine.command_dispatcher.async_dispatch(capability)
+                )
+                if not command_outcome.completed:
+                    return ProviderExecutionResult(
+                        status="failed",
+                        executed=False,
+                        command_sent=bool(command_outcome.dispatched),
+                        feedback_confirmed=False,
+                        reason="garage.stop command dispatch failed.",
+                        error=command_outcome.message,
+                        technical_capability=capability.as_dict(),
+                        feedback_before=runtime.as_dict(),
+                    )
+                after = self.engine.access_object_snapshot(object_id)
+                return ProviderExecutionResult(
+                    status="succeeded",
+                    executed=True,
+                    command_sent=bool(command_outcome.dispatched),
+                    feedback_confirmed=False,
+                    reason=(
+                        "Dedicated garage STOP pulse dispatched. Red Queen "
+                        "does not claim physical stop confirmation because no "
+                        "objective motion feedback is configured."
+                    ),
+                    technical_capability=capability.as_dict(),
+                    feedback_before=runtime.as_dict(),
+                    feedback_after=after.as_dict(),
+                    feedback_wait_ms=0.0,
                 )
 
             guard_error = self._runtime_guard_error(runtime)

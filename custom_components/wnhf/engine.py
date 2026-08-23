@@ -5090,6 +5090,12 @@ class WNHFEngine:
     ) -> dict[str, Any]:
         """Send the PLC command for opening the slats."""
         cover = self._require_house().cover(cover_id)
+        if not cover.blades_open_command_entity_id:
+            return {
+                "cover_id": cover_id,
+                "command_sent": False,
+                "reason": "blades_not_configured",
+            }
         await self.hass.services.async_call(
             "button",
             "press",
@@ -5107,6 +5113,12 @@ class WNHFEngine:
     ) -> dict[str, Any]:
         """Send the PLC command for closing the slats."""
         cover = self._require_house().cover(cover_id)
+        if not cover.blades_close_command_entity_id:
+            return {
+                "cover_id": cover_id,
+                "command_sent": False,
+                "reason": "blades_not_configured",
+            }
         await self.hass.services.async_call(
             "button",
             "press",

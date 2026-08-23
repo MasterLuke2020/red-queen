@@ -52,7 +52,7 @@ class DiagnosticClassification:
 class ReleaseScopeManager:
     """Central immutable Red Queen release-candidate profile and warning classifier."""
 
-    VERSION = "3.0-rc10"
+    VERSION = "3.0-rc11"
     CHANNEL = RELEASE_CHANNEL
     PHASE = RELEASE_PHASE
 
@@ -201,7 +201,8 @@ class ReleaseScopeManager:
             True,
             (
                 "Residential garage state plus confirmed, end-position-guarded "
-                "canonical open/close execution through OSC control."
+                "canonical open/close execution through OSC control and an optional "
+                "dedicated STOP pulse that is exposed only while motion is observed."
             ),
         ),
     }

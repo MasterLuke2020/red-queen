@@ -19,8 +19,8 @@ class Cover:
     enabled: bool
     open_command_entity_id: str
     close_command_entity_id: str
-    blades_open_command_entity_id: str
-    blades_close_command_entity_id: str
+    blades_open_command_entity_id: str | None
+    blades_close_command_entity_id: str | None
     open_feedback_entity_id: str
     closed_feedback_entity_id: str
     opening_feedback_entity_id: str
@@ -82,10 +82,18 @@ class Cover:
             elif capability_id == "covers.close":
                 commands = (self.close_command_entity_id,)
             elif capability_id == "covers.blades_open":
-                commands = (self.blades_open_command_entity_id,)
+                commands = (
+                    (self.blades_open_command_entity_id,)
+                    if self.blades_open_command_entity_id
+                    else ()
+                )
                 feedback = ()
             elif capability_id == "covers.blades_close":
-                commands = (self.blades_close_command_entity_id,)
+                commands = (
+                    (self.blades_close_command_entity_id,)
+                    if self.blades_close_command_entity_id
+                    else ()
+                )
                 feedback = ()
 
             result.append(ObjectCapability(

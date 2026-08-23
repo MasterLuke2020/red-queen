@@ -3,11 +3,312 @@
     "step": {
       "user": {
         "title": "Red Queen",
-        "description": "Set up Red Queen with the local registry."
+        "description": "Use the existing {mode} registry at {registry_path}. Validation: {validation}. Rooms: {rooms}, lights: {lights}, covers: {covers}, openings: {openings}, plants: {plants}. Error: {validation_error}. Existing files will not be changed."
+      },
+      "commissioning": {
+        "title": "Create a managed Red Queen registry",
+        "description": "For a new installation only. Select the Home Assistant areas that should become semantic Red Queen rooms.",
+        "data": {
+          "building_id": "Stable building ID",
+          "building_name": "Building name",
+          "areas": "Home Assistant areas"
+        }
+      },
+      "review": {
+        "title": "Review the managed base",
+        "description": "Building: {building_name} ({building_id}). Red Queen will create {room_count} rooms: {rooms}. Empty lights, covers, openings and plants registries are created too. No existing registry is overwritten.",
+        "data": {
+          "confirm": "Create these managed registry files"
+        }
       }
     },
+    "error": {
+      "invalid_commissioning_selection": "Select at least one valid Home Assistant area.",
+      "confirmation_required": "Explicit confirmation is required.",
+      "cannot_write_registry": "The registry could not be safely validated or written. No partial configuration was retained."
+    },
     "abort": {
-      "single_instance_allowed": "Red Queen is already configured."
+      "single_instance_allowed": "Red Queen is already configured.",
+      "commissioning_state_lost": "The commissioning draft was lost. Start the flow again.",
+      "no_rooms_configured": "No valid Red Queen rooms are configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Red Queen configurator",
+        "description": "Registry mode: {mode}. Validation: {validation}. Rooms: {rooms}, lights: {lights}, covers: {covers}, openings: {openings}, plants: {plants}.",
+        "menu_options": {
+          "status": "Configuration status",
+          "add_room": "Add room",
+          "add_light": "Add light",
+          "add_cover": "Add venetian blind",
+          "add_opening": "Add opening",
+          "add_plant": "Add plant"
+        }
+      },
+      "status": {
+        "title": "Configuration status",
+        "description": "Mode: {mode}. Path: {registry_path}. Validation: {validation}. Error: {validation_error}. Rooms: {rooms}, lights: {lights}, covers: {covers}, openings: {openings}, plants: {plants}."
+      },
+      "create_base": {
+        "title": "Create a managed Red Queen registry",
+        "description": "Select Home Assistant areas for a new installation.",
+        "data": {
+          "building_id": "Stable building ID",
+          "building_name": "Building name",
+          "areas": "Home Assistant areas"
+        }
+      },
+      "create_base_review": {
+        "title": "Review the managed base",
+        "description": "Building: {building_name} ({building_id}). Rooms ({room_count}): {rooms}.",
+        "data": {
+          "confirm": "Create these managed registry files"
+        }
+      },
+      "add_room": {
+        "title": "Add room from Home Assistant",
+        "description": "Select a Home Assistant area. The room name and semantic ID are generated automatically. The area's existing floor assignment is used automatically; only for an area without a floor may you optionally select a Home Assistant floor. Red Queen does not change the HA area or floor registry.",
+        "data": {
+          "area_id": "Home Assistant area",
+          "floor_id": "Home Assistant floor (optional)"
+        },
+        "data_description": {
+          "area_id": "The area name becomes the Red Queen room name.",
+          "floor_id": "Only needed when the area is not assigned to a floor in Home Assistant."
+        }
+      },
+      "add_light": {
+        "title": "Add light",
+        "description": "Add a pulse-controlled light. Red Queen creates the semantic light ID automatically from room and light name and uses the binary feedback as its objective state.",
+        "data": {
+          "name": "Light name",
+          "room_id": "Red Queen room",
+          "command_entity_id": "Command button",
+          "feedback_entity_id": "State feedback"
+        },
+        "data_description": {
+          "name": "For example: Spots, Ceiling light or Work light.",
+          "command_entity_id": "Impulse entity of type button.*.",
+          "feedback_entity_id": "Objective feedback entity of type binary_sensor.*."
+        }
+      },
+      "add_cover": {
+        "title": "Add venetian blind",
+        "description": "Choose the room, travel pulse commands and four objective state feedback entities. The semantic cover ID is generated automatically from room and name. Position feedback is optional. If blade control is enabled, a second step asks for the two blade pulse commands.",
+        "data": {
+          "cover_name": "Blind name",
+          "room_id": "Red Queen room",
+          "cover_open_command_entity_id": "OPEN command",
+          "cover_close_command_entity_id": "CLOSE command",
+          "cover_open_feedback_entity_id": "OPEN feedback",
+          "cover_closed_feedback_entity_id": "CLOSED feedback",
+          "cover_opening_feedback_entity_id": "OPENING feedback",
+          "cover_closing_feedback_entity_id": "CLOSING feedback",
+          "cover_closed_percent_feedback_entity_id": "Closed-percent position feedback (optional)",
+          "cover_blades_enabled": "Configure blade control"
+        },
+        "data_description": {
+          "cover_name": "Example: Street blind, patio door or left window.",
+          "cover_open_command_entity_id": "button.* pulse entity for opening travel.",
+          "cover_close_command_entity_id": "button.* pulse entity for closing travel.",
+          "cover_open_feedback_entity_id": "Objective binary_sensor.* end-state feedback.",
+          "cover_closed_feedback_entity_id": "Objective binary_sensor.* end-state feedback.",
+          "cover_opening_feedback_entity_id": "Objective binary_sensor.* movement feedback.",
+          "cover_closing_feedback_entity_id": "Objective binary_sensor.* movement feedback.",
+          "cover_closed_percent_feedback_entity_id": "Optional sensor.* using 0 = open and 100 = closed.",
+          "cover_blades_enabled": "Optional. Enable when separate blade-open/blade-close pulse commands exist."
+        }
+      },
+      "add_cover_blades": {
+        "title": "Optional blade control",
+        "description": "Choose the two separate blade pulse commands. Red Queen qualifies only command dispatch here and does not claim a blade position without objective feedback.",
+        "data": {
+          "cover_blades_open_command_entity_id": "OPEN blades",
+          "cover_blades_close_command_entity_id": "CLOSE blades"
+        },
+        "data_description": {
+          "cover_blades_open_command_entity_id": "button.* pulse entity.",
+          "cover_blades_close_command_entity_id": "button.* pulse entity."
+        }
+      },
+      "add_opening": {
+        "title": "Add opening",
+        "description": "Choose the opening type. Red Queen generates the semantic ID automatically from room and name.",
+        "menu_options": {
+          "add_window": "Window",
+          "add_sliding_door": "Sliding door",
+          "add_door": "Door",
+          "add_garage_door": "Garage door"
+        }
+      },
+      "add_window": {
+        "title": "Add window",
+        "description": "Choose the room and objective open/closed feedback. For binary_sensor.* on means open and off means closed.",
+        "data": {
+          "opening_name": "Name",
+          "room_id": "Red Queen room",
+          "opening_state_entity_id": "OPEN feedback"
+        },
+        "data_description": {
+          "opening_name": "Example: Street window, patio door or basement door.",
+          "opening_state_entity_id": "Objective binary_sensor.* feedback. on = open, off = closed."
+        }
+      },
+      "add_sliding_door": {
+        "title": "Add sliding door",
+        "description": "Choose the room and objective open/closed feedback. For binary_sensor.* on means open and off means closed.",
+        "data": {
+          "opening_name": "Name",
+          "room_id": "Red Queen room",
+          "opening_state_entity_id": "OPEN feedback"
+        },
+        "data_description": {
+          "opening_name": "Example: Street window, patio door or basement door.",
+          "opening_state_entity_id": "Objective binary_sensor.* feedback. on = open, off = closed."
+        }
+      },
+      "add_door": {
+        "title": "Add door",
+        "description": "Choose the room and objective door-contact feedback. Motor lock and electric door release are optional and are configured in follow-up steps.",
+        "data": {
+          "opening_name": "Door name",
+          "room_id": "Red Queen room",
+          "opening_state_entity_id": "DOOR OPEN feedback",
+          "door_lock_enabled": "Configure motor lock",
+          "door_opener_enabled": "Configure electric door release"
+        },
+        "data_description": {
+          "opening_name": "Example: Front door, basement door or side entrance.",
+          "opening_state_entity_id": "Objective binary_sensor.* door contact. on = open, off = closed.",
+          "door_lock_enabled": "Optional. Enable when objective lock feedback plus separate lock/unlock pulses are available.",
+          "door_opener_enabled": "Optional. Enable when a separate electric door-release pulse is available."
+        }
+      },
+      "add_door_lock": {
+        "title": "Configure motor lock",
+        "description": "Choose objective lock feedback and the two separate pulse commands. Red Queen permits lock/unlock only while the door is objectively closed.",
+        "data": {
+          "lock_feedback_entity_id": "LOCKED feedback",
+          "lock_command_entity_id": "LOCK command",
+          "unlock_command_entity_id": "UNLOCK command"
+        },
+        "data_description": {
+          "lock_feedback_entity_id": "binary_sensor.* with on = locked and off = unlocked.",
+          "lock_command_entity_id": "Pulse entity of type button.*.",
+          "unlock_command_entity_id": "Pulse entity of type button.*."
+        }
+      },
+      "add_door_opener": {
+        "title": "Configure electric door release",
+        "description": "Choose the electric door-release pulse. Red Queen enables it only while the door is objectively closed and does not claim physical door opening.",
+        "data": {
+          "door_opener_command_entity_id": "DOOR RELEASE command"
+        },
+        "data_description": {
+          "door_opener_command_entity_id": "button.* pulse entity for electric latch release."
+        }
+      },
+      "add_garage_door": {
+        "title": "Add garage door",
+        "description": "Configure two objective end-position feedbacks and the pulse command. Red Queen only moves from an unambiguous opposite end position toward the requested direction.",
+        "data": {
+          "opening_name": "Garage door name",
+          "room_id": "Red Queen room",
+          "garage_open_feedback_entity_id": "OPEN feedback",
+          "garage_closed_feedback_entity_id": "CLOSED feedback",
+          "garage_toggle_command_entity_id": "MOVE command",
+          "garage_stop_command_entity_id": "STOP command (optional)",
+          "garage_movement_timeout_seconds": "Maximum travel time in seconds"
+        },
+        "data_description": {
+          "garage_open_feedback_entity_id": "Objective end-position binary_sensor.* feedback.",
+          "garage_closed_feedback_entity_id": "Objective end-position binary_sensor.* feedback.",
+          "garage_toggle_command_entity_id": "button.* pulse entity for garage movement.",
+          "garage_stop_command_entity_id": "Optional separate button.* STOP pulse.",
+          "garage_movement_timeout_seconds": "Safety timeout for observed travel. Allowed: 1 to 300 seconds."
+        }
+      },
+      "add_plant": {
+        "title": "Add plant",
+        "description": "Create one plant in the selected Red Queen room. The semantic plant ID is generated automatically from room and plant name. Plant Care calculates watering status from the watering interval and confirmed watering events.",
+        "data": {
+          "plant_name": "Plant name",
+          "plant_species": "Species",
+          "room_id": "Red Queen room",
+          "plant_location": "Location in room (optional)",
+          "plant_watering_interval_days": "Watering interval in days",
+          "plant_moisture_sensor_entity_id": "Moisture sensor (optional)"
+        },
+        "data_description": {
+          "plant_name": "Individual name, for example Office Dragon Tree or Monstera 1.",
+          "plant_species": "Botanical or common plant species.",
+          "plant_location": "For example windowsill, left shelf or south side. Empty = room name.",
+          "plant_watering_interval_days": "Number of days after which Red Queen considers the next watering due. Allowed: 1 to 365 days.",
+          "plant_moisture_sensor_entity_id": "An optional sensor.* is stored in the registry. In RC11 Plant Care intentionally remains interval/history based and does not infer watering decisions from this sensor yet."
+        }
+      }
+    },
+    "error": {
+      "invalid_commissioning_selection": "Select at least one valid Home Assistant area.",
+      "confirmation_required": "Explicit confirmation is required.",
+      "cannot_write_registry": "The registry could not be safely validated or written.",
+      "cannot_apply_object": "The object is invalid or conflicts with the registry. No file was changed.",
+      "invalid_area": "The selected Home Assistant area no longer exists.",
+      "invalid_floor": "The selected Home Assistant floor no longer exists.",
+      "area_floor_mismatch": "The area is already assigned to a different Home Assistant floor. Leave the floor field empty or select the floor already assigned there.",
+      "room_already_configured": "This Home Assistant area is already configured as a Red Queen room.",
+      "name_required": "Enter a name.",
+      "light_already_configured": "A light with this name already exists in this Red Queen room.",
+      "cover_already_configured": "A venetian blind with this name already exists in this Red Queen room.",
+      "opening_already_configured": "An opening with this name already exists in this Red Queen room.",
+      "species_required": "Enter a plant species.",
+      "plant_already_configured": "A plant with this name already exists in this Red Queen room."
+    },
+    "abort": {
+      "commissioning_state_lost": "The commissioning draft was lost. Start again.",
+      "no_rooms_configured": "No valid Red Queen rooms are configured.",
+      "cover_configuration_state_lost": "The venetian-blind draft was lost. Start the configuration again.",
+      "opening_configuration_state_lost": "The opening draft was lost. Start the configuration again."
+    }
+  },
+  "exceptions": {
+    "door_open_lock_blocked": {
+      "message": "The door is open. Locking or unlocking is only allowed while the door is closed."
+    },
+    "door_open_release_blocked": {
+      "message": "The door release is only available while the door is objectively closed."
+    },
+    "cover_blades_moving": {
+      "message": "The blades can only be adjusted after the cover has stopped moving."
+    },
+    "cover_reversal_blocked": {
+      "message": "The cover is already moving in the opposite direction. Wait for a stable state before reversing direction."
+    },
+    "garage_stop_not_moving": {
+      "message": "STOP is only available while the garage door is objectively moving."
+    },
+    "garage_moving_blocked": {
+      "message": "The garage door is already moving. Another drive pulse is blocked for safety."
+    },
+    "garage_intermediate_blocked": {
+      "message": "The garage door is between its end positions. Red Queen cannot safely determine the next direction."
+    },
+    "garage_feedback_conflict": {
+      "message": "The garage end-position feedback is contradictory. No drive command will be sent."
+    },
+    "garage_feedback_unavailable": {
+      "message": "The garage end-position feedback is unavailable. No drive command will be sent."
+    },
+    "garage_end_state_required": {
+      "message": "The garage door must be proven open or closed before a drive command is allowed."
+    },
+    "command_unavailable": {
+      "message": "The configured command entity is currently unavailable."
+    },
+    "canonical_action_rejected": {
+      "message": "Red Queen rejected action {action_id} because of the current state or a safety rule."
     }
   }
 }

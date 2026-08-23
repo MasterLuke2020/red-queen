@@ -1,7 +1,7 @@
 contract:
   id: wnhf.generic_execution
   version: '1.1'
-  implementation: 2.1-rc10
+  implementation: 2.2-rc11
 dry_run_enabled: true
 hardware_dispatch_in_dry_run: false
 real_execution_enabled_actions:
@@ -20,6 +20,7 @@ real_execution_enabled_actions:
   covers.blades_close: *single_object_no_parameters
   garage.open: *single_object_no_parameters
   garage.close: *single_object_no_parameters
+  garage.stop: *single_object_no_parameters
   openings.lock: *single_object_no_parameters
   openings.unlock: *single_object_no_parameters
   openings.release:

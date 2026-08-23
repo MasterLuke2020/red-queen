@@ -5,9 +5,9 @@ from __future__ import annotations
 DOMAIN = "wnhf"
 PRODUCT_NAME = "Red Queen"
 DEVELOPMENT_NAME = "WNHF"
-DEVELOPMENT_BASELINE_VERSION = "1.36.0"
-RELEASE_BASELINE = "WP-4.7.16.0"
-VERSION = "1.0.0-rc10"
+DEVELOPMENT_BASELINE_VERSION = "1.37.0"
+RELEASE_BASELINE = "WP-4.7.17.0"
+VERSION = "1.0.0-rc11"
 
 DATA_ENGINE = "engine"
 
@@ -114,6 +114,7 @@ DEVICE_SECURITY = "module:security"
 
 # Validator
 SERVICE_VALIDATE_REGISTRY = "validate_registry"
+SERVICE_CONFIGURATION_SNAPSHOT = "configuration_snapshot"
 SIGNAL_VALIDATION_UPDATED = "wnhf_validation_updated"
 ACTION_VALIDATE_REGISTRY = "validate_registry"
 MODULE_VALIDATOR = "validator"
@@ -335,10 +336,10 @@ RELEASE_INFO_API_VERSION = "1.1"
 PUBLIC_API_REGISTRY_VERSION = "1.1"
 QUALIFICATION_API_VERSION = "1.1"
 UPGRADE_CHECK_API_VERSION = "1.1"
-# Red Queen 1.0.0-rc10 is the tenth explicitly assigned public release candidate.
-RELEASE_CANDIDATE = "rc10"
+# Red Queen 1.0.0-rc11 is the eleventh explicitly assigned public release candidate.
+RELEASE_CANDIDATE = "rc11"
 CANONICAL_EXECUTION_API_VERSION = "1.0"
-CANONICAL_EXECUTION_CONTRACT_VERSION = "2.2-rc10"
+CANONICAL_EXECUTION_CONTRACT_VERSION = "2.3-rc11"
 LEGACY_PUBLIC_EXECUTION_API_VERSION = "1.3"
 # Compatibility name now follows the canonical public execution entry.
 PUBLIC_EXECUTION_API_VERSION = CANONICAL_EXECUTION_API_VERSION
@@ -491,7 +492,7 @@ CAPABILITY_MANAGER_READ_ONLY = True
 SERVICE_EXECUTION_MANAGER = "execution_manager"
 SERVICE_EXECUTION_ACTION = "execution_action"
 SIGNAL_EXECUTION_MANAGER_UPDATED = "wnhf_execution_manager_updated"
-GENERIC_EXECUTION_MANAGER_VERSION = "2.0-rc10"
+GENERIC_EXECUTION_MANAGER_VERSION = "2.1-rc11"
 GENERIC_EXECUTION_ENABLED = True
 GENERIC_EXECUTION_READ_ONLY = False
 
@@ -499,7 +500,7 @@ GENERIC_EXECUTION_READ_ONLY = False
 # Generic Execution Contract & Dry-Run - WP-4.7.2
 SERVICE_EXECUTION_DRY_RUN = "execution_dry_run"
 SIGNAL_EXECUTION_DRY_RUN_UPDATED = "wnhf_execution_dry_run_updated"
-GENERIC_EXECUTION_CONTRACT_VERSION = "2.1-rc10"
+GENERIC_EXECUTION_CONTRACT_VERSION = "2.2-rc11"
 GENERIC_EXECUTION_DRY_RUN_ENABLED = True
 GENERIC_EXECUTION_HARDWARE_ENABLED = True
 
@@ -507,7 +508,7 @@ GENERIC_EXECUTION_HARDWARE_ENABLED = True
 # First Real Generic Execution - WP-4.7.3
 SERVICE_EXECUTION_EXECUTE = "execution_execute"
 SIGNAL_EXECUTION_EXECUTE_UPDATED = "wnhf_execution_execute_updated"
-GENERIC_REAL_EXECUTION_VERSION = "2.2-rc10"
+GENERIC_REAL_EXECUTION_VERSION = "2.3-rc11"
 GENERIC_REAL_EXECUTION_ENABLED = True
 GENERIC_REAL_EXECUTION_ACTIONS = (
     "lighting.turn_on",
@@ -518,6 +519,7 @@ GENERIC_REAL_EXECUTION_ACTIONS = (
     "covers.blades_close",
     "garage.open",
     "garage.close",
+    "garage.stop",
     "openings.lock",
     "openings.unlock",
     "openings.release",

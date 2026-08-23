@@ -342,7 +342,7 @@ class ExecutionCapabilityAdapter:
         snapshot,
         *,
         action_id: str,
-        command_entity_id: str,
+        command_entity_id: str | None,
         registry_capability: str,
     ) -> ExecutionCapability:
         """Resolve one feedback-guarded directional cover command."""
@@ -429,7 +429,7 @@ class ExecutionCapabilityAdapter:
         snapshot,
         *,
         action_id: str,
-        command_entity_id: str,
+        command_entity_id: str | None,
         registry_capability: str,
     ) -> ExecutionCapability:
         """Resolve one dispatch-scoped venetian-blind blade command."""
@@ -442,6 +442,13 @@ class ExecutionCapabilityAdapter:
                     "Registry cover does not declare capability "
                     f"{registry_capability!r}."
                 ),
+            )
+
+        if not command_entity_id:
+            return cls._unsupported(
+                object_id=cover.object_id,
+                capability_id=action_id,
+                reason="No blade command entity is configured.",
             )
 
         if snapshot is None:
@@ -602,6 +609,65 @@ class ExecutionCapabilityAdapter:
             opening,
             snapshot,
             action_id="garage.close",
+        )
+
+    @classmethod
+    def resolve_garage_stop(cls, opening, snapshot=None) -> ExecutionCapability:
+        """Resolve canonical garage.stop through a dedicated STOP pulse."""
+        garage = opening.garage_door
+        if garage is None or not opening.is_garage_door:
+            return cls._unsupported(
+                object_id=opening.object_id,
+                capability_id="garage.stop",
+                reason="No dedicated garage-door module is configured.",
+            )
+
+        feedback = (
+            garage.open_feedback_entity_id,
+            garage.closed_feedback_entity_id,
+        )
+        if not garage.stop_command_entity_id:
+            return cls._unsupported(
+                object_id=opening.object_id,
+                capability_id="garage.stop",
+                feedback_entity_ids=feedback,
+                reason="No dedicated garage STOP command is configured.",
+            )
+        if snapshot is None:
+            return cls._unsupported(
+                object_id=opening.object_id,
+                capability_id="garage.stop",
+                command_entity_id=garage.stop_command_entity_id,
+                feedback_entity_ids=feedback,
+                reason="No runtime garage snapshot exists.",
+            )
+
+        available = bool(snapshot.available)
+        healthy = available and snapshot.state != "error"
+        return ExecutionCapability(
+            capability_id="garage.stop",
+            provider_id="provider.core.garage.stop",
+            object_id=opening.object_id,
+            supported=True,
+            available=available,
+            healthy=healthy,
+            strategy="guarded_dedicated_stop_pulse",
+            command_domain="button",
+            command_service="press",
+            command_entity_id=garage.stop_command_entity_id,
+            feedback_required=False,
+            feedback_entity_ids=feedback,
+            idempotency="guarded_by_moving_state",
+            rollback_supported=False,
+            confirmation_policy=ConfirmationPolicy(
+                required_before_dispatch=True,
+                effect_confirmation=EffectConfirmationMode.NONE,
+            ),
+            reason=(
+                "STOP is permitted only while the garage door is objectively "
+                "moving. Dispatch proves only the configured STOP pulse; no "
+                "physical stopped state is claimed without motion feedback."
+            ),
         )
 
     @classmethod

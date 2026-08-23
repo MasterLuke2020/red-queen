@@ -184,9 +184,7 @@ class WNHFValidator:
                         )
                     )
 
-        required_cover_capabilities = {
-            "open", "close", "blades_open", "blades_close"
-        }
+        required_cover_capabilities = {"open", "close"}
         for cover in house.covers.values():
             if cover.room_id not in house.rooms:
                 issues.append(
@@ -309,9 +307,10 @@ class WNHFValidator:
                 cover.blades_open_command_entity_id,
                 cover.blades_close_command_entity_id,
             ):
-                references.append(
-                    (cover.object_id, entity_id, "button", True)
-                )
+                if entity_id:
+                    references.append(
+                        (cover.object_id, entity_id, "button", True)
+                    )
             for entity_id in cover.direction_feedback_entity_ids:
                 references.append(
                     (cover.object_id, entity_id, "binary_sensor", True)
@@ -500,7 +499,8 @@ class WNHFValidator:
                 cover.blades_open_command_entity_id,
                 cover.blades_close_command_entity_id,
             ):
-                command_usage[entity_id].append(cover.object_id)
+                if entity_id:
+                    command_usage[entity_id].append(cover.object_id)
             for entity_id in cover.feedback_entity_ids:
                 feedback_usage[entity_id].append(cover.object_id)
 

@@ -13,6 +13,7 @@ from .device import room_device_info
 from .domain.opening import Opening
 from .engine import WNHFEngine
 from .native_execution import async_execute_canonical
+from .localization import localized
 
 
 async def _async_setup_entities(
@@ -69,7 +70,10 @@ class WNHFDoorLockEntity(LockEntity):
         self.engine = engine
         self.opening_object = opening
         slug = opening.object_id.removeprefix("opening.").replace(".", "_")
-        self._attr_name = f"Red Queen {opening.name} – Lock"
+        self._attr_name = (
+            f"Red Queen {opening.name} – "
+            + localized(hass, de="Schloss", en="Lock")
+        )
         self._attr_unique_id = f"wnhf_lock_{slug}"
         self._attr_suggested_object_id = f"wnhf_lock_{slug}"
         self._attr_device_info = room_device_info(engine, opening.room_id)
