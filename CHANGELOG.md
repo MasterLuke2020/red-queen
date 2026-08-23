@@ -4,6 +4,43 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0-rc11 candidate — WP-4.7.17.0
+
+#### Added
+
+- Managed registry ownership modes and guided Home Assistant commissioning.
+- Automatic semantic IDs for configurator-created rooms and objects.
+- Guided configuration for rooms, impulse lights, venetian blinds, windows,
+  sliding doors, doors, garage doors and Plant Care.
+- Transaction staging, backups and rollback for managed registry writes.
+- Canonical guarded `garage.stop` for installations with a dedicated STOP command.
+- Optional Plant Care moisture-sensor references as non-decision-driving metadata.
+
+#### Changed
+
+- Native venetian-blind UI remains directional; blade commands are explicit separate
+  buttons and unavailable while moving.
+- Garage direction controls are hidden/blocked in ambiguous intermediate state.
+- Native guard failures use localized user-facing messages while retaining technical
+  causes in Home Assistant logs.
+- Public surface advances to 23 semantic actions, 16 canonical real-execution
+  contracts and 68 Home Assistant services.
+
+#### Compatibility and safety
+
+- Existing manual registries remain read-only and are never silently adopted.
+- Managed mutations are validated as complete bundles before replacement.
+- Door access controls remain closed-door guarded.
+- Cover set-position and invented blade position remain unsupported.
+- Garage STOP proves dispatch only and does not claim a physical stopped position.
+- Optional plant moisture input does not change RC11 watering-state decisions.
+
+#### Validation
+
+- Exact-package Home Assistant live qualification passed on 2026-08-22.
+- Home Assistant hassfest passed on the RC11 release branch on 2026-08-23.
+- Final repository static verification is required before publication.
+
 ### 1.0.0-rc10 candidate — WP-4.7.16.0
 
 #### Added

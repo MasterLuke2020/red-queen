@@ -1,34 +1,38 @@
 # Publishing Checklist
 
-## RC10 candidate preparation
+## RC11 candidate preparation
 
-- [x] Start from the published, live-verified RC9 source.
-- [x] Add native room state for every enabled opening.
-- [x] Add native lock, door-release, garage and explicit blade controls.
-- [x] Route native productive controls through canonical execution.
-- [x] Preserve 8 capabilities, 22 semantic actions, 15 canonical real contracts and
-  67 Home Assistant services.
-- [x] Add and verify `checksums/rc10_source.sha256`.
-- [x] Build the replaceable Home Assistant test package.
-- [x] Complete controlled reference-installation live qualification.
+- [x] Start from the published, live-verified RC10 source.
+- [x] Add managed registry ownership and transaction-safe configuration.
+- [x] Add guided configuration for rooms, lights, covers, openings and Plant Care.
+- [x] Add automatic semantic IDs and duplicate guards.
+- [x] Add canonical guarded `garage.stop`.
+- [x] Preserve existing access, cover, notification and Plant Care safety contracts.
+- [x] Advance to 8 capabilities, 23 semantic actions, 16 canonical real contracts
+  and 68 Home Assistant services.
+- [x] Add and verify `checksums/rc11_source.sha256`.
+- [x] Build the exact replaceable Home Assistant candidate package.
+- [x] Complete exact-package live qualification.
+- [x] Create and push `release/1.0.0-rc11`.
+- [x] Confirm Home Assistant hassfest passes.
 
 ## GitHub web release flow
 
-- [ ] Apply the verified RC10 source to the local repository checkout.
-- [ ] Create `release/1.0.0-rc10` locally and commit intentionally.
-- [ ] Push the release branch with Git.
-- [ ] Confirm static repository checks and hassfest pass.
-- [ ] Fast-forward `main` to the verified RC10 release commit.
-- [ ] Create annotated tag `v1.0.0-rc10` on that exact commit.
-- [ ] Publish GitHub Pre-Release `v1.0.0-rc10` using
-  `custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc10.md`.
+- [ ] Confirm the final static repository check passes.
+- [ ] Review the release-branch diff against published RC10.
+- [ ] Fast-forward `main` to the final RC11 release commit.
+- [ ] Create annotated tag `v1.0.0-rc11` on that exact commit.
+- [ ] Publish GitHub Pre-Release `v1.0.0-rc11` using
+  `custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc11.md`.
 - [ ] Record final commit, tag object and release artifact checksums.
 
 ## Boundaries
 
-- Do not rename the `wnhf` domain, public services, semantic IDs or persisted paths.
-- Do not publish RC10 before native-room live qualification and restart regression.
-- Do not claim blade position, latch release, physical opening or unobserved garage
-  direction.
-- Keep central health/security/aggregate diagnostics central.
+- Do not rename the `wnhf` domain, existing public services, semantic IDs or
+  persisted paths.
+- Do not silently adopt or rewrite a manual registry.
+- Do not weaken objective feedback or confirmation guards.
+- Do not advertise arbitrary cover set-position or invent blade position.
+- Do not infer a physical stopped garage position from STOP dispatch.
+- Do not use optional plant moisture input as an RC11 watering decision.
 - Keep climate deferred and HACS metadata inactive.

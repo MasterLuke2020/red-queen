@@ -5,54 +5,64 @@ The roadmap is directional rather than a promise of exact release numbers or dat
 ## 1.0 release-candidate line
 
 The 1.0 RC line expands only through bounded, independently qualified capability
-packets. RC10 candidate WP-4.7.16.0 completes the native room entity surface on top
-of the published, live-verified RC9 baseline.
-
-## Next candidates
+packets.
 
 ### Door opener and cover blades — completed in RC8
 
-WP-4.7.14.0 adds `openings.release`, `covers.blades_open` and
-`covers.blades_close`. Door release is explicitly confirmed and closed-door guarded;
-all three actions use dispatch-scoped qualification where the final physical effect
-is not objectively observable.
+RC8 added canonical electric door release and explicit cover blade commands with
+dispatch-scoped qualification where final physical state is not objectively
+observable.
 
 ### Semantic Plant Care — completed in RC9
 
-RC9 introduced semantic plant objects with species, room/location, persistent
-watering history, care intervals and dashboard-ready sensors. Later extensions may
-incorporate season, indoor climate, light conditions, soil-moisture sensors,
-fertilizing, repotting and vacation-aware care reminders.
+RC9 introduced semantic plants, persistent watering history, room-attached care
+sensors and canonical record-watering actions.
 
-### Native room completeness — RC10 candidate
+### Native room completeness — completed in RC10
 
-RC10 places every enabled opening on its semantic room device and adds native lock,
-door-release, garage and explicit blade controls. Native productive controls enter
-the same canonical execution surface as service calls; central diagnostics remain
-central.
+RC10 projected enabled openings and productive controls onto their semantic room
+devices and routed native controls through canonical execution.
 
-### Configuration and commissioning
+### Managed configuration and commissioning — RC11
 
-Extend the installation guide into a complete new-house commissioning path and design
-a native Home Assistant configuration flow for selecting installation entities and
-writing validated integration-owned configuration.
+RC11 adds explicit registry ownership modes and a transaction-safe managed
+configurator. New installations can create a base from Home Assistant Areas/Floors
+and add rooms, impulse lights, venetian blinds, windows, sliding doors, doors, garage
+doors and Plant Care objects without manually creating semantic IDs.
+
+RC11 also adds guarded canonical `garage.stop` for installations with a dedicated
+STOP command. Optional plant moisture input is stored but intentionally does not
+drive watering decisions yet.
+
+## Next candidates
 
 ### Functional dashboard
 
-Build a polished Red Queen dashboard on the stable first-version capability surface.
+Build a polished Red Queen dashboard on the stable semantic/native capability
+surface, with room-focused controls and diagnostics.
+
+### Commissioning refinement
+
+Continue improving managed editing, object maintenance, diagnostics and migration
+guidance without silently taking ownership of manual registries.
+
+### Plant Care extensions
+
+Potential later work includes season, indoor climate, light conditions,
+soil-moisture-aware recommendations, fertilizing, repotting and vacation-aware care.
 
 ## Deferred feature candidates
 
 ### Climate / temperature semantics
 
-Climate work is intentionally deferred while a separate heating integration is being
-developed with the heating-system partner. When resumed, introduce semantic
+Climate work remains intentionally deferred while the separate heating integration
+is developed with the heating-system partner. When resumed, introduce semantic
 temperature, humidity, setpoint and climate-state models/providers before adding
 higher-level control decisions.
 
 ### Climate control
 
-After the read semantics are stable, evaluate controlled setpoint writes, operating
+After read semantics are stable, evaluate controlled setpoint writes, operating
 modes, safety guards and observable feedback contracts.
 
 ## Later feature candidates

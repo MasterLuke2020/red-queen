@@ -2,65 +2,56 @@
 
 ## Current candidate
 
-**Red Queen 1.0.0-rc10 — LIVE VERIFIED**
+**Red Queen 1.0.0-rc11 — LIVE VERIFIED**
 
-RC10 is based on the published, live-verified RC9 baseline and adds WP-4.7.16.0
-Native Room Completeness. Existing semantic action IDs and provider contracts are
-intentionally preserved.
+RC11 is based on the published, live-verified RC10 baseline and advances the
+development lineage to WNHF `1.37.0` / `WP-4.7.17.0`.
 
-The inherited RC7 reference-installation baseline passed on 2026-08-20 with:
+The release adds a managed Home Assistant commissioning/configuration path for the
+currently supported semantic house registries while preserving existing manual
+registries as read-only. It also adds canonical guarded `garage.stop`.
 
-- `status: healthy`
-- `runtime_ready: true`
-- `health_score: 100`
-- `error_count: 0`
-- `warning_count: 0`
+## RC11 exact-package qualification
 
-The inherited RC8 qualification passed on 2026-08-21 and verified:
+The exact consolidated candidate package was installed on the dedicated Home
+Assistant test system and qualified on 2026-08-22.
 
-- blade open and blade close on one reference venetian blind;
-- moving-cover rejection without a blade pulse;
-- confirmed courtyard and street door-opener dispatch with one physical pulse each;
-- missing-confirmation and open-door rejection without a pulse;
-- dispatch-scoped evidence with `hardware_verified: false` for blades and release;
-- final health 100 with no Red Queen errors or warnings.
+Observed PASS results included:
 
-The RC9 qualification passed on 2026-08-21 and verified:
+- managed registry creation/status/validation and fresh commissioning recovery;
+- automatic room/object IDs and duplicate rejection;
+- native impulse-light execution with objective feedback;
+- cover open/close, movement state, read-only position and blade movement guard;
+- window and sliding-door state;
+- door motor-lock/electric-release configuration and open-door safety guard;
+- garage open/close, intermediate-state direction blocking and dedicated STOP;
+- Plant Care creation, watering history and restart persistence;
+- optional plant moisture-sensor reference stored without driving care state;
+- localized configurator/native guard messages;
+- restart persistence of the managed registry and native entities.
 
-- all 13 configured plants load with native room-attached sensors and buttons;
-- plants without history remain `unknown` without invented timestamps;
-- the office dragon tree changed to `ok` after exactly one canonical button event;
-- state-scoped evidence persisted without claiming hardware verification;
-- `EXE-203` unknown-target and `EXE-204` invalid-parameter guards wrote no history;
-- watering history, due time and sensor state survived a full restart;
-- the bounded Context sensor produced no Recorder oversized-attribute warning;
-- final runtime health was 100 with no Red Queen errors or warnings.
+The exact candidate ZIP qualified in that test had SHA-256:
 
-The RC10 qualification passed on 2026-08-21 and verified:
+`9ad0f802d11dce56900323b1a50a1333f3d60d51e26e6522f404ceb7b6e7ce35`
 
-- native opening state and room placement across the reference house;
-- office native lighting and explicit blade controls through canonical execution;
-- entrance lock/unlock, electric door release and contact-based access guards;
-- native garage open/close from stable end positions;
-- corrected installation-owned Gang EG/Gang OG room associations;
-- restart with 23 rooms, 43 lights, 17 covers, 21 openings and 13 plants;
-- valid Registry/validation, runtime ready, health 100 and no Red Queen errors or
-  warnings.
+Home Assistant hassfest passed on the RC11 release branch on 2026-08-23. Repository
+static verification must pass on the final release commit before publication.
+
+## Compatibility and safety
+
+- Home Assistant integration domain remains `wnhf`.
+- Canonical execution entry remains `wnhf.execution_execute`.
+- Canonical execution API remains `1.0`.
+- 8 capabilities, 23 semantic actions, 16 canonical real contracts and 68 services.
+- Garage STOP is dispatch-scoped and does not claim a resulting physical position.
+- Cover position is read-only and arbitrary `SET_POSITION` remains disabled.
+- Blade position, latch release, physical door opening and physical watering are not
+  claimed without objective evidence.
+- Optional plant moisture input is metadata only in RC11.
 
 ## RC policy
 
 During the RC line, capability additions are accepted only as bounded work packages
 with explicit contracts, static validation, isolated behavior validation, live Home
 Assistant validation, regression checks and a new immutable release candidate. A
-previously published RC is never silently overwritten.
-
-## Technical identity
-
-The Home Assistant integration domain and service namespace remain `wnhf`. This is
-an intentional compatibility boundary and is not the public product name.
-
-## Stable public execution entry
-
-`wnhf.execution_execute` is the canonical productive execution entry.
-`wnhf.execute` is a legacy Decision-ID compatibility path and is not recommended for
-new automations.
+published RC is never silently overwritten.

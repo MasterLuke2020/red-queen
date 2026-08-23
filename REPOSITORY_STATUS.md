@@ -3,47 +3,49 @@
 ## Product
 
 - Name: **Red Queen**
-- Version: `1.0.0-rc10`
+- Version: `1.0.0-rc11`
 - Status: **LIVE VERIFIED**
 - Channel: `release_candidate`
-- Candidate: `rc10`
+- Candidate: `rc11`
 
 ## Technical compatibility
 
 - Home Assistant domain: `wnhf`
 - Canonical execution service: `wnhf.execution_execute`
 - Canonical execution API: `1.0`
-- Canonical dry-run contract: `2.1-rc10`
-- Canonical real-execution contract: `2.2-rc10`
-- Development baseline: WNHF `1.36.0` / `WP-4.7.16.0`
+- Canonical dry-run contract: `2.2-rc11`
+- Canonical real-execution contract: `2.3-rc11`
+- Development baseline: WNHF `1.37.0` / `WP-4.7.17.0`
 
 ## Verified release surface
 
-- Plant Care is an active release domain; climate and media remain planned.
 - 8 capability definitions.
-- 22 semantic actions.
-- 15 canonical real-execution contracts.
-- 67 Home Assistant services.
-- Semantic Notifications Core remains compatible with the live-verified RC6 baseline.
-- Native announcement and notification routing are live verified for RC7.
-- Notification qualification is dispatch-scoped and does not claim delivery/read or
-  hardware verification.
-- RC10 adds native room entities for openings, locks, electric door release, garage
-  and explicit blade controls.
-- Native productive controls route through canonical execution; public action IDs,
-  capability counts, service counts and provider contracts remain unchanged.
+- 23 semantic actions.
+- 16 canonical real-execution contracts.
+- 68 Home Assistant services.
+- Plant Care and Notifications remain active release domains.
+- RC11 adds managed commissioning for rooms, lights, covers, openings and plants.
+- Existing manual registries remain read-only.
+- Managed writes are complete-bundle validated, staged, backed up and rolled back
+  after write failure.
+- `garage.stop` is canonical only when a dedicated STOP command exists and movement
+  is objectively observed.
+- Cover position remains read-only; blade position is never invented.
+- Door lock/unlock and electric release remain closed-door guarded.
+- Plant moisture input can be stored but does not drive RC11 watering state.
 
-## Release preparation state
+## Qualification
 
-- Runtime source originated from the published, live-verified RC9 artifact.
-- WP-4.7.16.0 introduces Native Room Completeness on that baseline.
-- Static verification and reference-installation live qualification passed on
-  2026-08-21.
+- RC11 was developed from the published, live-verified RC10 baseline.
+- Exact-package live qualification passed on the dedicated Home Assistant test
+  installation on 2026-08-22.
+- Home Assistant hassfest passed on the RC11 release branch on 2026-08-23.
+- Final repository static verification is required on the release commit before
+  fast-forwarding `main`.
 - Repository owner: `MasterLuke2020`.
 - Repository: `MasterLuke2020/red-queen`.
-- Intended release after qualification: annotated tag `v1.0.0-rc10` and GitHub
-  Pre-Release.
-- HACS support remains intentionally inactive.
-- Independent brand assets remain intentionally unresolved.
+- Intended tag: `v1.0.0-rc11`.
+- HACS metadata remains intentionally inactive.
 
-This document describes the live-verified RC10 candidate before GitHub publication.
+This document describes the live-verified RC11 candidate during GitHub publication
+qualification.

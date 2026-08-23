@@ -1,43 +1,34 @@
-# Red Queen 1.0.0-rc10 Candidate Feature Matrix
+# Red Queen 1.0.0-rc11 Candidate Feature Matrix
 
-| Domain | Semantic model/state | Native room surface | Canonical mutating execution | RC10 candidate status |
+| Domain | Semantic model/state | Native room surface | Canonical execution | RC11 candidate status |
 |---|---:|---:|---:|---|
-| Rooms | Yes | Yes | N/A | Stable |
-| Lighting | Yes | Native light per controllable object | `lighting.turn_on`, `lighting.turn_off` | Canonical native adapter added |
-| Openings | Yes | Native state per enabled window/door | `openings.lock`, `openings.unlock`, `openings.release` | Room completeness added |
-| Covers | Yes | Native cover plus explicit blade buttons | `covers.open`, `covers.close`, `covers.blades_open`, `covers.blades_close` | Canonical native adapters added |
-| Garage | Yes | Native garage cover plus opening state | `garage.open`, `garage.close` | Room completeness added |
-| Notifications | Yes | direct, announcement and route diagnostics | `notifications.send`, `notifications.announce`, `notifications.route` | Live verified on 2026-08-20 |
-| Plant Care | Yes, optional registry and persistent history | `plants.snapshot`, per-plant sensor and watering button | `plants.record_watering` | Live-verified RC9 baseline |
+| Rooms | Yes | Yes | N/A | Managed configurator live qualified |
+| Lighting | Yes | Native light per controllable object | `lighting.turn_on`, `lighting.turn_off` | Execution RC10 live verified; RC11 configuration live qualified |
+| Openings | Yes | Native state per enabled window/door/sliding door | `openings.lock`, `openings.unlock` | RC11 configuration and guards live qualified |
+| Door opener | Yes | Native guarded button | `openings.release` | RC11 configuration and closed-door guard live qualified |
+| Garage | Yes | Native cover plus opening state | `garage.open`, `garage.close`, `garage.stop` | RC11 open/close/STOP and intermediate-state guards live qualified |
+| Covers | Yes | Native directional cover | `covers.open`, `covers.close` | RC11 configuration, movement and UI guards live qualified |
+| Cover position | Read-only objective feedback | Dedicated `%` sensor plus HA current position | No `SET_POSITION` | RC11 live qualified |
+| Cover blades/slats | Optional separate native buttons | No objective blade-position feedback required | `covers.blades_open`, `covers.blades_close` | RC11 optional configuration and moving guard live qualified |
+| Notifications | Yes | targets, announcement routes, channel diagnostics | `notifications.send`, `notifications.announce`, `notifications.route` | Live verified on 2026-08-20 |
+| Plant Care | Optional registry and persistent history | One care sensor and one record-watering button per plant | `plants.record_watering` | RC11 managed configuration and persistence live qualified |
+| Plant moisture input | Optional configured `sensor.*` reference | Diagnostic metadata only | No moisture-driven watering action | Stored/observable; intentionally not decision-driving in RC11 |
 | Security | Yes | `security.snapshot` | No | Stable read surface |
-| Providers | Yes | Yes | N/A | Stable core architecture |
-| Capabilities | Yes | Yes | N/A | Stable core architecture |
-| Qualification | Yes | Yes | N/A | Stable core architecture |
-| Validation | Yes | Yes | N/A | Stable core architecture |
-| Rules | Yes | Yes | N/A | Stable evaluation |
-| Context | Yes | Yes | N/A | Stable evaluation |
-| Policies | Yes | Yes | Legacy mutating routes compatibility-only | Stable evaluation |
-| Decisions | Yes | Yes | Decision-ID execution is legacy | Stable evaluation |
-| Execution | Yes | Yes | Canonical Stage-4.7 semantic path | Stable |
-| Scheduler | Yes | Yes | Legacy compatibility support | Stable diagnostics |
+| Providers / Capabilities | Yes | Yes | N/A | Stable core architecture |
+| Qualification / Validation | Yes | Yes | N/A | Stable core architecture |
+| Configuration | Manual read-only or managed transaction | Guided rooms/lights/covers/openings/plants | No physical execution | RC11 reference-installation live qualified |
+| Rules / Context / Policies / Decisions | Yes | Yes | Legacy mutating routes compatibility-only | Stable evaluation |
+| Execution / Scheduler | Yes | Yes | Canonical Stage-4.7 path / legacy scheduling | 23 semantic actions, 16 canonical real actions |
 | Climate / temperature | Planned | Planned | Planned | Future feature work |
 | Media | Planned | Planned | Planned | Future feature work |
 
-All notification actions are provider-neutral, require a non-empty message, need no
-confirmation and are deliberately non-idempotent. Announcement targets keep raw TTS
-and media-player IDs out of the public action envelope. Route targets select log,
-dashboard, mobile and voice channels through priority/profile policy. Success remains
-dispatch-scoped; delivery, read and audible playback are not claimed.
+Notification success is dispatch-scoped: framework verification is recorded, while
+remote delivery/read, audible playback and hardware verification are not claimed.
+Native TTS, Sonos restoration and context-aware channel routing were live verified
+for WP-4.7.13.2 on 2026-08-20.
 
-Blade and electric door-opener success are dispatch-scoped and deliberately do not
-claim unobservable hardware state. Garage stop/toggle and cover set-position remain
-outside the canonical surface.
-
-Plant Care starts without invented history: a plant is `unknown` until a real
-watering event is recorded. Thereafter interval/history state is `ok`, `due` or
-`overdue`. Plant Care state-scoped success proves the persistent event, not physical
-watering or soil moisture.
-
-Native room controls are adapters, not alternate provider paths: each productive
-press or Home Assistant entity service call enters `wnhf.execution_execute`. Central
-health, security and aggregate entities deliberately remain on central module devices.
+RC11 does not advertise arbitrary cover positioning or blade position. Garage STOP
+proves only the dedicated STOP command dispatch and does not infer the physical
+stopped position. Plant Care verifies persistent watering history only; an optional
+moisture sensor can be recorded in the semantic registry but does not change the
+care state in RC11.

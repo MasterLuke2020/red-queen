@@ -5,20 +5,25 @@ as semantic objects and state, evaluates context/rules/policies/decisions, resol
 capabilities and providers, and executes explicitly supported actions through
 contracts and feedback-aware guards.
 
-> **Current candidate:** `1.0.0-rc10` — LIVE VERIFIED<br>
+> **Current candidate:** `1.0.0-rc11` — LIVE VERIFIED<br>
 > **Technical Home Assistant domain:** `wnhf`<br>
-> **Development lineage:** WNHF `1.36.0` / `WP-4.7.16.0`
+> **Development lineage:** WNHF `1.37.0` / `WP-4.7.17.0`
 
-## RC10 candidate changes
+## RC11 candidate changes
 
-- Preserves the published, live-verified RC9 semantic and execution contracts.
-- Adds one room-associated native state entity for every enabled opening.
-- Adds native room controls for motor locks, electric door release and the garage
-  door, plus explicit blade-open/blade-close buttons for every capable blind.
-- Routes native light, cover, blade, lock, door-release, garage and Plant Care
-  controls through the canonical execution service.
-- Keeps central health, security and aggregate diagnostics on their existing module
-  devices while placing physical object state and controls in their semantic rooms.
+RC11 turns the existing semantic registry foundation into a guided Home Assistant
+commissioning path for the currently supported house model.
+
+- Adds explicit `uninitialized`, `manual` and `managed` registry ownership modes.
+- Adds managed base creation from Home Assistant Areas/Floors.
+- Generates semantic IDs automatically for configurator-created rooms and objects.
+- Adds guided configuration for rooms, impulse lights, venetian blinds, windows,
+  sliding doors, doors, garage doors and Plant Care.
+- Adds transaction staging, backups and rollback for managed registry writes.
+- Preserves existing manual registries as read-only.
+- Adds canonical `garage.stop` when a dedicated STOP command is configured.
+- Keeps cover positioning read-only and blade commands explicit.
+- Adds localized configurator validation and native-action guard messages.
 
 ## Current canonical real-execution surface
 
@@ -31,6 +36,7 @@ covers.blades_open
 covers.blades_close
 garage.open
 garage.close
+garage.stop
 openings.lock
 openings.unlock
 openings.release
@@ -45,18 +51,23 @@ Dry-run entry point: `wnhf.execution_dry_run`
 
 ## Candidate status
 
-`1.0.0-rc10` and WP-4.7.16.0 preserve the published, live-verified RC9 baseline.
-Static and reference-installation live qualification passed on 2026-08-21.
+The exact consolidated RC11 package was installed and live-regression-tested on the
+dedicated Home Assistant test system on 2026-08-22. Managed configuration, native
+light/cover/access/garage behavior, Plant Care persistence, localized guards and
+restart persistence passed. Home Assistant hassfest passed on the RC11 release branch
+on 2026-08-23. Publication still requires the final repository static check on the
+release commit.
 
-See `docs/RC10_CANDIDATE_VALIDATION.md` for the qualification plan.
+See `docs/RC11_CANDIDATE_VALIDATION.md` and
+`custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc11.md`.
 
 ## Installation
 
 Copy `custom_components/wnhf` to `/config/custom_components/wnhf`, restart Home
 Assistant, and add/reload **Red Queen** through **Settings → Devices & services**.
 
-Registry data under `/config/wnhf` is installation-specific and is intentionally not
-part of the integration source tree.
+Installation-owned data remains below `/config/wnhf`. Existing manual registries are
+not silently adopted or rewritten by the RC11 configurator.
 
 ## License
 
