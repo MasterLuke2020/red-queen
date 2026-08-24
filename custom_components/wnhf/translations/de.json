@@ -44,7 +44,8 @@
           "add_light": "Licht hinzufügen",
           "add_cover": "Raffstore hinzufügen",
           "add_opening": "Öffnung hinzufügen",
-          "add_plant": "Pflanze hinzufügen"
+          "add_plant": "Pflanze hinzufügen",
+          "dashboard": "Dashboard"
         }
       },
       "status": {
@@ -248,6 +249,14 @@
           "plant_watering_interval_days": "Nach wie vielen Tagen Red Queen die nächste Gießung als fällig betrachtet. Zulässig: 1 bis 365 Tage.",
           "plant_moisture_sensor_entity_id": "Optionaler sensor.* wird in der Registry gespeichert. In RC11 bleibt der Plant-Care-Status bewusst intervall-/historienbasiert und leitet aus diesem Sensor noch keine Gießentscheidung ab."
         }
+      },
+      "dashboard": {
+        "title": "Red-Queen-Dashboard",
+        "description": "Status: {dashboard_status}. Pfad: {dashboard_path}. Erzeugtes Modell: {floors} Etagen, {rooms} Räume, {lights} Lichter, {covers} Raffstores, {openings} Öffnungen, {garages} Garagentore und {plants} Pflanzen. Native Entity-Bindings: {bindings_resolved}/{bindings_expected} aufgelöst, {binding_issues} Hinweise. Das Dashboard wird nur durch die unten gewählte Aktion erstellt oder aktualisiert.",
+        "menu_options": {
+          "dashboard_create": "Dashboard erstellen",
+          "dashboard_update": "Dashboard aktualisieren"
+        }
       }
     },
     "error": {
@@ -270,7 +279,8 @@
       "commissioning_state_lost": "Der Einrichtungsentwurf ist verloren gegangen. Starte erneut.",
       "no_rooms_configured": "Es sind keine gültigen Red-Queen-Räume konfiguriert.",
       "cover_configuration_state_lost": "Der Raffstore-Entwurf ist verloren gegangen. Starte die Konfiguration erneut.",
-      "opening_configuration_state_lost": "Der Öffnungsentwurf ist verloren gegangen. Starte die Konfiguration erneut."
+      "opening_configuration_state_lost": "Der Öffnungsentwurf ist verloren gegangen. Starte die Konfiguration erneut.",
+      "dashboard_generation_failed": "Das Red-Queen-Dashboard konnte nicht verarbeitet werden: {error}"
     }
   },
   "exceptions": {

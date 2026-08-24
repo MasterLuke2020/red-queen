@@ -21,6 +21,11 @@ from .configuration import (
     WNHFConfigurationError,
 )
 from .const import DOMAIN, PRODUCT_NAME, REGISTRY_ROOT
+from .dashboard_service import (
+    DashboardGenerationError,
+    dashboard_generation_service,
+)
+from .localization import localized
 
 CONF_BUILDING_ID = "building_id"
 CONF_BUILDING_NAME = "building_name"
@@ -78,6 +83,45 @@ def _status_placeholders(snapshot: dict[str, Any]) -> dict[str, str]:
             key: str(counts.get(key, 0))
             for key in ("rooms", "lights", "covers", "openings", "plants")
         },
+    }
+
+
+def _dashboard_state_label(hass, state: str) -> str:
+    """Return one localized Configurator label for a dashboard lifecycle state."""
+    labels = {
+        "not_created": ("nicht erstellt", "not created"),
+        "ready": ("aktuell", "current"),
+        "outdated": ("Aktualisierung verfügbar", "update available"),
+        "detached": (
+            "gespeichert, derzeit nicht eingebunden",
+            "stored, currently detached",
+        ),
+        "recovery_mode": (
+            "im Recovery-Modus nicht verfügbar",
+            "unavailable in recovery mode",
+        ),
+    }
+    de, en = labels.get(state, (state, state))
+    return localized(hass, de=de, en=en)
+
+
+def _dashboard_placeholders(hass, status) -> dict[str, str]:
+    """Flatten dashboard generation status for localized Options Flow text."""
+    counts = status.preview.model.counts
+    lifecycle = status.lifecycle
+    return {
+        "dashboard_status": _dashboard_state_label(hass, lifecycle.state),
+        "dashboard_path": f"/{lifecycle.url_path}",
+        "floors": str(counts.floors),
+        "rooms": str(counts.rooms),
+        "lights": str(counts.lights),
+        "covers": str(counts.covers),
+        "openings": str(counts.openings),
+        "garages": str(counts.garages),
+        "plants": str(counts.plants),
+        "bindings_resolved": str(status.preview.bindings.resolved_entity_count),
+        "bindings_expected": str(status.preview.bindings.expected_entity_count),
+        "binding_issues": str(len(status.preview.bindings.issues)),
     }
 
 
@@ -353,7 +397,15 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
             return await self.async_step_status()
         return self.async_show_menu(
             step_id="init",
-            menu_options=["status", "add_room", "add_light", "add_cover", "add_opening", "add_plant"],
+            menu_options=[
+                "status",
+                "add_room",
+                "add_light",
+                "add_cover",
+                "add_opening",
+                "add_plant",
+                "dashboard",
+            ],
             description_placeholders=_status_placeholders(snapshot),
         )
 
@@ -1114,6 +1166,53 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
             ),
             errors=errors,
         )
+
+    async def async_step_dashboard(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Show dashboard status and exactly one explicit write action."""
+        try:
+            status = await dashboard_generation_service(self.hass).async_status()
+        except DashboardGenerationError as err:
+            return self.async_abort(
+                reason="dashboard_generation_failed",
+                description_placeholders={"error": str(err)},
+            )
+
+        action = (
+            "dashboard_create"
+            if status.lifecycle.state == "not_created"
+            else "dashboard_update"
+        )
+        return self.async_show_menu(
+            step_id="dashboard",
+            menu_options=[action],
+            description_placeholders=_dashboard_placeholders(self.hass, status),
+        )
+
+    async def async_step_dashboard_create(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Explicitly create the integration-owned Red Queen dashboard."""
+        return await self._async_apply_dashboard()
+
+    async def async_step_dashboard_update(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Explicitly refresh the integration-owned Red Queen dashboard."""
+        return await self._async_apply_dashboard()
+
+    async def _async_apply_dashboard(self) -> FlowResult:
+        """Run the dashboard generation pipeline after an explicit click."""
+        try:
+            result = await dashboard_generation_service(self.hass).async_apply()
+        except DashboardGenerationError as err:
+            return self.async_abort(
+                reason="dashboard_generation_failed",
+                description_placeholders={"error": str(err)},
+            )
+
+        return self._finish(f"dashboard_{result.applied.action}")
 
     def _finish(self, action: str) -> FlowResult:
         options = dict(self.config_entry.options)

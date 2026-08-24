@@ -44,7 +44,8 @@
           "add_light": "Add light",
           "add_cover": "Add venetian blind",
           "add_opening": "Add opening",
-          "add_plant": "Add plant"
+          "add_plant": "Add plant",
+          "dashboard": "Dashboard"
         }
       },
       "status": {
@@ -248,6 +249,14 @@
           "plant_watering_interval_days": "Number of days after which Red Queen considers the next watering due. Allowed: 1 to 365 days.",
           "plant_moisture_sensor_entity_id": "An optional sensor.* is stored in the registry. In RC11 Plant Care intentionally remains interval/history based and does not infer watering decisions from this sensor yet."
         }
+      },
+      "dashboard": {
+        "title": "Red Queen dashboard",
+        "description": "Status: {dashboard_status}. Path: {dashboard_path}. Generated model: {floors} floors, {rooms} rooms, {lights} lights, {covers} covers, {openings} openings, {garages} garage doors and {plants} plants. Native entity bindings: {bindings_resolved}/{bindings_expected} resolved, {binding_issues} issues. The dashboard is created or updated only by the explicit action selected below.",
+        "menu_options": {
+          "dashboard_create": "Create dashboard",
+          "dashboard_update": "Update dashboard"
+        }
       }
     },
     "error": {
@@ -270,7 +279,8 @@
       "commissioning_state_lost": "The commissioning draft was lost. Start again.",
       "no_rooms_configured": "No valid Red Queen rooms are configured.",
       "cover_configuration_state_lost": "The venetian-blind draft was lost. Start the configuration again.",
-      "opening_configuration_state_lost": "The opening draft was lost. Start the configuration again."
+      "opening_configuration_state_lost": "The opening draft was lost. Start the configuration again.",
+      "dashboard_generation_failed": "The Red Queen dashboard could not be processed: {error}"
     }
   },
   "exceptions": {
