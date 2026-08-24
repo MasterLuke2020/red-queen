@@ -394,7 +394,11 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
         if snapshot["mode"] == "uninitialized":
             return await self.async_step_create_base()
         if snapshot["mode"] == CONFIGURATOR_MODE_MANUAL:
-            return await self.async_step_status()
+            return self.async_show_menu(
+                step_id="init",
+                menu_options=["status", "dashboard"],
+                description_placeholders=_status_placeholders(snapshot),
+            )
         return self.async_show_menu(
             step_id="init",
             menu_options=[
