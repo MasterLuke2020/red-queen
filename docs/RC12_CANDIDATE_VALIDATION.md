@@ -34,9 +34,9 @@ Assistant test instance and qualified on 2026-08-24.
 
 Candidate identity:
 
-- File: `red_queen_1.0.0-rc12_candidate.zip`
+- File: `red_queen_1.0.0-rc12_final_candidate.zip`
 - Integration files: `174`
-- SHA-256: `88b31e2da46ab052ba08c71f8600160f1a51e7719e0284597dee1eda249a02b0`
+- SHA-256: `d1c683f56990ed14aa7e488564dad67d008fbd483ec3353ca793af56fec135d7`
 
 Exact-package PASS evidence:
 
@@ -54,6 +54,12 @@ Exact-package PASS evidence:
 - Post-restart logs contained no Red Queen dashboard error/traceback and no oversized
   validation-sensor Recorder warning.
 
+After the initial exact-package qualification, hassfest identified the required
+explicit `lovelace` manifest dependency. The dependency was added and manifest keys
+were sorted per hassfest. Static repository checks and hassfest then passed, the final
+package above was rebuilt from the frozen integration source, and targeted
+startup/dashboard-restore/restart revalidation passed.
+
 ## Safety boundary
 
 - The generated dashboard invokes native Red Queen entities only.
@@ -66,7 +72,5 @@ Exact-package PASS evidence:
 
 ## Remaining publication gate
 
-1. Commit and push the frozen RC12 release candidate source.
-2. Pass repository static checks and Home Assistant hassfest on the release branch.
-3. Fast-forward `main` to the verified release commit.
-4. Create annotated tag `v1.0.0-rc12` and publish the GitHub prerelease.
+1. Fast-forward `main` to the verified RC12 release commit.
+2. Create annotated tag `v1.0.0-rc12` and publish the GitHub prerelease.

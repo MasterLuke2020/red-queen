@@ -26,7 +26,10 @@ All notable public changes to Red Queen are documented here.
 
 #### Validation
 - Dashboard implementation live validation passed on 2026-08-24.
-- Exact final RC12 candidate package qualification remains pending after metadata/checksum finalization.
+- Final exact-package qualification passed on 2026-08-24 with 174 integration files.
+- Final package SHA-256: `d1c683f56990ed14aa7e488564dad67d008fbd483ec3353ca793af56fec135d7`.
+- Repository static checks and Home Assistant hassfest passed after the explicit
+  Lovelace dependency metadata correction.
 
 
 ### 1.0.0-rc11 candidate — WP-4.7.17.0

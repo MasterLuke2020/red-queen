@@ -4,7 +4,7 @@
 
 - Name: **Red Queen**
 - Version: `1.0.0-rc12`
-- Status: **EXACT PACKAGE LIVE VERIFIED / REPOSITORY CI PENDING**
+- Status: **FINAL EXACT PACKAGE LIVE VERIFIED / CI PASS**
 - Channel: `release_candidate`
 - Candidate: `rc12`
 
@@ -34,7 +34,7 @@
 
 On the dedicated Home Assistant test instance on 2026-08-24, the exact candidate
 package with 174 integration files and SHA-256
-`88b31e2da46ab052ba08c71f8600160f1a51e7719e0284597dee1eda249a02b0`
+`d1c683f56990ed14aa7e488564dad67d008fbd483ec3353ca793af56fec135d7`
 passed:
 
 - fresh integration installation and startup;
@@ -46,12 +46,15 @@ passed:
 - full Home Assistant restart with immediate dashboard persistence;
 - post-restart dashboard state `Status: aktuell`;
 - no Red Queen dashboard traceback/error and no oversized Recorder attribute warning.
+- final Lovelace dependency metadata correction passed static repository checks and
+  Home Assistant hassfest; the rebuilt package passed targeted startup/restore/restart
+  revalidation.
 
 ## Remaining release gate
 
-- Commit and push the frozen RC12 release candidate source.
-- Pass repository static checks and Home Assistant hassfest on the release branch.
-- Fast-forward `main`, create annotated tag `v1.0.0-rc12`, and publish the prerelease.
+- Fast-forward `main` to the verified RC12 release commit.
+- Create annotated tag `v1.0.0-rc12`.
+- Publish Red Queen `1.0.0-rc12` as a GitHub prerelease.
 
 Repository owner: `MasterLuke2020`
 Repository: `MasterLuke2020/red-queen`

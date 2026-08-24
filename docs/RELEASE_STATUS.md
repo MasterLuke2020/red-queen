@@ -2,7 +2,7 @@
 
 ## Current candidate
 
-**Red Queen 1.0.0-rc12 — EXACT PACKAGE LIVE VERIFIED / REPOSITORY CI PENDING**
+**Red Queen 1.0.0-rc12 — FINAL EXACT PACKAGE LIVE VERIFIED / CI PASS**
 
 RC12 advances the development lineage to WNHF `1.38.0` / `WP-4.7.18.0` and adds the
 Generated Dashboard Foundation. Managed configuration from RC11 remains intact.
@@ -15,7 +15,7 @@ Assistant test instance and qualified on 2026-08-24.
 Qualified package:
 
 - Integration files: `174`
-- SHA-256: `88b31e2da46ab052ba08c71f8600160f1a51e7719e0284597dee1eda249a02b0`
+- SHA-256: `d1c683f56990ed14aa7e488564dad67d008fbd483ec3353ca793af56fec135d7`
 
 Observed PASS results included:
 
@@ -32,6 +32,11 @@ Observed PASS results included:
 - no Red Queen dashboard error/traceback and no oversized validation-sensor Recorder
   warning after restart.
 
+Home Assistant hassfest required an explicit `lovelace` manifest dependency. After
+that metadata-only correction, repository static checks and hassfest passed. The
+rebuilt final package then passed targeted startup, dashboard restore and restart
+persistence revalidation.
+
 ## Compatibility and safety
 
 - Home Assistant integration domain remains `wnhf`.
@@ -45,8 +50,6 @@ Observed PASS results included:
 
 ## Remaining RC12 publication gate
 
-1. Commit and push the frozen RC12 release candidate source.
-2. Pass repository static checks and Home Assistant hassfest on the release branch.
-3. Fast-forward `main` to the verified release commit.
-4. Create annotated tag `v1.0.0-rc12`.
-5. Publish Red Queen `1.0.0-rc12` as a GitHub prerelease.
+1. Fast-forward `main` to the verified release commit.
+2. Create annotated tag `v1.0.0-rc12`.
+3. Publish Red Queen `1.0.0-rc12` as a GitHub prerelease.

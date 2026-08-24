@@ -4,7 +4,7 @@
 as semantic objects and state, resolves native/canonical controls, and exposes a
 stable Home Assistant surface for commissioning, operation and diagnostics.
 
-> **Current candidate:** `1.0.0-rc12` — EXACT PACKAGE LIVE VERIFIED / REPOSITORY CI PENDING
+> **Current candidate:** `1.0.0-rc12` — FINAL EXACT PACKAGE LIVE VERIFIED / CI PASS
 > **Technical Home Assistant domain:** `wnhf`
 > **Development lineage:** WNHF `1.38.0` / `WP-4.7.18.0`
 
@@ -62,13 +62,17 @@ The exact RC12 candidate package was clean-installed and live-qualified on the
 dedicated Home Assistant test system on 2026-08-24. The qualified package contains
 174 integration files and has SHA-256:
 
-`88b31e2da46ab052ba08c71f8600160f1a51e7719e0284597dee1eda249a02b0`
+`d1c683f56990ed14aa7e488564dad67d008fbd483ec3353ca793af56fec135d7`
 
 The exact package passed registry loading/validation, dashboard preview and creation,
 `168/168` native entity binding, overview/floor/room/Plant Care/System navigation,
 restart persistence and post-restart `Status: aktuell`. No Red Queen dashboard errors,
-tracebacks or oversized Recorder attribute warnings were observed. The remaining
-release gate is repository CI and publication from the frozen candidate source.
+tracebacks or oversized Recorder attribute warnings were observed.
+
+Home Assistant hassfest required the explicit `lovelace` dependency declaration.
+After that metadata-only correction, static repository checks and hassfest passed on
+the frozen RC12 integration source. The rebuilt final package was then re-tested for
+startup, dashboard restore and restart persistence. The remaining gate is publication.
 
 See `docs/RC12_CANDIDATE_VALIDATION.md` and
 `custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc12.md`.
