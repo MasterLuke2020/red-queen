@@ -181,36 +181,131 @@ def _global_tile(
     return _unresolved_card(name=name, role=role)
 
 
+def _semantic_markdown_card(*, title: str, content: str) -> dict[str, Any]:
+    """Return one compact native Markdown status card."""
+    return {
+        "type": "markdown",
+        "content": f"### {title}\n{content}",
+    }
+
+
+def _binary_status_template(
+    entity_id: str | None,
+    *,
+    on_text: str,
+    off_text: str,
+) -> str:
+    if not entity_id:
+        return "Nicht verfügbar"
+    return (
+        f"{{% set s = states('{entity_id}') %}}\n"
+        f"{{{{ '{on_text}' if s == 'on' else '{off_text}' if s == 'off' "
+        "else 'Nicht verfügbar' }}"
+    )
+
+
+def _numeric_status_template(
+    entity_id: str | None,
+    *,
+    suffix: str = "",
+) -> str:
+    if not entity_id:
+        return "Nicht verfügbar"
+    suffix_literal = f" ~ ' {suffix}'" if suffix else ""
+    return (
+        f"{{% set s = states('{entity_id}') %}}\n"
+        "{% if s in ['unknown', 'unavailable', 'none', ''] %}"
+        "Nicht verfügbar"
+        "{% else %}"
+        f"{{{{ s{suffix_literal} }}}}"
+        "{% endif %}"
+    )
+
+
+def _light_overview_template(entity_ids: list[str]) -> str:
+    quoted = ", ".join(f"'{entity_id}'" for entity_id in entity_ids)
+    return (
+        f"{{% set ids = [{quoted}] %}}\n"
+        "{% set ns = namespace(on=0, off=0, unavailable=0, other=0) %}\n"
+        "{% for id in ids %}\n"
+        "  {% set s = states(id) %}\n"
+        "  {% if s == 'on' %}{% set ns.on = ns.on + 1 %}\n"
+        "  {% elif s == 'off' %}{% set ns.off = ns.off + 1 %}\n"
+        "  {% elif s in ['unknown', 'unavailable', 'none', ''] %}"
+        "{% set ns.unavailable = ns.unavailable + 1 %}\n"
+        "  {% else %}{% set ns.other = ns.other + 1 %}{% endif %}\n"
+        "{% endfor %}\n"
+        "{{ ids | length }} gesamt · {{ ns.on }} an · {{ ns.off }} aus"
+        "{% if ns.unavailable > 0 %} · {{ ns.unavailable }} nicht verfügbar{% endif %}"
+        "{% if ns.other > 0 %} · {{ ns.other }} unklar{% endif %}"
+    )
+
+
+def _opening_overview_template(entity_ids: list[str]) -> str:
+    quoted = ", ".join(f"'{entity_id}'" for entity_id in entity_ids)
+    return (
+        f"{{% set ids = [{quoted}] %}}\n"
+        "{% set ns = namespace(open=0, closed=0, unavailable=0, other=0) %}\n"
+        "{% for id in ids %}\n"
+        "  {% set s = states(id) %}\n"
+        "  {% if s == 'on' %}{% set ns.open = ns.open + 1 %}\n"
+        "  {% elif s == 'off' %}{% set ns.closed = ns.closed + 1 %}\n"
+        "  {% elif s in ['unknown', 'unavailable', 'none', ''] %}"
+        "{% set ns.unavailable = ns.unavailable + 1 %}\n"
+        "  {% else %}{% set ns.other = ns.other + 1 %}{% endif %}\n"
+        "{% endfor %}\n"
+        "{{ ids | length }} gesamt · {{ ns.open }} offen · {{ ns.closed }} geschlossen"
+        "{% if ns.unavailable > 0 %} · {{ ns.unavailable }} nicht verfügbar{% endif %}"
+        "{% if ns.other > 0 %} · {{ ns.other }} unklar{% endif %}"
+    )
+
+
 def _overview_status_cards(
     model: DashboardModel,
     bindings: DashboardBindings,
 ) -> list[dict[str, Any]]:
     cards: list[dict[str, Any]] = [
-        _global_tile(
-            bindings,
-            role="house_ready",
-            name="Hausstatus",
-            icon="mdi:home-check",
+        _semantic_markdown_card(
+            title="Hausstatus",
+            content=_binary_status_template(
+                bindings.global_entity_id("house_ready"),
+                on_text="Bereit",
+                off_text="Nicht bereit",
+            ),
         ),
     ]
 
     if model.features.openings:
+        opening_entities = [
+            item.state.entity_id
+            for item in bindings.openings
+            if item.state.entity_id
+        ]
         cards.append(
-            _global_tile(
-                bindings,
-                role="openings_any_open",
-                name="Öffnungen",
-                icon="mdi:window-open-variant",
+            _semantic_markdown_card(
+                title="Öffnungen",
+                content=(
+                    _opening_overview_template(opening_entities)
+                    if opening_entities
+                    else "Nicht verfügbar"
+                ),
             )
         )
 
     if model.features.lights:
+        light_entities = [
+            item.light.entity_id
+            for item in bindings.lights
+            if item.light.entity_id
+        ]
         cards.append(
-            _global_tile(
-                bindings,
-                role="lighting_count_on",
-                name="Licht",
-                icon="mdi:lightbulb-group",
+            _semantic_markdown_card(
+                title="Licht",
+                content=(
+                    _light_overview_template(light_entities)
+                    if light_entities
+                    else "Nicht verfügbar"
+                ),
             )
         )
 
@@ -220,15 +315,16 @@ def _overview_status_cards(
             for item in bindings.covers
             if item.cover.entity_id
         ]
-        if resolved_covers:
-            cards.append(
-                {
-                    "type": "markdown",
-                    "content": _cover_overview_template(resolved_covers),
-                }
+        cards.append(
+            _semantic_markdown_card(
+                title="Raffstores",
+                content=(
+                    _cover_overview_template(resolved_covers, include_heading=False)
+                    if resolved_covers
+                    else "Nicht verfügbar"
+                ),
             )
-        else:
-            cards.append(_unresolved_card(name="Raffstores", role="covers"))
+        )
 
     if model.features.garage:
         garage_bindings = [
@@ -258,76 +354,110 @@ def _overview_status_cards(
             for item in bindings.plants
             if item.care.entity_id
         ]
-        if care_entities:
-            cards.append(
-                {
-                    "type": "markdown",
-                    "content": _plant_overview_template(care_entities),
-                }
+        cards.append(
+            _semantic_markdown_card(
+                title="Pflanzen",
+                content=(
+                    _plant_overview_template(care_entities, include_heading=False)
+                    if care_entities
+                    else "Nicht verfügbar"
+                ),
             )
-        else:
-            cards.append(_unresolved_card(name="Pflanzen", role="plant_care"))
+        )
 
-    cards.extend(
-        [
-            _global_tile(
-                bindings,
-                role="security_secure",
-                name="Sicherheit",
-                icon="mdi:shield-home",
+    access_available = bindings.global_entity_id("access_all_available")
+    security_secure = bindings.global_entity_id("security_secure")
+    if access_available and security_secure:
+        security_content = (
+            f"{{% set available = states('{access_available}') %}}\n"
+            f"{{% set secure = states('{security_secure}') %}}\n"
+            "{% if available != 'on' %}Rückmeldungen unvollständig"
+            "{% elif secure == 'on' %}Sicher"
+            "{% elif secure == 'off' %}Aufmerksamkeit erforderlich"
+            "{% else %}Nicht verfügbar{% endif %}"
+        )
+    else:
+        security_content = "Nicht verfügbar"
+    cards.append(
+        _semantic_markdown_card(
+            title="Sicherheit",
+            content=security_content,
+        )
+    )
+
+    cards.append(
+        _semantic_markdown_card(
+            title="Red Queen",
+            content=_numeric_status_template(
+                bindings.global_entity_id("health_score"),
+                suffix="%",
             ),
-            _global_tile(
-                bindings,
-                role="health_score",
-                name="Red Queen",
-                icon="mdi:chess-queen",
-            ),
-        ]
+        )
     )
     return cards
 
 
-def _cover_overview_template(entity_ids: list[str]) -> str:
+def _cover_overview_template(
+    entity_ids: list[str],
+    *,
+    include_heading: bool = True,
+) -> str:
     quoted = ", ".join(f"'{entity_id}'" for entity_id in entity_ids)
+    heading = "### Raffstores\n" if include_heading else ""
     return (
-        "### Raffstores\n"
-        f"{{% set ids = [{quoted}] %}}\n"
-        "{% set ns = namespace(open=0, closed=0, moving=0, other=0) %}\n"
+        heading
+        + f"{{% set ids = [{quoted}] %}}\n"
+        "{% set ns = namespace(open=0, closed=0, moving=0, unavailable=0, other=0) %}\n"
         "{% for id in ids %}\n"
         "  {% set s = states(id) %}\n"
         "  {% if s == 'open' %}{% set ns.open = ns.open + 1 %}\n"
         "  {% elif s == 'closed' %}{% set ns.closed = ns.closed + 1 %}\n"
         "  {% elif s in ['opening', 'closing'] %}"
         "{% set ns.moving = ns.moving + 1 %}\n"
+        "  {% elif s in ['unknown', 'unavailable', 'none', ''] %}"
+        "{% set ns.unavailable = ns.unavailable + 1 %}\n"
         "  {% else %}{% set ns.other = ns.other + 1 %}{% endif %}\n"
         "{% endfor %}\n"
         "{{ ids | length }} gesamt · {{ ns.open }} offen · "
         "{{ ns.closed }} geschlossen"
         "{% if ns.moving > 0 %} · {{ ns.moving }} in Bewegung{% endif %}"
-        "{% if ns.other > 0 %} · {{ ns.other }} prüfen{% endif %}"
+        "{% if ns.unavailable > 0 %} · {{ ns.unavailable }} nicht verfügbar{% endif %}"
+        "{% if ns.other > 0 %} · {{ ns.other }} unklar{% endif %}"
     )
 
 
-def _plant_overview_template(entity_ids: list[str]) -> str:
+def _plant_overview_template(
+    entity_ids: list[str],
+    *,
+    include_heading: bool = True,
+) -> str:
     quoted = ", ".join(f"'{entity_id}'" for entity_id in entity_ids)
+    heading = "### Pflanzen\n" if include_heading else ""
     return (
-        "### Pflanzen\n"
-        f"{{% set ids = [{quoted}] %}}\n"
-        "{% set ns = namespace(due=0, overdue=0, unknown=0, ok=0) %}\n"
+        heading
+        + f"{{% set ids = [{quoted}] %}}\n"
+        "{% set ns = namespace(due=0, overdue=0, unknown=0, unavailable=0, ok=0) %}\n"
         "{% for id in ids %}\n"
         "  {% set s = states(id) %}\n"
         "  {% if s == 'overdue' %}{% set ns.overdue = ns.overdue + 1 %}\n"
         "  {% elif s == 'due' %}{% set ns.due = ns.due + 1 %}\n"
         "  {% elif s == 'unknown' %}{% set ns.unknown = ns.unknown + 1 %}\n"
+        "  {% elif s in ['unavailable', 'none', ''] %}"
+        "{% set ns.unavailable = ns.unavailable + 1 %}\n"
         "  {% else %}{% set ns.ok = ns.ok + 1 %}{% endif %}\n"
         "{% endfor %}\n"
         "{% if ns.overdue > 0 %}{{ ns.overdue }} überfällig"
-        "{% if ns.due > 0 %} · {{ ns.due }} heute fällig{% endif %}\n"
-        "{% elif ns.due > 0 %}{{ ns.due }} heute fällig\n"
+        "{% if ns.due > 0 %} · {{ ns.due }} heute fällig{% endif %}"
+        "{% if ns.unknown > 0 %} · {{ ns.unknown }} ohne Gießverlauf{% endif %}"
+        "{% if ns.unavailable > 0 %} · {{ ns.unavailable }} nicht verfügbar{% endif %}\n"
+        "{% elif ns.due > 0 %}{{ ns.due }} heute fällig"
+        "{% if ns.unknown > 0 %} · {{ ns.unknown }} ohne Gießverlauf{% endif %}"
+        "{% if ns.unavailable > 0 %} · {{ ns.unavailable }} nicht verfügbar{% endif %}\n"
+        "{% elif ns.unavailable > 0 %}{{ ns.unavailable }} nicht verfügbar"
+        "{% if ns.unknown > 0 %} · {{ ns.unknown }} ohne Gießverlauf{% endif %}\n"
         "{% elif ns.unknown > 0 %}{{ ns.unknown }} ohne Gießverlauf\n"
         "{% else %}alle {{ ids | length }} versorgt{% endif %}"
     )
-
 
 def _overview_action_cards(
     model: DashboardModel,
@@ -510,21 +640,37 @@ def _room_status_markdown(
         "{% set lights_on = namespace(n=0) %}\n"
         "{% set openings_open = namespace(n=0) %}\n"
         "{% set unlocked = namespace(n=0) %}\n"
-        "{% for id in lights %}{% if states(id) == 'on' %}"
-        "{% set lights_on.n = lights_on.n + 1 %}{% endif %}{% endfor %}\n"
-        "{% for id in openings %}{% if states(id) == 'on' %}"
-        "{% set openings_open.n = openings_open.n + 1 %}{% endif %}{% endfor %}\n"
-        "{% for id in locks %}{% if states(id) == 'unlocked' %}"
-        "{% set unlocked.n = unlocked.n + 1 %}{% endif %}{% endfor %}\n"
+        "{% set unavailable = namespace(n=0) %}\n"
+        "{% for id in lights %}\n"
+        "  {% set s = states(id) %}\n"
+        "  {% if s == 'on' %}{% set lights_on.n = lights_on.n + 1 %}"
+        "{% elif s in ['unknown', 'unavailable', 'none', ''] %}"
+        "{% set unavailable.n = unavailable.n + 1 %}{% endif %}\n"
+        "{% endfor %}\n"
+        "{% for id in openings %}\n"
+        "  {% set s = states(id) %}\n"
+        "  {% if s == 'on' %}{% set openings_open.n = openings_open.n + 1 %}"
+        "{% elif s in ['unknown', 'unavailable', 'none', ''] %}"
+        "{% set unavailable.n = unavailable.n + 1 %}{% endif %}\n"
+        "{% endfor %}\n"
+        "{% for id in locks %}\n"
+        "  {% set s = states(id) %}\n"
+        "  {% if s == 'unlocked' %}{% set unlocked.n = unlocked.n + 1 %}"
+        "{% elif s in ['unknown', 'unavailable', 'none', ''] %}"
+        "{% set unavailable.n = unavailable.n + 1 %}{% endif %}\n"
+        "{% endfor %}\n"
         "{% set moving = namespace(n=0) %}\n"
         "{% set closed = namespace(n=0) %}\n"
         "{% for id in covers %}\n"
-        "  {% if states(id) in ['opening', 'closing'] %}"
-        "{% set moving.n = moving.n + 1 %}{% endif %}\n"
-        "  {% if states(id) == 'closed' %}"
-        "{% set closed.n = closed.n + 1 %}{% endif %}\n"
+        "  {% set s = states(id) %}\n"
+        "  {% if s in ['opening', 'closing'] %}"
+        "{% set moving.n = moving.n + 1 %}"
+        "{% elif s == 'closed' %}{% set closed.n = closed.n + 1 %}"
+        "{% elif s in ['unknown', 'unavailable', 'none', ''] %}"
+        "{% set unavailable.n = unavailable.n + 1 %}{% endif %}\n"
         "{% endfor %}\n"
         "{% set parts = [] %}\n"
+        "{% if unavailable.n > 0 %}{% set parts = parts + ['⚠️ ' ~ unavailable.n ~ ' nicht verfügbar'] %}{% endif %}\n"
         "{% if openings_open.n > 0 %}{% set parts = parts + ['🚪 ' ~ openings_open.n ~ ' offen'] %}{% endif %}\n"
         "{% if unlocked.n > 0 %}{% set parts = parts + ['🔓 ' ~ unlocked.n ~ ' entriegelt'] %}{% endif %}\n"
         "{% if lights_on.n > 0 %}{% set parts = parts + ['💡 ' ~ lights_on.n ~ ' an'] %}{% endif %}\n"
@@ -533,7 +679,6 @@ def _room_status_markdown(
         "{{ parts | join(' · ') if parts | length > 0 else 'alles ruhig' }}"
     )
     return {"type": "markdown", "content": content}
-
 
 def _render_floor(
     floor: DashboardFloorSpec,
@@ -776,39 +921,47 @@ def _plant_cards(
         if binding is None:
             cards.append(_unresolved_card(name=plant.name, role="plant_care"))
             continue
-        cards.extend(_one_plant_cards(plant.name, binding))
+        cards.append(_one_plant_stack(plant.name, binding))
     return cards
 
 
-def _one_plant_cards(
-    plant_name: str,
+def _one_plant_stack(
+    display_name: str,
     binding: DashboardPlantBinding,
-) -> list[dict[str, Any]]:
-    cards: list[dict[str, Any]] = []
+) -> dict[str, Any]:
+    """Keep one plant state and its watering action visually together."""
+    stack_cards: list[dict[str, Any]] = []
     if binding.care.entity_id:
-        cards.append(
+        stack_cards.append(
             _entity_tile(
                 binding.care.entity_id,
-                name=plant_name,
+                name=display_name,
                 icon="mdi:sprout",
             )
         )
     else:
-        cards.append(_unresolved_card(name=plant_name, role="plant_care"))
+        stack_cards.append(
+            _unresolved_card(name=display_name, role="plant_care")
+        )
 
     if binding.record_watering.entity_id:
-        cards.append(
+        stack_cards.append(
             _action_button(
-                name=f"{plant_name} gießen protokollieren",
+                name="Gießen protokollieren",
                 icon="mdi:watering-can",
                 action="button.press",
                 target_entity_id=binding.record_watering.entity_id,
             )
         )
     else:
-        cards.append(_unresolved_card(name=plant_name, role="record_watering"))
-    return cards
+        stack_cards.append(
+            _unresolved_card(name=display_name, role="record_watering")
+        )
 
+    return {
+        "type": "vertical-stack",
+        "cards": stack_cards,
+    }
 
 def _render_room(
     room: DashboardRoomSpec,
@@ -896,10 +1049,12 @@ def _render_plants(
             if binding is None:
                 cards.append(_unresolved_card(name=plant.name, role="plant_care"))
                 continue
-            plant_cards = _one_plant_cards(plant.name, binding)
-            if plant_cards:
-                plant_cards[0]["name"] = f"{plant.name} · {room.name}"
-            cards.extend(plant_cards)
+            cards.append(
+                _one_plant_stack(
+                    f"{plant.name} · {room.name}",
+                    binding,
+                )
+            )
 
     return {
         "type": "sections",
@@ -925,60 +1080,101 @@ def _render_plants(
     }
 
 
+def _system_summary_card(bindings: DashboardBindings) -> dict[str, Any]:
+    """Render technical state with semantic labels instead of raw HA states."""
+    framework = bindings.global_entity_id("framework_healthy")
+    version = bindings.global_entity_id("framework_version")
+    health = bindings.global_entity_id("health_score")
+    registry = bindings.global_entity_id("registry_valid")
+    validation = bindings.global_entity_id("registry_validation_status")
+    issues = bindings.global_entity_id("registry_validation_issues")
+    access = bindings.global_entity_id("access_all_available")
+    attention = bindings.global_entity_id("access_attention_required")
+
+    lines = ["### Systemstatus"]
+
+    if framework:
+        lines.extend(
+            [
+                f"{{% set framework = states('{framework}') %}}",
+                "**Framework:** {{ 'Bereit' if framework == 'on' else 'Fehler' if framework == 'off' else 'Nicht verfügbar' }}  ",
+            ]
+        )
+    else:
+        lines.append("**Framework:** Nicht verfügbar  ")
+
+    if version:
+        lines.extend(
+            [
+                f"{{% set version = states('{version}') %}}",
+                "**Version:** {{ version if version not in ['unknown', 'unavailable', 'none', ''] else 'Nicht verfügbar' }}  ",
+            ]
+        )
+    else:
+        lines.append("**Version:** Nicht verfügbar  ")
+
+    if health:
+        lines.extend(
+            [
+                f"{{% set health = states('{health}') %}}",
+                "**Health:** {{ health ~ ' %' if health not in ['unknown', 'unavailable', 'none', ''] else 'Nicht verfügbar' }}  ",
+            ]
+        )
+    else:
+        lines.append("**Health:** Nicht verfügbar  ")
+
+    if registry:
+        lines.extend(
+            [
+                f"{{% set registry = states('{registry}') %}}",
+                "**Registry:** {{ 'Gültig' if registry == 'on' else 'Ungültig' if registry == 'off' else 'Nicht verfügbar' }}  ",
+            ]
+        )
+    else:
+        lines.append("**Registry:** Nicht verfügbar  ")
+
+    if validation:
+        lines.extend(
+            [
+                f"{{% set validation = states('{validation}') %}}",
+                "**Laufzeitprüfung:** {{ {'healthy':'OK', 'warning':'Warnungen', 'error':'Fehler', 'pending':'Ausstehend'}.get(validation, 'Nicht verfügbar') }}  ",
+            ]
+        )
+    else:
+        lines.append("**Laufzeitprüfung:** Nicht verfügbar  ")
+
+    if issues:
+        lines.extend(
+            [
+                f"{{% set issues = states('{issues}') %}}",
+                "**Befunde:** {{ issues if issues not in ['unknown', 'unavailable', 'none', ''] else 'Nicht verfügbar' }}  ",
+            ]
+        )
+    else:
+        lines.append("**Befunde:** Nicht verfügbar  ")
+
+    if access and attention:
+        lines.extend(
+            [
+                f"{{% set access = states('{access}') %}}",
+                f"{{% set attention = states('{attention}') %}}",
+                "**Zugriff:** {% if access == 'on' and attention == 'off' %}Verfügbar{% elif access == 'off' %}Rückmeldungen unvollständig{% elif attention == 'on' %}Aufmerksamkeit erforderlich{% else %}Nicht verfügbar{% endif %}",
+            ]
+        )
+    else:
+        lines.append("**Zugriff:** Nicht verfügbar")
+
+    return {
+        "type": "markdown",
+        "content": "\n".join(lines),
+    }
+
+
 def _render_system(
     model: DashboardModel,
     bindings: DashboardBindings,
 ) -> dict[str, Any]:
-    cards = [
-        _global_tile(
-            bindings,
-            role="framework_healthy",
-            name="Framework",
-            icon="mdi:heart-pulse",
-        ),
-        _global_tile(
-            bindings,
-            role="framework_version",
-            name="Version",
-            icon="mdi:package-variant-closed",
-        ),
-        _global_tile(
-            bindings,
-            role="health_score",
-            name="Health",
-            icon="mdi:heart-flash",
-        ),
-        _global_tile(
-            bindings,
-            role="registry_valid",
-            name="Registry",
-            icon="mdi:database-check",
-        ),
-        _global_tile(
-            bindings,
-            role="registry_validation_status",
-            name="Validation",
-            icon="mdi:check-decagram-outline",
-        ),
-        _global_tile(
-            bindings,
-            role="registry_validation_issues",
-            name="Validation Details",
-            icon="mdi:alert-circle-outline",
-        ),
-        _global_tile(
-            bindings,
-            role="access_all_available",
-            name="Access verfügbar",
-            icon="mdi:access-point-check",
-        ),
-        _global_tile(
-            bindings,
-            role="access_attention_required",
-            name="Access Aufmerksamkeit",
-            icon="mdi:shield-alert-outline",
-        ),
-    ]
+    cards: list[dict[str, Any]] = [_system_summary_card(bindings)]
 
     if bindings.issues:
         issue_lines = "\n".join(
@@ -992,6 +1188,13 @@ def _render_system(
                     "### Nicht aufgelöste native Entities\n"
                     f"{issue_lines}"
                 ),
+            }
+        )
+    else:
+        cards.append(
+            {
+                "type": "markdown",
+                "content": "### Native Entity-Bindings\nAlle erwarteten Red-Queen-Entities sind aufgelöst.",
             }
         )
 
@@ -1017,7 +1220,6 @@ def _render_system(
             )
         ],
     }
-
 
 def _canonical_sha256(config: dict[str, Any]) -> str:
     encoded = json.dumps(

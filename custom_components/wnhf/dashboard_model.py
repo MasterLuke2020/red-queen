@@ -174,8 +174,38 @@ def _stable_path(prefix: str, value: str) -> str:
 
 
 def _fallback_floor_name(floor_id: str) -> str:
-    """Return a readable fallback when no HA floor display metadata is available."""
-    words = re.sub(r"[_-]+", " ", floor_id).strip()
+    """Return a readable fallback when no HA floor display metadata is available.
+
+    Manual registries often use semantic ids such as ``house.eg`` instead of a
+    Home Assistant Floor Registry id.  The dashboard must never expose that
+    implementation detail as ``House.Eg``.  Common floor segments receive a
+    stable human label; unknown ids are still converted deterministically.
+    """
+    raw = floor_id.strip()
+    segment = raw.rsplit(".", 1)[-1].casefold() if raw else ""
+    aliases = {
+        "eg": "Erdgeschoss",
+        "ground": "Erdgeschoss",
+        "ground_floor": "Erdgeschoss",
+        "og": "Obergeschoss",
+        "upper": "Obergeschoss",
+        "upper_floor": "Obergeschoss",
+        "ug": "Untergeschoss",
+        "basement": "Keller",
+        "keller": "Keller",
+        "dg": "Dachgeschoss",
+        "attic": "Dachgeschoss",
+        "outdoor": "Außenbereich",
+        "outside": "Außenbereich",
+        "aussen": "Außenbereich",
+        "außen": "Außenbereich",
+        "unassigned": "Weitere Räume",
+    }
+    if segment in aliases:
+        return aliases[segment]
+
+    display_source = raw.rsplit(".", 1)[-1] if "." in raw else raw
+    words = re.sub(r"[_-]+", " ", display_source).strip()
     return words.title() if words else "Weitere Räume"
 
 

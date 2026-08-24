@@ -887,10 +887,21 @@ class WNHFRegistryValidationStatus(WNHFValidationEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
+        """Expose a recorder-safe summary instead of the complete report."""
         attrs = super().extra_state_attributes
         report = self.engine.validation_snapshot()
         if report is not None:
-            attrs.update(report.as_dict())
+            attrs.update(
+                {
+                    "valid": report.valid,
+                    "quality_score": report.quality_score,
+                    "error_count": len(report.errors),
+                    "warning_count": len(report.warnings),
+                    "info_count": len(report.info),
+                    "duration_ms": report.duration_ms,
+                    "generated_at": report.generated_at.isoformat(),
+                }
+            )
         return attrs
 
 
@@ -918,16 +929,20 @@ class WNHFRegistryValidationIssues(WNHFValidationEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
+        """Expose bounded issue metadata that remains recorder-safe."""
         attrs = super().extra_state_attributes
         report = self.engine.validation_snapshot()
         if report is not None:
+            sample = tuple(report.errors[:5]) + tuple(report.warnings[:5])
             attrs.update(
                 {
-                    "errors": [item.as_dict() for item in report.errors],
-                    "warnings": [item.as_dict() for item in report.warnings],
-                    "info": [item.as_dict() for item in report.info],
-                    "checks": report.checks,
-                    "summary": report.summary,
+                    "error_count": len(report.errors),
+                    "warning_count": len(report.warnings),
+                    "info_count": len(report.info),
+                    "sample_issue_codes": [item.code for item in sample],
+                    "sample_object_ids": [
+                        item.object_id for item in sample if item.object_id
+                    ],
                     "generated_at": report.generated_at.isoformat(),
                 }
             )
