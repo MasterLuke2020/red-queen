@@ -2,56 +2,51 @@
 
 ## Current candidate
 
-**Red Queen 1.0.0-rc11 — LIVE VERIFIED**
+**Red Queen 1.0.0-rc12 — EXACT PACKAGE LIVE VERIFIED / REPOSITORY CI PENDING**
 
-RC11 is based on the published, live-verified RC10 baseline and advances the
-development lineage to WNHF `1.37.0` / `WP-4.7.17.0`.
+RC12 advances the development lineage to WNHF `1.38.0` / `WP-4.7.18.0` and adds the
+Generated Dashboard Foundation. Managed configuration from RC11 remains intact.
 
-The release adds a managed Home Assistant commissioning/configuration path for the
-currently supported semantic house registries while preserving existing manual
-registries as read-only. It also adds canonical guarded `garage.stop`.
+## RC12 exact-package qualification
 
-## RC11 exact-package qualification
+The exact final RC12 candidate package was installed on a fresh dedicated Home
+Assistant test instance and qualified on 2026-08-24.
 
-The exact consolidated candidate package was installed on the dedicated Home
-Assistant test system and qualified on 2026-08-22.
+Qualified package:
+
+- Integration files: `174`
+- SHA-256: `88b31e2da46ab052ba08c71f8600160f1a51e7719e0284597dee1eda249a02b0`
 
 Observed PASS results included:
 
-- managed registry creation/status/validation and fresh commissioning recovery;
-- automatic room/object IDs and duplicate rejection;
-- native impulse-light execution with objective feedback;
-- cover open/close, movement state, read-only position and blade movement guard;
-- window and sliding-door state;
-- door motor-lock/electric-release configuration and open-door safety guard;
-- garage open/close, intermediate-state direction blocking and dedicated STOP;
-- Plant Care creation, watering history and restart persistence;
-- optional plant moisture-sensor reference stored without driving care state;
-- localized configurator/native guard messages;
-- restart persistence of the managed registry and native entities.
-
-The exact candidate ZIP qualified in that test had SHA-256:
-
-`9ad0f802d11dce56900323b1a50a1333f3d60d51e26e6522f404ceb7b6e7ce35`
-
-Home Assistant hassfest passed on the RC11 release branch on 2026-08-23. Repository
-static verification must pass on the final release commit before publication.
+- Red Queen `1.0.0-rc12` startup from the exact package;
+- manual reference registry loaded and validated successfully;
+- generated model for 3 floors, 23 rooms, 34 controllable lights, 17 covers,
+  21 openings, 1 garage door and 13 plants;
+- `168/168` expected native entity bindings resolved with 0 issues;
+- explicit dashboard creation at `/red-queen`;
+- overview, floor, room, Plant Care and System/Diagnostics navigation;
+- semantic floor labels and unavailable-state handling;
+- full Home Assistant restart with dashboard persistence;
+- post-restart `Status: aktuell`;
+- no Red Queen dashboard error/traceback and no oversized validation-sensor Recorder
+  warning after restart.
 
 ## Compatibility and safety
 
 - Home Assistant integration domain remains `wnhf`.
 - Canonical execution entry remains `wnhf.execution_execute`.
 - Canonical execution API remains `1.0`.
+- Canonical real-execution contract remains `2.3-rc11` (unchanged behavior).
 - 8 capabilities, 23 semantic actions, 16 canonical real contracts and 68 services.
-- Garage STOP is dispatch-scoped and does not claim a resulting physical position.
-- Cover position is read-only and arbitrary `SET_POSITION` remains disabled.
-- Blade position, latch release, physical door opening and physical watering are not
-  claimed without objective evidence.
-- Optional plant moisture input is metadata only in RC11.
+- Dashboard writes are explicit and isolated to the Red Queen-owned dashboard.
+- Existing/default user dashboards are not rewritten.
+- Physical safety remains in canonical/native Red Queen execution, not in Lovelace.
 
-## RC policy
+## Remaining RC12 publication gate
 
-During the RC line, capability additions are accepted only as bounded work packages
-with explicit contracts, static validation, isolated behavior validation, live Home
-Assistant validation, regression checks and a new immutable release candidate. A
-published RC is never silently overwritten.
+1. Commit and push the frozen RC12 release candidate source.
+2. Pass repository static checks and Home Assistant hassfest on the release branch.
+3. Fast-forward `main` to the verified release commit.
+4. Create annotated tag `v1.0.0-rc12`.
+5. Publish Red Queen `1.0.0-rc12` as a GitHub prerelease.

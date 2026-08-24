@@ -1,103 +1,49 @@
-# Red Queen 1.0.0-rc11
+# Red Queen 1.0.0-rc12
 
-Red Queen is a semantic home framework for Home Assistant. It models the house as
-objects and state, evaluates context/rules/policies/decisions, resolves capabilities
-and providers, and executes supported actions through explicit contracts and
-feedback-aware guards.
+Red Queen is a semantic home framework for Home Assistant. The public product name is
+**Red Queen**; the technical Home Assistant domain remains **`wnhf`** for compatibility.
 
-## Technical identity
-
-The public product name is **Red Queen**. The historical development name and the
-Home Assistant technical integration domain remain **WNHF / `wnhf`** for
-compatibility. Existing service IDs, config paths, unique IDs and persisted
-qualification evidence are preserved throughout the 1.0 release line.
-
-Canonical execution entry point: `wnhf.execution_execute`. The Decision-ID service
-`wnhf.execute` remains a legacy compatibility path and is not recommended for new
-automations.
-
-## Release status
+## Release identity
 
 - Product: Red Queen
-- Version: `1.0.0-rc11`
+- Version: `1.0.0-rc12`
 - Channel: `release_candidate`
-- Phase: `rc`
-- Candidate: `rc11`
-- Candidate development baseline: WNHF `1.37.0` / `WP-4.7.17.0`
-- Status: LIVE VERIFIED / REPOSITORY CI PENDING
+- Candidate: `rc12`
+- Development baseline: WNHF `1.38.0` / `WP-4.7.18.0`
+- Canonical execution entry: `wnhf.execution_execute`
+- Canonical execution API: `1.0`
+- Canonical real-execution contract: `2.3-rc11` (unchanged in RC12)
 
-## Stable 1.0 RC scope
+## RC12 Generated Dashboard Foundation
 
-Canonical mutating execution currently includes `lighting.turn_on`,
-`lighting.turn_off`, `covers.open`, `covers.close`, `covers.blades_open`,
-`covers.blades_close`, `garage.open`, `garage.close`, `garage.stop`, `openings.lock`,
-`openings.unlock`, `openings.release` and
-`notifications.send`, `notifications.announce`, `notifications.route` and
-`plants.record_watering`.
+RC12 adds a generated integration-owned dashboard at `/red-queen`.
 
-`notifications.send` targets one provider-neutral semantic notification target. It
-requires a non-empty `message`, accepts an optional string/null `title`, needs no
-confirmation and is non-idempotent. Successful execution proves Home Assistant
-dispatch only; delivery/read and hardware verification are not claimed. Qualification
-evidence never persists message/title text.
+The dashboard is built from the Red Queen semantic House model, resolves current
+native entity IDs through stable unique IDs, and renders only native Home Assistant
+cards. It includes overview, floor views, room subviews, Plant Care and
+System/Diagnostics.
 
-`notifications.announce` natively owns TTS playback, urgency profiles and optional
-Sonos-native announce overlays without a Home Assistant helper script. `notifications.route`
-owns priority/profile channel selection for log, dashboard, mobile and voice outputs.
-Installation-specific TTS and speaker entity IDs remain in the optional semantic
-notification registry, never in the public action request.
+The managed configurator exposes explicit dashboard create/update actions. Existing
+manual registries stay read-only for semantic configuration but can use the dashboard.
+Dashboard refresh is deterministic and digest-based; Home Assistant restart restores
+the saved dashboard without implicit regeneration.
 
-Garage open/close targets exactly one semantic `garage_door` opening object. Both
-actions require `confirmed: true`. The residential OSC pulse is dispatched only from
-a proven opposite stable end state; moving, intermediate, unavailable or contradictory
-states reject without a pulse. RC11 additionally supports canonical `garage.stop`
-when a dedicated STOP command is configured. STOP is offered only while motion is
-objectively observed and proves dispatch only; Red Queen does not invent a stopped
-position or direction after the pulse.
+The dashboard never dispatches provider entities directly. Lights, covers, blades,
+`garage.stop`, door access actions and Plant Care use native Red Queen entities that
+route through canonical execution and preserve all safety guards.
 
-Door lock/unlock requires explicit confirmation, a healthy motor-lock command,
-objective lock feedback and a closed door contact. Directional cover execution is
-guarded by objective end-state and movement feedback; automatic reversal remains
-blocked.
+## Managed configurator
 
-Blade actions are non-idempotent and dispatch-scoped because objective blade-position
-feedback is not required. Door release requires explicit confirmation, a closed-door
-contact and an available configured command; successful execution does not claim
-latch release or subsequent physical opening.
+The managed configurator supports transaction-safe commissioning for rooms, impulse
+lights, venetian blinds, windows, sliding doors, doors, garage doors and Plant Care.
+Existing manual registries remain read-only and are never silently adopted.
 
-Plant Care loads an optional `plants.yaml` registry, exposes dashboard-ready status
-sensors plus native record-watering buttons and atomically persists manual watering
-history. Each plant entity pair belongs to its configured Red Queen room device;
-button presses use the canonical execution service. A new plant remains
-`unknown` until `plants.record_watering` records a real event. State-scoped success
-does not claim independently observed physical watering or soil moisture.
+## Qualification status
 
-RC10 adds a native room surface for every enabled opening, configured motor locks,
-electric door releases, the garage door and explicit blade controls. Native lights,
-covers, blades, access controls and Plant Care buttons all call the canonical
-execution service; they do not bypass semantic guards or qualification.
+The dashboard implementation was live verified on a dedicated Home Assistant test
+instance on 2026-08-24, including `168/168` native entity bindings, create/update,
+room/floor/plant/system navigation and restart persistence. Exact final candidate
+package qualification remains pending after release metadata/checksum finalization.
 
-RC11 turns the commissioning foundation into a complete managed configurator for
-the currently supported house registries. New installations can create a managed
-base from Home Assistant Areas/Floors and then add rooms, impulse-controlled lights,
-venetian blinds, windows/sliding doors/doors/garage doors and Plant Care objects.
-Semantic IDs are generated automatically from room identity and user-facing names.
-Covers support objective end/movement feedback, optional read-only position feedback
-and optional separate blade commands. Doors may add a guarded motor lock and electric
-door release; garage doors may add a dedicated STOP command; plants may store an
-optional moisture sensor without claiming moisture-driven care decisions.
-
-Existing manual registries remain read-only. Every managed write is validated as a
-complete bundle, staged, backed up and rolled back on failure.
-`wnhf.configuration_snapshot` exposes ownership, file hashes and validation even in
-recovery mode. Native UI guard states and localized errors make blocked actions
-visible without weakening canonical execution safety.
-
-See `docs/FEATURE_MATRIX.md` and `docs/RELEASE_NOTES_1.0.0-rc11.md`.
-
-## Qualification
-
-Canonical execution evidence is persisted per installation at
-`/config/wnhf/qualification/execution_evidence_store.json`. Qualification is
-evidence, not authorization, and never bypasses provider health, request validation,
-guards or hardware/dispatch verification semantics.
+See `docs/FEATURE_MATRIX.md`, `docs/RC12_CANDIDATE_VALIDATION.md`, and
+`docs/RELEASE_NOTES_1.0.0-rc12.md`.

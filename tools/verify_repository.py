@@ -248,6 +248,19 @@ required_paths = [
     INTEGRATION / "providers" / "plants.py",
     INTEGRATION / "plant_care.py",
     INTEGRATION / "domain" / "plant.py",
+    INTEGRATION / "dashboard_model.py",
+    INTEGRATION / "dashboard_binding.py",
+    INTEGRATION / "dashboard_renderer.py",
+    INTEGRATION / "dashboard_adapter.py",
+    INTEGRATION / "dashboard_service.py",
+    INTEGRATION / "docs" / "RC12_IMPLEMENTATION_PLAN.md",
+    INTEGRATION / "docs" / "RC12_DASHBOARD_CONTRACT.md",
+    INTEGRATION / "docs" / "RC12_ENTITY_BINDING.md",
+    INTEGRATION / "docs" / "RC12_DASHBOARD_RENDERER.md",
+    INTEGRATION / "docs" / "RC12_DASHBOARD_LIFECYCLE.md",
+    INTEGRATION / "docs" / "RC12_DASHBOARD_GENERATION_SERVICE.md",
+    INTEGRATION / "docs" / "RC12_CONFIGURATOR_DASHBOARD.md",
+    INTEGRATION / "docs" / "RC12_DASHBOARD_POLISH.md",
     integration_validation,
     release_notes,
 ]
@@ -595,7 +608,7 @@ for marker in (
 try:
     de = json.loads(read_text(INTEGRATION / "translations" / "de.json"))
     menu = de["options"]["step"]["init"]["menu_options"]
-    for key in ("status", "add_room", "add_light", "add_cover", "add_opening", "add_plant"):
+    for key in ("status", "add_room", "add_light", "add_cover", "add_opening", "add_plant", "dashboard"):
         if key not in menu:
             fail(f"German configurator menu missing option: {key}")
 
@@ -604,6 +617,63 @@ try:
         fail("German open-door lock guard translation is missing")
 except Exception as exc:
     fail(f"German translation structure check failed: {exc}")
+
+
+
+# ---------------------------------------------------------------------------
+# RC12 generated dashboard invariants
+# ---------------------------------------------------------------------------
+
+dashboard_model_text = read_text(INTEGRATION / "dashboard_model.py")
+dashboard_binding_text = read_text(INTEGRATION / "dashboard_binding.py")
+dashboard_renderer_text = read_text(INTEGRATION / "dashboard_renderer.py")
+dashboard_adapter_text = read_text(INTEGRATION / "dashboard_adapter.py")
+dashboard_service_text = read_text(INTEGRATION / "dashboard_service.py")
+
+for marker in (
+    'DASHBOARD_CONTRACT_VERSION = "1.0"',
+    "build_dashboard_model",
+    "DashboardModel",
+):
+    if marker not in dashboard_model_text:
+        fail(f"Missing RC12 dashboard-model marker: {marker}")
+
+for marker in (
+    'DASHBOARD_BINDING_CONTRACT_VERSION = "1.0"',
+    "async_get_entity_id",
+    "resolve_dashboard_bindings",
+):
+    if marker not in dashboard_binding_text:
+        fail(f"Missing RC12 dashboard-binding marker: {marker}")
+
+for marker in (
+    'DASHBOARD_RENDERER_CONTRACT_VERSION = "1.0"',
+    "render_dashboard",
+    '"subview": True',
+):
+    if marker not in dashboard_renderer_text:
+        fail(f"Missing RC12 dashboard-renderer marker: {marker}")
+
+for marker in (
+    'DASHBOARD_ADAPTER_CONTRACT_VERSION = "1.0"',
+    'DEFAULT_DASHBOARD_ID = "red-queen"',
+    "async_register_built_in_panel",
+    "async_save",
+):
+    if marker not in dashboard_adapter_text:
+        fail(f"Missing RC12 dashboard-adapter marker: {marker}")
+
+for marker in (
+    'DASHBOARD_GENERATION_CONTRACT_VERSION = "1.0"',
+    "async_preview",
+    "async_apply",
+    "resolve_dashboard_bindings",
+):
+    if marker not in dashboard_service_text:
+        fail(f"Missing RC12 dashboard-service marker: {marker}")
+
+if '"dashboard"' not in config_flow_text or "async_step_dashboard" not in config_flow_text:
+    fail("Configurator must expose the RC12 dashboard lifecycle step")
 
 
 # ---------------------------------------------------------------------------
@@ -749,6 +819,8 @@ print(f"- canonical real contracts: {expected_real}")
 print("- managed configuration: ownership/transaction invariants PASS")
 print("- garage STOP: guarded canonical dispatch contract PASS")
 print("- native cover UX: directional/no-tilt contract PASS")
+print("- generated dashboard: model/binding/renderer/lifecycle invariants PASS")
+print("- dashboard configurator: explicit create/update lifecycle PASS")
 print("- translations/configurator menu structure: PASS")
 print(f"- {candidate.upper()} LF-normalized source checksums: PASS")
 print(f"- Git whitespace hygiene: {git_whitespace_status}")

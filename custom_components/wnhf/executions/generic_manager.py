@@ -61,7 +61,7 @@ class SemanticExecutionManager:
     """Resolve semantic actions and expose the canonical execution surface."""
 
     API_VERSION = "1.1"
-    VERSION = "2.1-rc11"
+    VERSION = "2.1-rc12"
     EXECUTION_ENABLED = True
     READ_ONLY = False
 

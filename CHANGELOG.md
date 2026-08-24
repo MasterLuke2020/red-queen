@@ -4,6 +4,31 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0-rc12 candidate — WP-4.7.18.0
+
+#### Added
+- Generated native Red Queen dashboard at `/red-queen`.
+- Semantic dashboard model, unique-ID entity binding, native renderer and lifecycle adapter.
+- Overview, floor views, room subviews, Plant Care and System/Diagnostics views.
+- Explicit dashboard create/update controls for managed and manual registries.
+- Digest-based update detection and restart persistence.
+
+#### Changed
+- Development baseline advanced to WNHF 1.38.0 / WP-4.7.18.0.
+- Dashboard status presentation now distinguishes unavailable feedback from known safe/off states.
+- Validator sensor attributes are compacted to avoid Recorder oversized-attribute warnings.
+
+#### Compatibility and safety
+- Canonical execution API remains 1.0.
+- Canonical real-execution contract remains 2.3-rc11; RC12 does not change physical execution semantics.
+- Existing manual registries remain read-only for semantic configuration.
+- User/default Lovelace dashboards are not rewritten.
+
+#### Validation
+- Dashboard implementation live validation passed on 2026-08-24.
+- Exact final RC12 candidate package qualification remains pending after metadata/checksum finalization.
+
+
 ### 1.0.0-rc11 candidate — WP-4.7.17.0
 
 #### Added

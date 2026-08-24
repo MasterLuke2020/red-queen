@@ -7,39 +7,38 @@ The roadmap is directional rather than a promise of exact release numbers or dat
 The 1.0 RC line expands only through bounded, independently qualified capability
 packets.
 
-### Door opener and cover blades — completed in RC8
+### Managed configuration and commissioning — completed in RC11
 
-RC8 added canonical electric door release and explicit cover blade commands with
-dispatch-scoped qualification where final physical state is not objectively
-observable.
+RC11 added explicit registry ownership modes and the transaction-safe Managed
+configuration path for rooms, lights, covers, openings, garage and Plant Care.
 
-### Semantic Plant Care — completed in RC9
+### Generated Dashboard Foundation — RC12
 
-RC9 introduced semantic plants, persistent watering history, room-attached care
-sensors and canonical record-watering actions.
+RC12 adds an integration-owned native Home Assistant dashboard generated from the
+semantic house model and native Red Queen entity surface.
 
-### Native room completeness — completed in RC10
+The RC12 dashboard provides:
 
-RC10 projected enabled openings and productive controls onto their semantic room
-devices and routed native controls through canonical execution.
+- overall house overview;
+- floor navigation and room subviews;
+- lighting, covers, openings/access and garage projections;
+- Plant Care and System/Diagnostics views;
+- stable unique-ID based entity binding;
+- explicit create/update lifecycle;
+- deterministic update detection;
+- restart persistence;
+- native HA cards with no mandatory custom frontend dependency.
 
-### Managed configuration and commissioning — RC11
-
-RC11 adds explicit registry ownership modes and a transaction-safe managed
-configurator. New installations can create a base from Home Assistant Areas/Floors
-and add rooms, impulse lights, venetian blinds, windows, sliding doors, doors, garage
-doors and Plant Care objects without manually creating semantic IDs.
-
-RC11 also adds guarded canonical `garage.stop` for installations with a dedicated
-STOP command. Optional plant moisture input is stored but intentionally does not
-drive watering decisions yet.
+The dashboard never becomes a second safety engine. Physical action guards remain in
+canonical Red Queen execution.
 
 ## Next candidates
 
-### Functional dashboard
+### Dashboard refinement
 
-Build a polished Red Queen dashboard on the stable semantic/native capability
-surface, with room-focused controls and diagnostics.
+Continue visual/UX refinement only where it can remain deterministic, native and
+safe. Consider user-selectable presentation preferences without making dashboard
+correctness depend on custom frontend cards.
 
 ### Commissioning refinement
 
@@ -56,16 +55,7 @@ soil-moisture-aware recommendations, fertilizing, repotting and vacation-aware c
 ### Climate / temperature semantics
 
 Climate work remains intentionally deferred while the separate heating integration
-is developed with the heating-system partner. When resumed, introduce semantic
-temperature, humidity, setpoint and climate-state models/providers before adding
-higher-level control decisions.
-
-### Climate control
-
-After read semantics are stable, evaluate controlled setpoint writes, operating
-modes, safety guards and observable feedback contracts.
-
-## Later feature candidates
+is developed with the heating-system partner.
 
 ### Media
 
