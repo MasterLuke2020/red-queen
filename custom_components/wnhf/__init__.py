@@ -36,6 +36,10 @@ from .engine import WNHFEngine
 from .domain.house import House
 from .registry import WNHFRegistryError
 from .services import async_register_services, async_unregister_services
+from .dashboard_adapter import (
+    async_setup_dashboard_adapter,
+    async_unload_dashboard_adapter,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -106,6 +110,7 @@ async def async_setup_entry(
 
     await async_register_services(hass, engine)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    await async_setup_dashboard_adapter(hass)
 
     _LOGGER.info(
         "Red Queen %s started via config entry | Rooms: %s | Lights: %s | "
@@ -209,6 +214,7 @@ async def async_unload_entry(
             cancel_startup_validation()
 
         removed_services = async_unregister_services(hass)
+        await async_unload_dashboard_adapter(hass)
 
         if engine is not None:
             await engine.provider_discovery.async_unload()
