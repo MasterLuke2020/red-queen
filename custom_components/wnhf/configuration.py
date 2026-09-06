@@ -35,6 +35,23 @@ OPTIONAL_REGISTRY_FILES: dict[str, str] = {
     "notification_targets.yaml": "notification_targets",
 }
 
+# Configurator-owned semantic object collections. These are deliberately limited
+# to the house registry files that the managed commissioning flow owns.
+_MANAGED_OBJECT_SPECS: dict[str, tuple[str, str]] = {
+    "rooms": ("rooms.yaml", "rooms"),
+    "lights": ("lights.yaml", "lights"),
+    "covers": ("covers.yaml", "covers"),
+    "openings": ("openings.yaml", "openings"),
+    "plants": ("plants.yaml", "plants"),
+}
+_MANAGED_OBJECT_ACTION_NAMES: dict[str, str] = {
+    "rooms": "room",
+    "lights": "light",
+    "covers": "cover",
+    "openings": "opening",
+    "plants": "plant",
+}
+
 _MANAGED_HEADER = (
     "# Managed by the Red Queen configurator.\n"
     "# Use the Red Queen configuration flow instead of editing this file manually.\n"
@@ -252,6 +269,212 @@ class RegistryConfigurationManager:
             and isinstance(item.get("id"), str)
             and isinstance(item.get("name"), str)
         ]
+
+
+    def _require_managed(self) -> None:
+        """Reject every mutation unless Red Queen owns the registry bundle."""
+        snapshot = self.snapshot()
+        if not snapshot["managed"]:
+            raise WNHFConfigurationError(
+                "This registry is manually owned and remains read-only. "
+                "Configurator writes are allowed only for a managed installation."
+            )
+
+    @staticmethod
+    def _object_spec(object_type: str) -> tuple[str, str]:
+        """Resolve one supported managed object collection."""
+        try:
+            return _MANAGED_OBJECT_SPECS[object_type]
+        except KeyError as err:
+            raise WNHFConfigurationError(
+                f"Unsupported managed object type: {object_type}"
+            ) from err
+
+    def _object_document(
+        self,
+        object_type: str,
+    ) -> tuple[str, str, dict[str, Any], list[Any]]:
+        """Load one managed object collection after ownership validation."""
+        self._require_managed()
+        filename, root_key = self._object_spec(object_type)
+        path = self.registry_dir / filename
+        if not path.is_file():
+            raise WNHFConfigurationError(
+                f"Managed registry file does not exist: {filename}"
+            )
+        document = _read_yaml_document(path)
+        entries = document.get(root_key)
+        if not isinstance(entries, list):
+            raise WNHFConfigurationError(
+                f"{filename} has no valid '{root_key}' list."
+            )
+        return filename, root_key, document, entries
+
+    def object_options(self, object_type: str) -> list[dict[str, str]]:
+        """Return stable IDs and readable labels for maintenance selectors."""
+        _filename, _root_key, _document, entries = self._object_document(
+            object_type
+        )
+        options = [
+            {
+                "value": str(item["id"]),
+                "label": f"{item.get('name') or item['id']} ({item['id']})",
+            }
+            for item in entries
+            if isinstance(item, dict)
+            and isinstance(item.get("id"), str)
+            and item.get("id")
+        ]
+        return sorted(
+            options,
+            key=lambda item: (item["label"].casefold(), item["value"]),
+        )
+
+    def get_object(self, object_type: str, object_id: str) -> dict[str, Any]:
+        """Return one managed raw registry object without mutable state leakage."""
+        _filename, _root_key, _document, entries = self._object_document(
+            object_type
+        )
+        for item in entries:
+            if isinstance(item, dict) and item.get("id") == object_id:
+                return deepcopy(item)
+        raise WNHFConfigurationError(
+            f"Managed object not found: {object_type}/{object_id}"
+        )
+
+    def update_object(
+        self,
+        object_type: str,
+        object_id: str,
+        replacement: dict[str, Any],
+    ) -> ConfigurationApplyResult:
+        """Replace one managed object while its semantic identity stays stable."""
+        filename, root_key, document, entries = self._object_document(
+            object_type
+        )
+        if not isinstance(replacement, dict):
+            raise WNHFConfigurationError(
+                "Managed object replacement must be a dictionary."
+            )
+        if replacement.get("id") != object_id:
+            raise WNHFConfigurationError(
+                "A stable semantic object ID cannot be changed during maintenance."
+            )
+
+        index = next(
+            (
+                index
+                for index, item in enumerate(entries)
+                if isinstance(item, dict) and item.get("id") == object_id
+            ),
+            None,
+        )
+        if index is None:
+            raise WNHFConfigurationError(
+                f"Managed object not found: {object_type}/{object_id}"
+            )
+
+        candidate = deepcopy(document)
+        candidate[root_key][index] = deepcopy(replacement)
+        validation = self._validate_documents({filename: candidate})
+
+        manifest = _read_yaml_document(self.manifest_path)
+        manifest["updated_at"] = _utc_now().isoformat()
+        changed = {
+            filename: candidate,
+            CONFIGURATOR_MANIFEST_FILE: manifest,
+        }
+        backup = self._write_transaction(changed, managed=True)
+        action_name = _MANAGED_OBJECT_ACTION_NAMES[object_type]
+        return ConfigurationApplyResult(
+            action=f"update_{action_name}",
+            changed_files=tuple(sorted(changed)),
+            backup_path=backup,
+            validation=validation,
+        )
+
+    def set_object_enabled(
+        self,
+        object_type: str,
+        object_id: str,
+        enabled: bool,
+    ) -> ConfigurationApplyResult:
+        """Enable or disable one managed semantic object transactionally."""
+        replacement = self.get_object(object_type, object_id)
+        replacement["enabled"] = bool(enabled)
+        return self.update_object(object_type, object_id, replacement)
+
+    def delete_object(
+        self,
+        object_type: str,
+        object_id: str,
+    ) -> ConfigurationApplyResult:
+        """Delete one managed object only when the complete house remains valid."""
+        filename, root_key, document, entries = self._object_document(
+            object_type
+        )
+        index = next(
+            (
+                index
+                for index, item in enumerate(entries)
+                if isinstance(item, dict) and item.get("id") == object_id
+            ),
+            None,
+        )
+        if index is None:
+            raise WNHFConfigurationError(
+                f"Managed object not found: {object_type}/{object_id}"
+            )
+
+        if object_type == "rooms":
+            if len(entries) <= 1:
+                raise WNHFConfigurationError(
+                    "At least one managed room must remain configured."
+                )
+            dependents = self._room_dependents(object_id)
+            if dependents:
+                raise WNHFConfigurationError(
+                    "Room is still referenced and cannot be deleted: "
+                    f"{object_id} <- {', '.join(dependents)}"
+                )
+
+        candidate = deepcopy(document)
+        del candidate[root_key][index]
+        validation = self._validate_documents({filename: candidate})
+
+        manifest = _read_yaml_document(self.manifest_path)
+        manifest["updated_at"] = _utc_now().isoformat()
+        changed = {
+            filename: candidate,
+            CONFIGURATOR_MANIFEST_FILE: manifest,
+        }
+        backup = self._write_transaction(changed, managed=True)
+        action_name = _MANAGED_OBJECT_ACTION_NAMES[object_type]
+        return ConfigurationApplyResult(
+            action=f"delete_{action_name}",
+            changed_files=tuple(sorted(changed)),
+            backup_path=backup,
+            validation=validation,
+        )
+
+    def _room_dependents(self, room_id: str) -> list[str]:
+        """Return semantic objects that still reference one managed room."""
+        dependents: list[str] = []
+        for object_type in ("lights", "covers", "openings", "plants"):
+            filename, root_key = _MANAGED_OBJECT_SPECS[object_type]
+            path = self.registry_dir / filename
+            if not path.is_file():
+                continue
+            document = _read_yaml_document(path)
+            entries = document.get(root_key)
+            if not isinstance(entries, list):
+                continue
+            for item in entries:
+                if not isinstance(item, dict) or item.get("room") != room_id:
+                    continue
+                object_id = str(item.get("id") or "<unknown>")
+                dependents.append(f"{object_type}:{object_id}")
+        return sorted(dependents)
 
     def create_managed_base(
         self,

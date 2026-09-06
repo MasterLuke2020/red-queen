@@ -45,7 +45,8 @@
           "add_cover": "Raffstore hinzufügen",
           "add_opening": "Öffnung hinzufügen",
           "add_plant": "Pflanze hinzufügen",
-          "dashboard": "Dashboard"
+          "dashboard": "Dashboard",
+          "manage": "Objekte verwalten"
         }
       },
       "status": {
@@ -257,6 +258,168 @@
           "dashboard_create": "Dashboard erstellen",
           "dashboard_update": "Dashboard aktualisieren"
         }
+      },
+      "manage": {
+        "title": "Red-Queen-Objekte verwalten",
+        "description": "Bearbeiten, aktivieren/deaktivieren oder löschen. Semantische Objekt-IDs bleiben beim Bearbeiten stabil.",
+        "menu_options": {
+          "manage_room": "Räume",
+          "manage_light": "Lichter",
+          "manage_cover": "Raffstores",
+          "manage_opening": "Öffnungen",
+          "manage_plant": "Pflanzen"
+        }
+      },
+      "manage_room": {
+        "title": "Raum auswählen",
+        "description": "Wähle das verwaltete Objekt, das geändert werden soll.",
+        "data": {
+          "object_id": "Objekt"
+        }
+      },
+      "manage_light": {
+        "title": "Licht auswählen",
+        "description": "Wähle das verwaltete Objekt, das geändert werden soll.",
+        "data": {
+          "object_id": "Objekt"
+        }
+      },
+      "manage_cover": {
+        "title": "Raffstore auswählen",
+        "description": "Wähle das verwaltete Objekt, das geändert werden soll.",
+        "data": {
+          "object_id": "Objekt"
+        }
+      },
+      "manage_opening": {
+        "title": "Öffnung auswählen",
+        "description": "Wähle das verwaltete Objekt, das geändert werden soll.",
+        "data": {
+          "object_id": "Objekt"
+        }
+      },
+      "manage_plant": {
+        "title": "Pflanze auswählen",
+        "description": "Wähle das verwaltete Objekt, das geändert werden soll.",
+        "data": {
+          "object_id": "Objekt"
+        }
+      },
+      "edit_room": {
+        "title": "Raum bearbeiten",
+        "description": "Semantische ID: {object_id}. Name und Aktivierung können geändert werden. Die stabile semantische ID sowie die Home-Assistant-Quellverknüpfung werden nicht automatisch geändert.",
+        "data": {
+          "name": "Raumname",
+          "enabled": "Objekt aktiviert",
+          "delete_object": "Objekt löschen"
+        }
+      },
+      "edit_light": {
+        "title": "Licht bearbeiten",
+        "description": "Semantische ID: {object_id}. Die ID bleibt auch bei Umbenennung oder Raumwechsel stabil.",
+        "data": {
+          "name": "Lichtname",
+          "room_id": "Red-Queen-Raum",
+          "command_entity_id": "Befehlstaster",
+          "feedback_entity_id": "Statusrückmeldung",
+          "enabled": "Objekt aktiviert",
+          "delete_object": "Objekt löschen"
+        }
+      },
+      "edit_cover": {
+        "title": "Raffstore bearbeiten",
+        "description": "Semantische ID: {object_id}. Fahr-, Feedback- und optionale Lamellen-Entities können geändert werden.",
+        "data": {
+          "cover_name": "Raffstorename",
+          "room_id": "Red-Queen-Raum",
+          "cover_open_command_entity_id": "Befehl AUF",
+          "cover_close_command_entity_id": "Befehl ZU",
+          "cover_open_feedback_entity_id": "Rückmeldung OFFEN",
+          "cover_closed_feedback_entity_id": "Rückmeldung GESCHLOSSEN",
+          "cover_opening_feedback_entity_id": "Rückmeldung FÄHRT AUF",
+          "cover_closing_feedback_entity_id": "Rückmeldung FÄHRT ZU",
+          "cover_closed_percent_feedback_entity_id": "Positionsrückmeldung Geschlossen-% (optional)",
+          "cover_blades_enabled": "Lamellensteuerung aktiviert",
+          "cover_blades_open_command_entity_id": "Lamellen ÖFFNEN (optional)",
+          "cover_blades_close_command_entity_id": "Lamellen SCHLIESSEN (optional)",
+          "enabled": "Objekt aktiviert",
+          "delete_object": "Objekt löschen"
+        }
+      },
+      "edit_window": {
+        "title": "Fenster bearbeiten",
+        "description": "Semantische ID: {object_id}.",
+        "data": {
+          "opening_name": "Name",
+          "room_id": "Red-Queen-Raum",
+          "opening_state_entity_id": "Rückmeldung OFFEN",
+          "enabled": "Objekt aktiviert",
+          "delete_object": "Objekt löschen"
+        }
+      },
+      "edit_sliding_door": {
+        "title": "Schiebetür bearbeiten",
+        "description": "Semantische ID: {object_id}.",
+        "data": {
+          "opening_name": "Name",
+          "room_id": "Red-Queen-Raum",
+          "opening_state_entity_id": "Rückmeldung OFFEN",
+          "enabled": "Objekt aktiviert",
+          "delete_object": "Objekt löschen"
+        }
+      },
+      "edit_door": {
+        "title": "Tür bearbeiten",
+        "description": "Semantische ID: {object_id}. Schloss und Türöffner können hier nachträglich ergänzt, geändert oder entfernt werden.",
+        "data": {
+          "opening_name": "Türname",
+          "room_id": "Red-Queen-Raum",
+          "opening_state_entity_id": "Rückmeldung TÜR OFFEN",
+          "door_lock_enabled": "Motor-Schloss konfiguriert",
+          "door_opener_enabled": "Elektrischer Türöffner konfiguriert",
+          "lock_feedback_entity_id": "Rückmeldung VERRIEGELT (optional)",
+          "lock_command_entity_id": "Befehl VERRIEGELN (optional)",
+          "unlock_command_entity_id": "Befehl ENTRIEGELN (optional)",
+          "door_opener_command_entity_id": "Befehl TÜRÖFFNER (optional)",
+          "enabled": "Objekt aktiviert",
+          "delete_object": "Objekt löschen"
+        }
+      },
+      "edit_garage_door": {
+        "title": "Garagentor bearbeiten",
+        "description": "Semantische ID: {object_id}. Die kanonischen Sicherheitsregeln werden durch diese Konfiguration nicht verändert.",
+        "data": {
+          "opening_name": "Garagentorname",
+          "room_id": "Red-Queen-Raum",
+          "garage_open_feedback_entity_id": "Rückmeldung OFFEN",
+          "garage_closed_feedback_entity_id": "Rückmeldung GESCHLOSSEN",
+          "garage_toggle_command_entity_id": "Befehl FAHREN",
+          "garage_stop_command_entity_id": "Befehl STOP (optional)",
+          "garage_movement_timeout_seconds": "Maximale Fahrzeit in Sekunden",
+          "enabled": "Objekt aktiviert",
+          "delete_object": "Objekt löschen"
+        }
+      },
+      "edit_plant": {
+        "title": "Pflanze bearbeiten",
+        "description": "Semantische ID: {object_id}. Die ID bleibt stabil, damit bestehende Plant-Care-Historie und native Entities dieselbe Identität behalten.",
+        "data": {
+          "plant_name": "Pflanzenname",
+          "plant_species": "Pflanzenart",
+          "room_id": "Red-Queen-Raum",
+          "plant_location": "Standort im Raum",
+          "plant_watering_interval_days": "Gießintervall in Tagen",
+          "plant_moisture_sensor_entity_id": "Feuchtigkeitssensor (optional)",
+          "enabled": "Objekt aktiviert",
+          "delete_object": "Objekt löschen"
+        }
+      },
+      "delete_confirm": {
+        "title": "Objekt wirklich löschen?",
+        "description": "Typ: {object_type}. Objekt: {object_name} ({object_id}). Red Queen erstellt vor der Transaktion ein Backup und validiert anschließend die vollständige Registry. Räume mit abhängigen Objekten können nicht gelöscht werden.",
+        "data": {
+          "confirm": "Löschen endgültig bestätigen"
+        }
       }
     },
     "error": {
@@ -273,14 +436,22 @@
       "cover_already_configured": "In diesem Red-Queen-Raum existiert bereits ein Raffstore mit diesem Namen.",
       "opening_already_configured": "In diesem Red-Queen-Raum existiert bereits eine Öffnung mit diesem Namen.",
       "species_required": "Gib eine Pflanzenart ein.",
-      "plant_already_configured": "In diesem Red-Queen-Raum existiert bereits eine Pflanze mit diesem Namen."
+      "plant_already_configured": "In diesem Red-Queen-Raum existiert bereits eine Pflanze mit diesem Namen.",
+      "object_not_found": "Das ausgewählte verwaltete Objekt wurde nicht gefunden.",
+      "unsupported_opening_type": "Dieser Öffnungstyp kann noch nicht über den Konfigurator bearbeitet werden.",
+      "entity_required": "Für die aktivierte Funktion ist eine Entity erforderlich.",
+      "object_in_use": "Das Objekt kann nicht gelöscht werden, solange abhängige Objekte darauf verweisen oder solange es der letzte verwaltete Raum ist.",
+      "cannot_delete_object": "Das Objekt konnte nicht sicher gelöscht werden. Die Registry blieb unverändert bzw. wurde zurückgerollt."
     },
     "abort": {
       "commissioning_state_lost": "Der Einrichtungsentwurf ist verloren gegangen. Starte erneut.",
       "no_rooms_configured": "Es sind keine gültigen Red-Queen-Räume konfiguriert.",
       "cover_configuration_state_lost": "Der Raffstore-Entwurf ist verloren gegangen. Starte die Konfiguration erneut.",
       "opening_configuration_state_lost": "Der Öffnungsentwurf ist verloren gegangen. Starte die Konfiguration erneut.",
-      "dashboard_generation_failed": "Das Red-Queen-Dashboard konnte nicht verarbeitet werden: {error}"
+      "dashboard_generation_failed": "Das Red-Queen-Dashboard konnte nicht verarbeitet werden: {error}",
+      "maintenance_unavailable": "Die verwaltete Registry ist für Änderungen nicht verfügbar.",
+      "no_managed_objects": "Für diesen Objekttyp sind keine verwalteten Objekte vorhanden.",
+      "maintenance_state_lost": "Der ausgewählte Wartungszustand ist verloren gegangen. Öffne den Dialog erneut."
     }
   },
   "exceptions": {

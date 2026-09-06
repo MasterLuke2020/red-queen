@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import UTC, datetime
 from functools import partial
 from pathlib import Path
@@ -65,6 +66,9 @@ CONF_PLANT_SPECIES = "plant_species"
 CONF_PLANT_LOCATION = "plant_location"
 CONF_PLANT_WATERING_INTERVAL_DAYS = "plant_watering_interval_days"
 CONF_PLANT_MOISTURE_SENSOR_ENTITY_ID = "plant_moisture_sensor_entity_id"
+CONF_OBJECT_ID = "object_id"
+CONF_ENABLED = "enabled"
+CONF_DELETE_OBJECT = "delete_object"
 
 
 def _manager(hass) -> RegistryConfigurationManager:
@@ -379,13 +383,15 @@ class WNHFConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
-    """Inspect or safely extend configurator-managed registries."""
+    """Inspect, extend and safely maintain configurator-managed registries."""
 
     def __init__(self) -> None:
         self._pending_base: dict[str, Any] | None = None
         self._pending_cover: dict[str, Any] | None = None
         self._pending_opening: dict[str, Any] | None = None
         self._pending_door_opener_enabled = False
+        self._pending_object_type: str | None = None
+        self._pending_object: dict[str, Any] | None = None
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -408,6 +414,7 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
                 "add_cover",
                 "add_opening",
                 "add_plant",
+                "manage",
                 "dashboard",
             ],
             description_placeholders=_status_placeholders(snapshot),
@@ -1169,6 +1176,1100 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
                 }
             ),
             errors=errors,
+        )
+
+
+    async def async_step_manage(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Open the managed-object maintenance area."""
+        return self.async_show_menu(
+            step_id="manage",
+            menu_options=[
+                "manage_room",
+                "manage_light",
+                "manage_cover",
+                "manage_opening",
+                "manage_plant",
+            ],
+        )
+
+    async def _async_select_managed_object(
+        self,
+        *,
+        object_type: str,
+        step_id: str,
+        next_step: str,
+        user_input: dict[str, Any] | None,
+    ) -> FlowResult:
+        """Select one configurator-owned object and enter its edit form."""
+        manager = _manager(self.hass)
+        try:
+            options = await self.hass.async_add_executor_job(
+                manager.object_options,
+                object_type,
+            )
+        except WNHFConfigurationError:
+            return self.async_abort(reason="maintenance_unavailable")
+        if not options:
+            return self.async_abort(reason="no_managed_objects")
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            object_id = user_input[CONF_OBJECT_ID]
+            try:
+                current = await self.hass.async_add_executor_job(
+                    manager.get_object,
+                    object_type,
+                    object_id,
+                )
+            except WNHFConfigurationError:
+                errors[CONF_OBJECT_ID] = "object_not_found"
+            else:
+                self._pending_object_type = object_type
+                self._pending_object = current
+                return await getattr(self, f"async_step_{next_step}")()
+
+        return self.async_show_form(
+            step_id=step_id,
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_OBJECT_ID): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=options,
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_manage_room(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        return await self._async_select_managed_object(
+            object_type="rooms",
+            step_id="manage_room",
+            next_step="edit_room",
+            user_input=user_input,
+        )
+
+    async def async_step_manage_light(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        return await self._async_select_managed_object(
+            object_type="lights",
+            step_id="manage_light",
+            next_step="edit_light",
+            user_input=user_input,
+        )
+
+    async def async_step_manage_cover(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        return await self._async_select_managed_object(
+            object_type="covers",
+            step_id="manage_cover",
+            next_step="edit_cover",
+            user_input=user_input,
+        )
+
+    async def async_step_manage_plant(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        return await self._async_select_managed_object(
+            object_type="plants",
+            step_id="manage_plant",
+            next_step="edit_plant",
+            user_input=user_input,
+        )
+
+    async def async_step_manage_opening(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Select one opening and route to its type-specific maintenance form."""
+        manager = _manager(self.hass)
+        try:
+            options = await self.hass.async_add_executor_job(
+                manager.object_options,
+                "openings",
+            )
+        except WNHFConfigurationError:
+            return self.async_abort(reason="maintenance_unavailable")
+        if not options:
+            return self.async_abort(reason="no_managed_objects")
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            object_id = user_input[CONF_OBJECT_ID]
+            try:
+                current = await self.hass.async_add_executor_job(
+                    manager.get_object,
+                    "openings",
+                    object_id,
+                )
+            except WNHFConfigurationError:
+                errors[CONF_OBJECT_ID] = "object_not_found"
+            else:
+                self._pending_object_type = "openings"
+                self._pending_object = current
+                next_steps = {
+                    "window": "edit_window",
+                    "sliding_door": "edit_sliding_door",
+                    "door": "edit_door",
+                    "garage_door": "edit_garage_door",
+                }
+                next_step = next_steps.get(str(current.get("type")))
+                if next_step is None:
+                    errors[CONF_OBJECT_ID] = "unsupported_opening_type"
+                else:
+                    return await getattr(self, f"async_step_{next_step}")()
+
+        return self.async_show_form(
+            step_id="manage_opening",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_OBJECT_ID): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=options,
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
+            errors=errors,
+        )
+
+    def _maintenance_current(self, object_type: str) -> dict[str, Any] | None:
+        """Return the selected object only while the expected edit flow owns it."""
+        if self._pending_object_type != object_type or self._pending_object is None:
+            return None
+        return self._pending_object
+
+    async def _async_commit_pending_update(
+        self,
+        replacement: dict[str, Any],
+    ) -> tuple[FlowResult | None, str | None]:
+        """Transactionally update the selected managed object."""
+        current = self._pending_object
+        object_type = self._pending_object_type
+        if current is None or object_type is None:
+            return None, "maintenance_state_lost"
+        try:
+            result = await self.hass.async_add_executor_job(
+                _manager(self.hass).update_object,
+                object_type,
+                str(current["id"]),
+                replacement,
+            )
+        except WNHFConfigurationError:
+            return None, "cannot_apply_object"
+
+        self._pending_object = None
+        self._pending_object_type = None
+        return self._finish(result.action), None
+
+    async def async_step_edit_room(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Maintain a room without changing its stable semantic ID/source link."""
+        current = self._maintenance_current("rooms")
+        if current is None:
+            return self.async_abort(reason="maintenance_state_lost")
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if user_input.get(CONF_DELETE_OBJECT, False):
+                return await self.async_step_delete_confirm()
+            name = str(user_input["name"]).strip()
+            if not name:
+                errors["name"] = "name_required"
+            else:
+                replacement = deepcopy(current)
+                replacement["name"] = name
+                replacement["enabled"] = bool(user_input[CONF_ENABLED])
+                result, error = await self._async_commit_pending_update(replacement)
+                if result is not None:
+                    return result
+                errors["base"] = error or "cannot_apply_object"
+
+        defaults = user_input or {}
+        return self.async_show_form(
+            step_id="edit_room",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        "name",
+                        default=defaults.get("name", current.get("name", "")),
+                    ): str,
+                    vol.Required(
+                        CONF_ENABLED,
+                        default=defaults.get(
+                            CONF_ENABLED, bool(current.get("enabled", True))
+                        ),
+                    ): bool,
+                    vol.Required(
+                        CONF_DELETE_OBJECT,
+                        default=defaults.get(CONF_DELETE_OBJECT, False),
+                    ): bool,
+                }
+            ),
+            errors=errors,
+            description_placeholders={"object_id": str(current["id"])},
+        )
+
+    async def async_step_edit_light(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Maintain one impulse light while preserving its semantic ID."""
+        current = self._maintenance_current("lights")
+        if current is None:
+            return self.async_abort(reason="maintenance_state_lost")
+        room_options = await self._async_room_options()
+        if room_options is None:
+            return self.async_abort(reason="no_rooms_configured")
+
+        command = current.get("command") or {}
+        state = current.get("state") or {}
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if user_input.get(CONF_DELETE_OBJECT, False):
+                return await self.async_step_delete_confirm()
+            name = str(user_input["name"]).strip()
+            if not name:
+                errors["name"] = "name_required"
+            else:
+                replacement = deepcopy(current)
+                replacement["name"] = name
+                replacement["room"] = user_input[CONF_ROOM_ID]
+                replacement["enabled"] = bool(user_input[CONF_ENABLED])
+                replacement["command"] = {
+                    **dict(command),
+                    "entity_id": user_input[CONF_COMMAND_ENTITY_ID],
+                }
+                replacement["state"] = {
+                    **dict(state),
+                    "entity_id": user_input[CONF_FEEDBACK_ENTITY_ID],
+                }
+                result, error = await self._async_commit_pending_update(replacement)
+                if result is not None:
+                    return result
+                errors["base"] = error or "cannot_apply_object"
+
+        defaults = user_input or {}
+        return self.async_show_form(
+            step_id="edit_light",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        "name",
+                        default=defaults.get("name", current.get("name", "")),
+                    ): str,
+                    vol.Required(
+                        CONF_ROOM_ID,
+                        default=defaults.get(CONF_ROOM_ID, current.get("room")),
+                    ): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=room_options,
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
+                    vol.Required(
+                        CONF_COMMAND_ENTITY_ID,
+                        default=defaults.get(
+                            CONF_COMMAND_ENTITY_ID, command.get("entity_id")
+                        ),
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="button")
+                    ),
+                    vol.Required(
+                        CONF_FEEDBACK_ENTITY_ID,
+                        default=defaults.get(
+                            CONF_FEEDBACK_ENTITY_ID, state.get("entity_id")
+                        ),
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="binary_sensor")
+                    ),
+                    vol.Required(
+                        CONF_ENABLED,
+                        default=defaults.get(
+                            CONF_ENABLED, bool(current.get("enabled", True))
+                        ),
+                    ): bool,
+                    vol.Required(
+                        CONF_DELETE_OBJECT,
+                        default=defaults.get(CONF_DELETE_OBJECT, False),
+                    ): bool,
+                }
+            ),
+            errors=errors,
+            description_placeholders={"object_id": str(current["id"])},
+        )
+
+    async def async_step_edit_cover(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Maintain one venetian blind and its optional blade pulse controls."""
+        current = self._maintenance_current("covers")
+        if current is None:
+            return self.async_abort(reason="maintenance_state_lost")
+        room_options = await self._async_room_options()
+        if room_options is None:
+            return self.async_abort(reason="no_rooms_configured")
+
+        commands = dict(current.get("commands") or {})
+        feedback = dict(current.get("feedback") or {})
+        capabilities = list(current.get("capabilities") or [])
+        has_blades = (
+            "blades_open" in capabilities
+            or bool(commands.get("blades_open_entity_id"))
+            or bool(commands.get("blades_close_entity_id"))
+        )
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            if user_input.get(CONF_DELETE_OBJECT, False):
+                return await self.async_step_delete_confirm()
+            name = str(user_input[CONF_COVER_NAME]).strip()
+            blades_enabled = bool(user_input.get(CONF_COVER_BLADES_ENABLED, False))
+            if not name:
+                errors[CONF_COVER_NAME] = "name_required"
+            elif blades_enabled and not user_input.get(CONF_COVER_BLADES_OPEN_COMMAND):
+                errors[CONF_COVER_BLADES_OPEN_COMMAND] = "entity_required"
+            elif blades_enabled and not user_input.get(CONF_COVER_BLADES_CLOSE_COMMAND):
+                errors[CONF_COVER_BLADES_CLOSE_COMMAND] = "entity_required"
+            else:
+                replacement = deepcopy(current)
+                replacement["name"] = name
+                replacement["room"] = user_input[CONF_ROOM_ID]
+                replacement["enabled"] = bool(user_input[CONF_ENABLED])
+                next_commands = dict(commands)
+                next_commands["open_entity_id"] = user_input[CONF_COVER_OPEN_COMMAND]
+                next_commands["close_entity_id"] = user_input[CONF_COVER_CLOSE_COMMAND]
+                if blades_enabled:
+                    next_commands["blades_open_entity_id"] = user_input[
+                        CONF_COVER_BLADES_OPEN_COMMAND
+                    ]
+                    next_commands["blades_close_entity_id"] = user_input[
+                        CONF_COVER_BLADES_CLOSE_COMMAND
+                    ]
+                    replacement["capabilities"] = [
+                        "open",
+                        "close",
+                        "blades_open",
+                        "blades_close",
+                    ]
+                else:
+                    next_commands.pop("blades_open_entity_id", None)
+                    next_commands.pop("blades_close_entity_id", None)
+                    replacement["capabilities"] = ["open", "close"]
+                replacement["commands"] = next_commands
+
+                next_feedback = dict(feedback)
+                next_feedback.update(
+                    {
+                        "open_entity_id": user_input[CONF_COVER_OPEN_FEEDBACK],
+                        "closed_entity_id": user_input[CONF_COVER_CLOSED_FEEDBACK],
+                        "opening_entity_id": user_input[CONF_COVER_OPENING_FEEDBACK],
+                        "closing_entity_id": user_input[CONF_COVER_CLOSING_FEEDBACK],
+                    }
+                )
+                closed_percent = user_input.get(CONF_COVER_CLOSED_PERCENT_FEEDBACK)
+                if closed_percent:
+                    next_feedback["closed_percent_entity_id"] = closed_percent
+                else:
+                    next_feedback.pop("closed_percent_entity_id", None)
+                replacement["feedback"] = next_feedback
+
+                result, error = await self._async_commit_pending_update(replacement)
+                if result is not None:
+                    return result
+                errors["base"] = error or "cannot_apply_object"
+
+        defaults = user_input or {}
+        schema: dict[Any, Any] = {
+            vol.Required(
+                CONF_COVER_NAME,
+                default=defaults.get(CONF_COVER_NAME, current.get("name", "")),
+            ): str,
+            vol.Required(
+                CONF_ROOM_ID,
+                default=defaults.get(CONF_ROOM_ID, current.get("room")),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=room_options,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                CONF_COVER_OPEN_COMMAND,
+                default=defaults.get(
+                    CONF_COVER_OPEN_COMMAND, commands.get("open_entity_id")
+                ),
+            ): selector.EntitySelector(selector.EntitySelectorConfig(domain="button")),
+            vol.Required(
+                CONF_COVER_CLOSE_COMMAND,
+                default=defaults.get(
+                    CONF_COVER_CLOSE_COMMAND, commands.get("close_entity_id")
+                ),
+            ): selector.EntitySelector(selector.EntitySelectorConfig(domain="button")),
+            vol.Required(
+                CONF_COVER_OPEN_FEEDBACK,
+                default=defaults.get(
+                    CONF_COVER_OPEN_FEEDBACK, feedback.get("open_entity_id")
+                ),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor")
+            ),
+            vol.Required(
+                CONF_COVER_CLOSED_FEEDBACK,
+                default=defaults.get(
+                    CONF_COVER_CLOSED_FEEDBACK, feedback.get("closed_entity_id")
+                ),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor")
+            ),
+            vol.Required(
+                CONF_COVER_OPENING_FEEDBACK,
+                default=defaults.get(
+                    CONF_COVER_OPENING_FEEDBACK, feedback.get("opening_entity_id")
+                ),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor")
+            ),
+            vol.Required(
+                CONF_COVER_CLOSING_FEEDBACK,
+                default=defaults.get(
+                    CONF_COVER_CLOSING_FEEDBACK, feedback.get("closing_entity_id")
+                ),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor")
+            ),
+            vol.Required(
+                CONF_COVER_BLADES_ENABLED,
+                default=defaults.get(CONF_COVER_BLADES_ENABLED, has_blades),
+            ): bool,
+            vol.Required(
+                CONF_ENABLED,
+                default=defaults.get(CONF_ENABLED, bool(current.get("enabled", True))),
+            ): bool,
+            vol.Required(
+                CONF_DELETE_OBJECT,
+                default=defaults.get(CONF_DELETE_OBJECT, False),
+            ): bool,
+        }
+
+        closed_percent_default = defaults.get(
+            CONF_COVER_CLOSED_PERCENT_FEEDBACK,
+            feedback.get("closed_percent_entity_id"),
+        )
+        closed_percent_marker = (
+            vol.Optional(
+                CONF_COVER_CLOSED_PERCENT_FEEDBACK,
+                default=closed_percent_default,
+            )
+            if closed_percent_default
+            else vol.Optional(CONF_COVER_CLOSED_PERCENT_FEEDBACK)
+        )
+        schema[closed_percent_marker] = selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor")
+        )
+
+        blade_open_default = defaults.get(
+            CONF_COVER_BLADES_OPEN_COMMAND,
+            commands.get("blades_open_entity_id"),
+        )
+        blade_open_marker = (
+            vol.Optional(CONF_COVER_BLADES_OPEN_COMMAND, default=blade_open_default)
+            if blade_open_default
+            else vol.Optional(CONF_COVER_BLADES_OPEN_COMMAND)
+        )
+        schema[blade_open_marker] = selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="button")
+        )
+
+        blade_close_default = defaults.get(
+            CONF_COVER_BLADES_CLOSE_COMMAND,
+            commands.get("blades_close_entity_id"),
+        )
+        blade_close_marker = (
+            vol.Optional(CONF_COVER_BLADES_CLOSE_COMMAND, default=blade_close_default)
+            if blade_close_default
+            else vol.Optional(CONF_COVER_BLADES_CLOSE_COMMAND)
+        )
+        schema[blade_close_marker] = selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="button")
+        )
+
+        return self.async_show_form(
+            step_id="edit_cover",
+            data_schema=vol.Schema(schema),
+            errors=errors,
+            description_placeholders={"object_id": str(current["id"])},
+        )
+
+    async def _async_edit_simple_opening(
+        self,
+        *,
+        step_id: str,
+        user_input: dict[str, Any] | None,
+    ) -> FlowResult:
+        """Maintain a window or sliding door."""
+        current = self._maintenance_current("openings")
+        if current is None:
+            return self.async_abort(reason="maintenance_state_lost")
+        room_options = await self._async_room_options()
+        if room_options is None:
+            return self.async_abort(reason="no_rooms_configured")
+
+        state = dict(current.get("state") or {})
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if user_input.get(CONF_DELETE_OBJECT, False):
+                return await self.async_step_delete_confirm()
+            name = str(user_input[CONF_OPENING_NAME]).strip()
+            if not name:
+                errors[CONF_OPENING_NAME] = "name_required"
+            else:
+                replacement = deepcopy(current)
+                replacement["name"] = name
+                replacement["room"] = user_input[CONF_ROOM_ID]
+                replacement["enabled"] = bool(user_input[CONF_ENABLED])
+                replacement["state"] = {
+                    **state,
+                    "entity_id": user_input[CONF_OPENING_STATE_ENTITY_ID],
+                }
+                result, error = await self._async_commit_pending_update(replacement)
+                if result is not None:
+                    return result
+                errors["base"] = error or "cannot_apply_object"
+
+        defaults = user_input or {}
+        return self.async_show_form(
+            step_id=step_id,
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_OPENING_NAME,
+                        default=defaults.get(
+                            CONF_OPENING_NAME, current.get("name", "")
+                        ),
+                    ): str,
+                    vol.Required(
+                        CONF_ROOM_ID,
+                        default=defaults.get(CONF_ROOM_ID, current.get("room")),
+                    ): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=room_options,
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    ),
+                    vol.Required(
+                        CONF_OPENING_STATE_ENTITY_ID,
+                        default=defaults.get(
+                            CONF_OPENING_STATE_ENTITY_ID, state.get("entity_id")
+                        ),
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="binary_sensor")
+                    ),
+                    vol.Required(
+                        CONF_ENABLED,
+                        default=defaults.get(
+                            CONF_ENABLED, bool(current.get("enabled", True))
+                        ),
+                    ): bool,
+                    vol.Required(
+                        CONF_DELETE_OBJECT,
+                        default=defaults.get(CONF_DELETE_OBJECT, False),
+                    ): bool,
+                }
+            ),
+            errors=errors,
+            description_placeholders={"object_id": str(current["id"])},
+        )
+
+    async def async_step_edit_window(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        return await self._async_edit_simple_opening(
+            step_id="edit_window", user_input=user_input
+        )
+
+    async def async_step_edit_sliding_door(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        return await self._async_edit_simple_opening(
+            step_id="edit_sliding_door", user_input=user_input
+        )
+
+    async def async_step_edit_door(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Maintain a normal door including optional lock and opener modules."""
+        current = self._maintenance_current("openings")
+        if current is None:
+            return self.async_abort(reason="maintenance_state_lost")
+        room_options = await self._async_room_options()
+        if room_options is None:
+            return self.async_abort(reason="no_rooms_configured")
+
+        state = dict(current.get("state") or {})
+        lock = dict(current.get("lock") or {})
+        lock_feedback = dict(lock.get("feedback") or {})
+        lock_commands = dict(lock.get("commands") or {})
+        opener = dict(current.get("door_opener") or {})
+        opener_command = dict(opener.get("command") or {})
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if user_input.get(CONF_DELETE_OBJECT, False):
+                return await self.async_step_delete_confirm()
+            name = str(user_input[CONF_OPENING_NAME]).strip()
+            configure_lock = bool(user_input.get(CONF_DOOR_LOCK_ENABLED, False))
+            configure_opener = bool(user_input.get(CONF_DOOR_OPENER_ENABLED, False))
+            if not name:
+                errors[CONF_OPENING_NAME] = "name_required"
+            elif configure_lock and not user_input.get(CONF_LOCK_FEEDBACK_ENTITY_ID):
+                errors[CONF_LOCK_FEEDBACK_ENTITY_ID] = "entity_required"
+            elif configure_lock and not user_input.get(CONF_LOCK_COMMAND_ENTITY_ID):
+                errors[CONF_LOCK_COMMAND_ENTITY_ID] = "entity_required"
+            elif configure_lock and not user_input.get(CONF_UNLOCK_COMMAND_ENTITY_ID):
+                errors[CONF_UNLOCK_COMMAND_ENTITY_ID] = "entity_required"
+            elif configure_opener and not user_input.get(
+                CONF_DOOR_OPENER_COMMAND_ENTITY_ID
+            ):
+                errors[CONF_DOOR_OPENER_COMMAND_ENTITY_ID] = "entity_required"
+            else:
+                replacement = deepcopy(current)
+                replacement["name"] = name
+                replacement["room"] = user_input[CONF_ROOM_ID]
+                replacement["enabled"] = bool(user_input[CONF_ENABLED])
+                replacement["state"] = {
+                    **state,
+                    "entity_id": user_input[CONF_OPENING_STATE_ENTITY_ID],
+                }
+
+                if configure_lock:
+                    replacement["lock"] = {
+                        **lock,
+                        "enabled": True,
+                        "feedback": {
+                            **lock_feedback,
+                            "entity_id": user_input[CONF_LOCK_FEEDBACK_ENTITY_ID],
+                            "locked_states": lock_feedback.get(
+                                "locked_states", ["on"]
+                            ),
+                        },
+                        "commands": {
+                            **lock_commands,
+                            "lock_entity_id": user_input[CONF_LOCK_COMMAND_ENTITY_ID],
+                            "unlock_entity_id": user_input[
+                                CONF_UNLOCK_COMMAND_ENTITY_ID
+                            ],
+                        },
+                    }
+                else:
+                    replacement.pop("lock", None)
+
+                if configure_opener:
+                    replacement["door_opener"] = {
+                        **opener,
+                        "enabled": True,
+                        "command": {
+                            **opener_command,
+                            "entity_id": user_input[
+                                CONF_DOOR_OPENER_COMMAND_ENTITY_ID
+                            ],
+                        },
+                    }
+                else:
+                    replacement.pop("door_opener", None)
+
+                result, error = await self._async_commit_pending_update(replacement)
+                if result is not None:
+                    return result
+                errors["base"] = error or "cannot_apply_object"
+
+        defaults = user_input or {}
+        schema: dict[Any, Any] = {
+            vol.Required(
+                CONF_OPENING_NAME,
+                default=defaults.get(CONF_OPENING_NAME, current.get("name", "")),
+            ): str,
+            vol.Required(
+                CONF_ROOM_ID,
+                default=defaults.get(CONF_ROOM_ID, current.get("room")),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=room_options,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                CONF_OPENING_STATE_ENTITY_ID,
+                default=defaults.get(
+                    CONF_OPENING_STATE_ENTITY_ID, state.get("entity_id")
+                ),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor")
+            ),
+            vol.Required(
+                CONF_DOOR_LOCK_ENABLED,
+                default=defaults.get(
+                    CONF_DOOR_LOCK_ENABLED, bool(lock.get("enabled", False))
+                ),
+            ): bool,
+            vol.Required(
+                CONF_DOOR_OPENER_ENABLED,
+                default=defaults.get(
+                    CONF_DOOR_OPENER_ENABLED, bool(opener.get("enabled", False))
+                ),
+            ): bool,
+            vol.Required(
+                CONF_ENABLED,
+                default=defaults.get(CONF_ENABLED, bool(current.get("enabled", True))),
+            ): bool,
+            vol.Required(
+                CONF_DELETE_OBJECT,
+                default=defaults.get(CONF_DELETE_OBJECT, False),
+            ): bool,
+        }
+
+        optional_entities = (
+            (
+                CONF_LOCK_FEEDBACK_ENTITY_ID,
+                "binary_sensor",
+                lock_feedback.get("entity_id"),
+            ),
+            (
+                CONF_LOCK_COMMAND_ENTITY_ID,
+                "button",
+                lock_commands.get("lock_entity_id"),
+            ),
+            (
+                CONF_UNLOCK_COMMAND_ENTITY_ID,
+                "button",
+                lock_commands.get("unlock_entity_id"),
+            ),
+            (
+                CONF_DOOR_OPENER_COMMAND_ENTITY_ID,
+                "button",
+                opener_command.get("entity_id"),
+            ),
+        )
+        for key, domain, current_default in optional_entities:
+            default_value = defaults.get(key, current_default)
+            marker = (
+                vol.Optional(key, default=default_value)
+                if default_value
+                else vol.Optional(key)
+            )
+            schema[marker] = selector.EntitySelector(
+                selector.EntitySelectorConfig(domain=domain)
+            )
+
+        return self.async_show_form(
+            step_id="edit_door",
+            data_schema=vol.Schema(schema),
+            errors=errors,
+            description_placeholders={"object_id": str(current["id"])},
+        )
+
+    async def async_step_edit_garage_door(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Maintain one guarded garage door without weakening execution guards."""
+        current = self._maintenance_current("openings")
+        if current is None:
+            return self.async_abort(reason="maintenance_state_lost")
+        room_options = await self._async_room_options()
+        if room_options is None:
+            return self.async_abort(reason="no_rooms_configured")
+
+        garage = dict(current.get("garage") or {})
+        feedback = dict(garage.get("feedback") or {})
+        command = dict(garage.get("command") or {})
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            if user_input.get(CONF_DELETE_OBJECT, False):
+                return await self.async_step_delete_confirm()
+            name = str(user_input[CONF_OPENING_NAME]).strip()
+            if not name:
+                errors[CONF_OPENING_NAME] = "name_required"
+            else:
+                enabled = bool(user_input[CONF_ENABLED])
+                replacement = deepcopy(current)
+                replacement["name"] = name
+                replacement["room"] = user_input[CONF_ROOM_ID]
+                replacement["enabled"] = enabled
+                next_command = {
+                    **command,
+                    "toggle_entity_id": user_input[
+                        CONF_GARAGE_TOGGLE_COMMAND_ENTITY_ID
+                    ],
+                }
+                stop_entity = user_input.get(CONF_GARAGE_STOP_COMMAND_ENTITY_ID)
+                if stop_entity:
+                    next_command["stop_entity_id"] = stop_entity
+                else:
+                    next_command.pop("stop_entity_id", None)
+
+                replacement["garage"] = {
+                    **garage,
+                    "enabled": enabled,
+                    "feedback": {
+                        **feedback,
+                        "open_entity_id": user_input[
+                            CONF_GARAGE_OPEN_FEEDBACK_ENTITY_ID
+                        ],
+                        "closed_entity_id": user_input[
+                            CONF_GARAGE_CLOSED_FEEDBACK_ENTITY_ID
+                        ],
+                    },
+                    "command": next_command,
+                    "movement_timeout_seconds": float(
+                        user_input[CONF_GARAGE_MOVEMENT_TIMEOUT_SECONDS]
+                    ),
+                }
+                result, error = await self._async_commit_pending_update(replacement)
+                if result is not None:
+                    return result
+                errors["base"] = error or "cannot_apply_object"
+
+        defaults = user_input or {}
+        schema: dict[Any, Any] = {
+            vol.Required(
+                CONF_OPENING_NAME,
+                default=defaults.get(CONF_OPENING_NAME, current.get("name", "")),
+            ): str,
+            vol.Required(
+                CONF_ROOM_ID,
+                default=defaults.get(CONF_ROOM_ID, current.get("room")),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=room_options,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(
+                CONF_GARAGE_OPEN_FEEDBACK_ENTITY_ID,
+                default=defaults.get(
+                    CONF_GARAGE_OPEN_FEEDBACK_ENTITY_ID,
+                    feedback.get("open_entity_id"),
+                ),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor")
+            ),
+            vol.Required(
+                CONF_GARAGE_CLOSED_FEEDBACK_ENTITY_ID,
+                default=defaults.get(
+                    CONF_GARAGE_CLOSED_FEEDBACK_ENTITY_ID,
+                    feedback.get("closed_entity_id"),
+                ),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor")
+            ),
+            vol.Required(
+                CONF_GARAGE_TOGGLE_COMMAND_ENTITY_ID,
+                default=defaults.get(
+                    CONF_GARAGE_TOGGLE_COMMAND_ENTITY_ID,
+                    command.get("toggle_entity_id"),
+                ),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="button")
+            ),
+            vol.Required(
+                CONF_GARAGE_MOVEMENT_TIMEOUT_SECONDS,
+                default=defaults.get(
+                    CONF_GARAGE_MOVEMENT_TIMEOUT_SECONDS,
+                    float(garage.get("movement_timeout_seconds", 25.0)),
+                ),
+            ): vol.All(vol.Coerce(float), vol.Range(min=1.0, max=300.0)),
+            vol.Required(
+                CONF_ENABLED,
+                default=defaults.get(CONF_ENABLED, bool(current.get("enabled", True))),
+            ): bool,
+            vol.Required(
+                CONF_DELETE_OBJECT,
+                default=defaults.get(CONF_DELETE_OBJECT, False),
+            ): bool,
+        }
+        stop_default = defaults.get(
+            CONF_GARAGE_STOP_COMMAND_ENTITY_ID, command.get("stop_entity_id")
+        )
+        stop_marker = (
+            vol.Optional(CONF_GARAGE_STOP_COMMAND_ENTITY_ID, default=stop_default)
+            if stop_default
+            else vol.Optional(CONF_GARAGE_STOP_COMMAND_ENTITY_ID)
+        )
+        schema[stop_marker] = selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="button")
+        )
+
+        return self.async_show_form(
+            step_id="edit_garage_door",
+            data_schema=vol.Schema(schema),
+            errors=errors,
+            description_placeholders={"object_id": str(current["id"])},
+        )
+
+    async def async_step_edit_plant(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Maintain Plant Care metadata while keeping watering-history identity."""
+        current = self._maintenance_current("plants")
+        if current is None:
+            return self.async_abort(reason="maintenance_state_lost")
+        room_options = await self._async_room_options()
+        if room_options is None:
+            return self.async_abort(reason="no_rooms_configured")
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if user_input.get(CONF_DELETE_OBJECT, False):
+                return await self.async_step_delete_confirm()
+            name = str(user_input[CONF_PLANT_NAME]).strip()
+            species = str(user_input[CONF_PLANT_SPECIES]).strip()
+            if not name:
+                errors[CONF_PLANT_NAME] = "name_required"
+            elif not species:
+                errors[CONF_PLANT_SPECIES] = "species_required"
+            else:
+                replacement = deepcopy(current)
+                replacement["name"] = name
+                replacement["species"] = species
+                replacement["room"] = user_input[CONF_ROOM_ID]
+                replacement["location"] = str(
+                    user_input.get(CONF_PLANT_LOCATION) or ""
+                ).strip()
+                replacement["watering_interval_days"] = int(
+                    user_input[CONF_PLANT_WATERING_INTERVAL_DAYS]
+                )
+                replacement["enabled"] = bool(user_input[CONF_ENABLED])
+                moisture = user_input.get(CONF_PLANT_MOISTURE_SENSOR_ENTITY_ID)
+                if moisture:
+                    replacement["moisture_sensor_entity_id"] = moisture
+                else:
+                    replacement.pop("moisture_sensor_entity_id", None)
+
+                result, error = await self._async_commit_pending_update(replacement)
+                if result is not None:
+                    return result
+                errors["base"] = error or "cannot_apply_object"
+
+        defaults = user_input or {}
+        schema: dict[Any, Any] = {
+            vol.Required(
+                CONF_PLANT_NAME,
+                default=defaults.get(CONF_PLANT_NAME, current.get("name", "")),
+            ): str,
+            vol.Required(
+                CONF_PLANT_SPECIES,
+                default=defaults.get(
+                    CONF_PLANT_SPECIES, current.get("species", "")
+                ),
+            ): str,
+            vol.Required(
+                CONF_ROOM_ID,
+                default=defaults.get(CONF_ROOM_ID, current.get("room")),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=room_options,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Optional(
+                CONF_PLANT_LOCATION,
+                default=defaults.get(
+                    CONF_PLANT_LOCATION, current.get("location", "")
+                ),
+            ): str,
+            vol.Required(
+                CONF_PLANT_WATERING_INTERVAL_DAYS,
+                default=defaults.get(
+                    CONF_PLANT_WATERING_INTERVAL_DAYS,
+                    int(current.get("watering_interval_days", 7)),
+                ),
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=365)),
+            vol.Required(
+                CONF_ENABLED,
+                default=defaults.get(CONF_ENABLED, bool(current.get("enabled", True))),
+            ): bool,
+            vol.Required(
+                CONF_DELETE_OBJECT,
+                default=defaults.get(CONF_DELETE_OBJECT, False),
+            ): bool,
+        }
+        moisture_default = defaults.get(
+            CONF_PLANT_MOISTURE_SENSOR_ENTITY_ID,
+            current.get("moisture_sensor_entity_id"),
+        )
+        moisture_marker = (
+            vol.Optional(
+                CONF_PLANT_MOISTURE_SENSOR_ENTITY_ID,
+                default=moisture_default,
+            )
+            if moisture_default
+            else vol.Optional(CONF_PLANT_MOISTURE_SENSOR_ENTITY_ID)
+        )
+        schema[moisture_marker] = selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor")
+        )
+
+        return self.async_show_form(
+            step_id="edit_plant",
+            data_schema=vol.Schema(schema),
+            errors=errors,
+            description_placeholders={"object_id": str(current["id"])},
+        )
+
+    async def async_step_delete_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Require an explicit second confirmation before deleting an object."""
+        current = self._pending_object
+        object_type = self._pending_object_type
+        if current is None or object_type is None:
+            return self.async_abort(reason="maintenance_state_lost")
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if not user_input.get(CONF_CONFIRM, False):
+                errors["base"] = "confirmation_required"
+            else:
+                try:
+                    result = await self.hass.async_add_executor_job(
+                        _manager(self.hass).delete_object,
+                        object_type,
+                        str(current["id"]),
+                    )
+                except WNHFConfigurationError as err:
+                    message = str(err)
+                    if (
+                        "Room is still referenced" in message
+                        or "At least one managed room" in message
+                    ):
+                        errors["base"] = "object_in_use"
+                    else:
+                        errors["base"] = "cannot_delete_object"
+                else:
+                    self._pending_object = None
+                    self._pending_object_type = None
+                    return self._finish(result.action)
+
+        return self.async_show_form(
+            step_id="delete_confirm",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_CONFIRM, default=False): bool}
+            ),
+            errors=errors,
+            description_placeholders={
+                "object_type": object_type,
+                "object_name": str(current.get("name") or current["id"]),
+                "object_id": str(current["id"]),
+            },
         )
 
     async def async_step_dashboard(

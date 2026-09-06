@@ -159,6 +159,7 @@ required_release_fields = (
     "semantic_action_count",
     "canonical_real_action_count",
     "home_assistant_service_count",
+    "candidate_status",
 )
 for field in required_release_fields:
     if field not in release:
@@ -172,6 +173,8 @@ canonical_contract = str(release.get("canonical_execution_contract") or "")
 expected_actions = int(release.get("semantic_action_count") or 0)
 expected_real = int(release.get("canonical_real_action_count") or 0)
 expected_services = int(release.get("home_assistant_service_count") or 0)
+candidate_status = str(release.get("candidate_status") or "")
+development_candidate = candidate_status == "development"
 
 if release.get("product_name") != "Red Queen":
     fail("RELEASE.json product_name must be Red Queen")
@@ -316,6 +319,10 @@ try:
         fail("const.py development baseline does not match RELEASE.json")
     if module_assignment(const_path, "RELEASE_BASELINE") != release_baseline:
         fail("const.py release baseline does not match RELEASE.json")
+    if module_assignment(const_path, "VERSION") != version:
+        fail("const.py public version does not match RELEASE.json")
+    if module_assignment(const_path, "RELEASE_CANDIDATE") != candidate:
+        fail("const.py candidate marker does not match RELEASE.json")
 
     generic_execution = module_assignment(
         const_path, "GENERIC_EXECUTION_CONTRACT_VERSION"
@@ -537,6 +544,13 @@ for marker in (
     "os.replace",
     "yaml.safe_dump",
     "rollback",
+    "object_options",
+    "get_object",
+    "update_object",
+    "set_object_enabled",
+    "delete_object",
+    "A stable semantic object ID cannot be changed during maintenance.",
+    "Room is still referenced and cannot be deleted",
 ):
     if marker not in configuration_text:
         fail(f"Missing managed-configuration safety marker: {marker}")
@@ -552,6 +566,19 @@ for marker in (
     "async_step_add_door",
     "async_step_add_garage_door",
     "async_step_add_plant",
+    "async_step_manage",
+    "async_step_manage_room",
+    "async_step_manage_light",
+    "async_step_manage_cover",
+    "async_step_manage_opening",
+    "async_step_manage_plant",
+    "async_step_edit_room",
+    "async_step_edit_light",
+    "async_step_edit_cover",
+    "async_step_edit_door",
+    "async_step_edit_garage_door",
+    "async_step_edit_plant",
+    "async_step_delete_confirm",
 ):
     if marker not in config_flow_text:
         fail(f"Missing managed configurator flow: {marker}")
@@ -608,7 +635,16 @@ for marker in (
 try:
     de = json.loads(read_text(INTEGRATION / "translations" / "de.json"))
     menu = de["options"]["step"]["init"]["menu_options"]
-    for key in ("status", "add_room", "add_light", "add_cover", "add_opening", "add_plant", "dashboard"):
+    for key in (
+        "status",
+        "add_room",
+        "add_light",
+        "add_cover",
+        "add_opening",
+        "add_plant",
+        "manage",
+        "dashboard",
+    ):
         if key not in menu:
             fail(f"German configurator menu missing option: {key}")
 
@@ -701,43 +737,57 @@ except Exception as exc:
 # Repository documentation consistency
 # ---------------------------------------------------------------------------
 
-current_doc_markers = {
-    ROOT / "README.md": (
-        version,
-        development_baseline,
-        release_baseline,
-        "garage.stop",
-    ),
-    ROOT / "REPOSITORY_STATUS.md": (
-        version,
-        release_baseline,
-        str(expected_actions),
-        str(expected_real),
-        str(expected_services),
-    ),
-    ROOT / "docs" / "FEATURE_MATRIX.md": (
-        version,
-        "garage.stop",
-        "Configuration",
-    ),
-    ROOT / "docs" / "RELEASE_STATUS.md": (
-        version,
-        "LIVE VERIFIED",
-    ),
-    ROOT / "docs" / "ROADMAP.md": (
-        candidate.upper(),
-        "Managed configuration",
-    ),
-    INTEGRATION / "README.md": (
-        version,
-        "garage.stop",
-        "managed configurator",
-    ),
-    INTEGRATION / "docs" / "FEATURE_MATRIX.md": (
-        version,
-        "garage.stop",
-    ),
-}
+if development_candidate:
+    # During an active RC branch the published root documentation intentionally
+    # remains on the last released candidate until candidate freeze. RC13-specific
+    # scope/validation documents and checksums are required separately above.
+    current_doc_markers = {
+        ROOT / "docs" / "ROADMAP.md": (
+            "Managed configuration",
+        ),
+        INTEGRATION / "README.md": (
+            "garage.stop",
+            "managed configurator",
+        ),
+    }
+else:
+    current_doc_markers = {
+        ROOT / "README.md": (
+            version,
+            development_baseline,
+            release_baseline,
+            "garage.stop",
+        ),
+        ROOT / "REPOSITORY_STATUS.md": (
+            version,
+            release_baseline,
+            str(expected_actions),
+            str(expected_real),
+            str(expected_services),
+        ),
+        ROOT / "docs" / "FEATURE_MATRIX.md": (
+            version,
+            "garage.stop",
+            "Configuration",
+        ),
+        ROOT / "docs" / "RELEASE_STATUS.md": (
+            version,
+            "LIVE VERIFIED",
+        ),
+        ROOT / "docs" / "ROADMAP.md": (
+            candidate.upper(),
+            "Managed configuration",
+        ),
+        INTEGRATION / "README.md": (
+            version,
+            "garage.stop",
+            "managed configurator",
+        ),
+        INTEGRATION / "docs" / "FEATURE_MATRIX.md": (
+            version,
+            "garage.stop",
+        ),
+    }
 for path, markers in current_doc_markers.items():
     if not path.exists():
         continue
@@ -812,11 +862,12 @@ if ERRORS:
 print("Red Queen repository verification PASS")
 print(f"- integration: {manifest.get('name')} {version} ({manifest.get('domain')})")
 print(f"- development baseline: {development_baseline} / {release_baseline}")
+print(f"- candidate status: {candidate_status}")
 print(f"- services: {len(service_keys)}")
 print("- capabilities: 8")
 print(f"- semantic actions: {expected_actions}")
 print(f"- canonical real contracts: {expected_real}")
-print("- managed configuration: ownership/transaction invariants PASS")
+print("- managed configuration: ownership/transaction/maintenance invariants PASS")
 print("- garage STOP: guarded canonical dispatch contract PASS")
 print("- native cover UX: directional/no-tilt contract PASS")
 print("- generated dashboard: model/binding/renderer/lifecycle invariants PASS")

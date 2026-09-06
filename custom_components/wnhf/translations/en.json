@@ -45,7 +45,8 @@
           "add_cover": "Add venetian blind",
           "add_opening": "Add opening",
           "add_plant": "Add plant",
-          "dashboard": "Dashboard"
+          "dashboard": "Dashboard",
+          "manage": "Manage objects"
         }
       },
       "status": {
@@ -257,6 +258,168 @@
           "dashboard_create": "Create dashboard",
           "dashboard_update": "Update dashboard"
         }
+      },
+      "manage": {
+        "title": "Manage Red Queen objects",
+        "description": "Edit, enable/disable or delete managed objects. Semantic object IDs remain stable while editing.",
+        "menu_options": {
+          "manage_room": "Rooms",
+          "manage_light": "Lights",
+          "manage_cover": "Covers",
+          "manage_opening": "Openings",
+          "manage_plant": "Plants"
+        }
+      },
+      "manage_room": {
+        "title": "Select room",
+        "description": "Select the managed object to change.",
+        "data": {
+          "object_id": "Object"
+        }
+      },
+      "manage_light": {
+        "title": "Select light",
+        "description": "Select the managed object to change.",
+        "data": {
+          "object_id": "Object"
+        }
+      },
+      "manage_cover": {
+        "title": "Select cover",
+        "description": "Select the managed object to change.",
+        "data": {
+          "object_id": "Object"
+        }
+      },
+      "manage_opening": {
+        "title": "Select opening",
+        "description": "Select the managed object to change.",
+        "data": {
+          "object_id": "Object"
+        }
+      },
+      "manage_plant": {
+        "title": "Select plant",
+        "description": "Select the managed object to change.",
+        "data": {
+          "object_id": "Object"
+        }
+      },
+      "edit_room": {
+        "title": "Edit room",
+        "description": "Semantic ID: {object_id}. Name and enabled state can be changed. The stable semantic ID and Home Assistant source linkage are not changed automatically.",
+        "data": {
+          "name": "Room name",
+          "enabled": "Object enabled",
+          "delete_object": "Delete object"
+        }
+      },
+      "edit_light": {
+        "title": "Edit light",
+        "description": "Semantic ID: {object_id}. The ID remains stable when renaming or moving the object to another room.",
+        "data": {
+          "name": "Light name",
+          "room_id": "Red Queen room",
+          "command_entity_id": "Command button",
+          "feedback_entity_id": "State feedback",
+          "enabled": "Object enabled",
+          "delete_object": "Delete object"
+        }
+      },
+      "edit_cover": {
+        "title": "Edit cover",
+        "description": "Semantic ID: {object_id}. Movement, feedback and optional blade entities can be changed.",
+        "data": {
+          "cover_name": "Cover name",
+          "room_id": "Red Queen room",
+          "cover_open_command_entity_id": "OPEN command",
+          "cover_close_command_entity_id": "CLOSE command",
+          "cover_open_feedback_entity_id": "OPEN feedback",
+          "cover_closed_feedback_entity_id": "CLOSED feedback",
+          "cover_opening_feedback_entity_id": "OPENING feedback",
+          "cover_closing_feedback_entity_id": "CLOSING feedback",
+          "cover_closed_percent_feedback_entity_id": "Closed position % feedback (optional)",
+          "cover_blades_enabled": "Blade controls enabled",
+          "cover_blades_open_command_entity_id": "OPEN blades command (optional)",
+          "cover_blades_close_command_entity_id": "CLOSE blades command (optional)",
+          "enabled": "Object enabled",
+          "delete_object": "Delete object"
+        }
+      },
+      "edit_window": {
+        "title": "Edit window",
+        "description": "Semantic ID: {object_id}.",
+        "data": {
+          "opening_name": "Name",
+          "room_id": "Red Queen room",
+          "opening_state_entity_id": "OPEN feedback",
+          "enabled": "Object enabled",
+          "delete_object": "Delete object"
+        }
+      },
+      "edit_sliding_door": {
+        "title": "Edit sliding door",
+        "description": "Semantic ID: {object_id}.",
+        "data": {
+          "opening_name": "Name",
+          "room_id": "Red Queen room",
+          "opening_state_entity_id": "OPEN feedback",
+          "enabled": "Object enabled",
+          "delete_object": "Delete object"
+        }
+      },
+      "edit_door": {
+        "title": "Edit door",
+        "description": "Semantic ID: {object_id}. Lock and door-opener modules can be added, changed or removed here.",
+        "data": {
+          "opening_name": "Door name",
+          "room_id": "Red Queen room",
+          "opening_state_entity_id": "DOOR OPEN feedback",
+          "door_lock_enabled": "Motor lock configured",
+          "door_opener_enabled": "Electric door opener configured",
+          "lock_feedback_entity_id": "LOCKED feedback (optional)",
+          "lock_command_entity_id": "LOCK command (optional)",
+          "unlock_command_entity_id": "UNLOCK command (optional)",
+          "door_opener_command_entity_id": "DOOR OPENER command (optional)",
+          "enabled": "Object enabled",
+          "delete_object": "Delete object"
+        }
+      },
+      "edit_garage_door": {
+        "title": "Edit garage door",
+        "description": "Semantic ID: {object_id}. Canonical safety rules are not changed by this configuration.",
+        "data": {
+          "opening_name": "Garage door name",
+          "room_id": "Red Queen room",
+          "garage_open_feedback_entity_id": "OPEN feedback",
+          "garage_closed_feedback_entity_id": "CLOSED feedback",
+          "garage_toggle_command_entity_id": "MOVEMENT command",
+          "garage_stop_command_entity_id": "STOP command (optional)",
+          "garage_movement_timeout_seconds": "Maximum movement time in seconds",
+          "enabled": "Object enabled",
+          "delete_object": "Delete object"
+        }
+      },
+      "edit_plant": {
+        "title": "Edit plant",
+        "description": "Semantic ID: {object_id}. The ID remains stable so existing Plant Care history and native entities retain the same identity.",
+        "data": {
+          "plant_name": "Plant name",
+          "plant_species": "Species",
+          "room_id": "Red Queen room",
+          "plant_location": "Location in room",
+          "plant_watering_interval_days": "Watering interval in days",
+          "plant_moisture_sensor_entity_id": "Moisture sensor (optional)",
+          "enabled": "Object enabled",
+          "delete_object": "Delete object"
+        }
+      },
+      "delete_confirm": {
+        "title": "Really delete object?",
+        "description": "Type: {object_type}. Object: {object_name} ({object_id}). Red Queen creates a backup before the transaction and validates the complete registry. Rooms with dependent objects cannot be deleted.",
+        "data": {
+          "confirm": "Confirm permanent deletion"
+        }
       }
     },
     "error": {
@@ -273,14 +436,22 @@
       "cover_already_configured": "A venetian blind with this name already exists in this Red Queen room.",
       "opening_already_configured": "An opening with this name already exists in this Red Queen room.",
       "species_required": "Enter a plant species.",
-      "plant_already_configured": "A plant with this name already exists in this Red Queen room."
+      "plant_already_configured": "A plant with this name already exists in this Red Queen room.",
+      "object_not_found": "The selected managed object was not found.",
+      "unsupported_opening_type": "This opening type cannot yet be maintained through the configurator.",
+      "entity_required": "An entity is required for the enabled function.",
+      "object_in_use": "The object cannot be deleted while dependent objects reference it or while it is the last managed room.",
+      "cannot_delete_object": "The object could not be deleted safely. The registry remained unchanged or was rolled back."
     },
     "abort": {
       "commissioning_state_lost": "The commissioning draft was lost. Start again.",
       "no_rooms_configured": "No valid Red Queen rooms are configured.",
       "cover_configuration_state_lost": "The venetian-blind draft was lost. Start the configuration again.",
       "opening_configuration_state_lost": "The opening draft was lost. Start the configuration again.",
-      "dashboard_generation_failed": "The Red Queen dashboard could not be processed: {error}"
+      "dashboard_generation_failed": "The Red Queen dashboard could not be processed: {error}",
+      "maintenance_unavailable": "The managed registry is not available for maintenance.",
+      "no_managed_objects": "No managed objects of this type are configured.",
+      "maintenance_state_lost": "The selected maintenance state was lost. Open the dialog again."
     }
   },
   "exceptions": {
