@@ -34,3 +34,14 @@ enable/disable, and route deletion through a separate explicit confirmation step
 
 The canonical physical execution surface is unchanged in WP13.1.
 `CANONICAL_EXECUTION_CONTRACT_VERSION` therefore remains `2.3-rc11`.
+
+## WP13.2 — Production Diagnostics & Dashboard Freshness
+
+`configuration_diagnostics.py` inspects only entity IDs explicitly configured in
+the Red Queen registry. It does not scan arbitrary Home Assistant entities and does
+not introduce provider fallback.
+
+Dashboard lifecycle status now receives the current registry source SHA from the
+generation service. A registry-source mismatch marks the owned dashboard as outdated
+even when the visual render SHA did not change, allowing explicit update to refresh
+the generator metadata.

@@ -234,6 +234,7 @@ required_paths = [
     INTEGRATION / "button.py",
     INTEGRATION / "config_flow.py",
     INTEGRATION / "configuration.py",
+    INTEGRATION / "configuration_diagnostics.py",
     INTEGRATION / "cover.py",
     INTEGRATION / "light.py",
     INTEGRATION / "localization.py",
@@ -643,6 +644,7 @@ try:
         "add_opening",
         "add_plant",
         "manage",
+        "diagnostics",
         "dashboard",
     ):
         if key not in menu:
@@ -711,6 +713,43 @@ for marker in (
 if '"dashboard"' not in config_flow_text or "async_step_dashboard" not in config_flow_text:
     fail("Configurator must expose the RC12 dashboard lifecycle step")
 
+
+
+# ---------------------------------------------------------------------------
+# RC13 commissioning diagnostics / dashboard source freshness
+# ---------------------------------------------------------------------------
+
+configuration_diagnostics_text = read_text(
+    INTEGRATION / "configuration_diagnostics.py"
+)
+for marker in (
+    'CONFIGURATION_DIAGNOSTICS_CONTRACT_VERSION = "1.0"',
+    "async_diagnose_configured_entities",
+    "ConfiguredEntityIssue",
+    "ConfigurationDiagnosticsReport",
+    "STATE_UNAVAILABLE",
+    "STATE_UNKNOWN",
+    "disabled_by",
+    "async_add_executor_job",
+):
+    if marker not in configuration_diagnostics_text:
+        fail(f"Missing RC13 configuration diagnostics marker: {marker}")
+
+for marker in (
+    "expected_source_registry_sha256",
+    "source_outdated",
+    "current_source_sha",
+):
+    if marker not in dashboard_adapter_text:
+        fail(f"Missing RC13 dashboard source-freshness marker: {marker}")
+
+for marker in (
+    "async_step_diagnostics",
+    "async_diagnose_configured_entities",
+    "dashboard_refresh_recommended",
+):
+    if marker not in config_flow_text:
+        fail(f"Missing RC13 Configurator diagnostics marker: {marker}")
 
 # ---------------------------------------------------------------------------
 # Reference configuration regression
@@ -872,6 +911,7 @@ print("- garage STOP: guarded canonical dispatch contract PASS")
 print("- native cover UX: directional/no-tilt contract PASS")
 print("- generated dashboard: model/binding/renderer/lifecycle invariants PASS")
 print("- dashboard configurator: explicit create/update lifecycle PASS")
+print("- commissioning diagnostics/dashboard freshness: PASS")
 print("- translations/configurator menu structure: PASS")
 print(f"- {candidate.upper()} LF-normalized source checksums: PASS")
 print(f"- Git whitespace hygiene: {git_whitespace_status}")

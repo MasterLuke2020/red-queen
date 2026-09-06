@@ -35,3 +35,17 @@ candidate validation, backup creation, atomic replacement and rollback behavior.
 
 No exact RC13 candidate package exists yet. Live candidate qualification, final
 source checksum freeze, hassfest and publication checks remain future release gates.
+
+## WP13.2 — Production Diagnostics & Dashboard Freshness
+
+WP13.2 adds read-only commissioning diagnostics for configured provider/entity
+references and hardens dashboard freshness tracking.
+
+- Missing, disabled, unavailable, unknown and state-missing entities are classified.
+- Home Assistant integration/platform information is shown where available.
+- Disabled Red Queen objects/modules are skipped intentionally.
+- Diagnostics are available for managed and manual registries; manual remains read-only.
+- Registry changes set a Configurator reminder to check the generated dashboard.
+- Dashboard freshness now compares both Lovelace render SHA and registry source SHA.
+- Existing RC12 dashboard manifests remain compatible.
+- Canonical physical execution semantics remain unchanged (`2.3-rc11`).

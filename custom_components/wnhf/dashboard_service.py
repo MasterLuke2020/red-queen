@@ -245,6 +245,7 @@ class RedQueenDashboardGenerationService:
         try:
             lifecycle = await self._adapter().async_status(
                 expected_render=preview.rendered,
+                expected_source_registry_sha256=preview.source_registry_sha256,
             )
         except DashboardAdapterError as err:
             raise DashboardGenerationError(str(err)) from err

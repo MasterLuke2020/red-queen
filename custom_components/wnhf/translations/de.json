@@ -37,7 +37,7 @@
     "step": {
       "init": {
         "title": "Red-Queen-Konfigurator",
-        "description": "Registry-Modus: {mode}. Validierung: {validation}. Räume: {rooms}, Lichter: {lights}, Raffstores: {covers}, Öffnungen: {openings}, Pflanzen: {plants}.",
+        "description": "Registry-Modus: {mode}. Validierung: {validation}. Räume: {rooms}, Lichter: {lights}, Raffstores: {covers}, Öffnungen: {openings}, Pflanzen: {plants}. Dashboard-Hinweis: {dashboard_hint}.",
         "menu_options": {
           "status": "Konfigurationsstatus",
           "add_room": "Raum hinzufügen",
@@ -46,7 +46,8 @@
           "add_opening": "Öffnung hinzufügen",
           "add_plant": "Pflanze hinzufügen",
           "dashboard": "Dashboard",
-          "manage": "Objekte verwalten"
+          "manage": "Objekte verwalten",
+          "diagnostics": "Diagnose"
         }
       },
       "status": {
@@ -420,6 +421,10 @@
         "data": {
           "confirm": "Löschen endgültig bestätigen"
         }
+      },
+      "diagnostics": {
+        "title": "Entity- und Provider-Diagnose",
+        "description": "Konfigurierte Entity-Referenzen: {references_total}. Bereit: {references_ready}. Befunde: {problems}. Fehlend: {missing}, deaktiviert: {disabled}, nicht verfügbar: {unavailable}, Status unbekannt: {unknown}, kein Laufzeitzustand: {state_missing}. Bewusst deaktivierte Red-Queen-Objekte übersprungen: {skipped_disabled_objects}.\n\n### Befunde\n{details}"
       }
     },
     "error": {

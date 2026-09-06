@@ -27,3 +27,13 @@ Development baseline:
 
 This file describes an active development candidate. Exact-package live qualification
 and publication status will be recorded only after RC13 feature freeze.
+
+## WP13.2 — Production Diagnostics & Dashboard Freshness
+
+- Adds Configurator entity/provider diagnostics.
+- Classifies missing, disabled, unavailable, unknown and state-missing references.
+- Shows integration/platform information where Home Assistant exposes it.
+- Adds a post-maintenance dashboard-status reminder.
+- Tracks generated dashboard freshness against the semantic registry source SHA.
+- Keeps manual registries read-only.
+- Keeps canonical physical execution semantics unchanged.

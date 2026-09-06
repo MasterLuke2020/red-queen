@@ -37,7 +37,7 @@
     "step": {
       "init": {
         "title": "Red Queen configurator",
-        "description": "Registry mode: {mode}. Validation: {validation}. Rooms: {rooms}, lights: {lights}, covers: {covers}, openings: {openings}, plants: {plants}.",
+        "description": "Registry mode: {mode}. Validation: {validation}. Rooms: {rooms}, lights: {lights}, covers: {covers}, openings: {openings}, plants: {plants}. Dashboard note: {dashboard_hint}.",
         "menu_options": {
           "status": "Configuration status",
           "add_room": "Add room",
@@ -46,7 +46,8 @@
           "add_opening": "Add opening",
           "add_plant": "Add plant",
           "dashboard": "Dashboard",
-          "manage": "Manage objects"
+          "manage": "Manage objects",
+          "diagnostics": "Diagnostics"
         }
       },
       "status": {
@@ -420,6 +421,10 @@
         "data": {
           "confirm": "Confirm permanent deletion"
         }
+      },
+      "diagnostics": {
+        "title": "Entity and provider diagnostics",
+        "description": "Configured entity references: {references_total}. Ready: {references_ready}. Findings: {problems}. Missing: {missing}, disabled: {disabled}, unavailable: {unavailable}, unknown state: {unknown}, runtime state missing: {state_missing}. Intentionally disabled Red Queen objects skipped: {skipped_disabled_objects}.\n\n### Findings\n{details}"
       }
     },
     "error": {

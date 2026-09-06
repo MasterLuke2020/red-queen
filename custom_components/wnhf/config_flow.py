@@ -21,6 +21,10 @@ from .configuration import (
     RegistryConfigurationManager,
     WNHFConfigurationError,
 )
+from .configuration_diagnostics import (
+    ConfigurationDiagnosticsReport,
+    async_diagnose_configured_entities,
+)
 from .const import DOMAIN, PRODUCT_NAME, REGISTRY_ROOT
 from .dashboard_service import (
     DashboardGenerationError,
@@ -126,6 +130,63 @@ def _dashboard_placeholders(hass, status) -> dict[str, str]:
         "bindings_resolved": str(status.preview.bindings.resolved_entity_count),
         "bindings_expected": str(status.preview.bindings.expected_entity_count),
         "binding_issues": str(len(status.preview.bindings.issues)),
+    }
+
+
+
+def _diagnostic_status_label(hass, status: str) -> str:
+    labels = {
+        "missing": ("Entity fehlt", "entity missing"),
+        "disabled": ("Entity deaktiviert", "entity disabled"),
+        "unavailable": ("Entity nicht verfügbar", "entity unavailable"),
+        "unknown": ("Status unbekannt", "state unknown"),
+        "state_missing": ("kein Laufzeitzustand", "runtime state missing"),
+    }
+    de, en = labels.get(status, (status, status))
+    return localized(hass, de=de, en=en)
+
+
+def _diagnostics_placeholders(
+    hass,
+    report: ConfigurationDiagnosticsReport,
+) -> dict[str, str]:
+    max_lines = 25
+    lines: list[str] = []
+    for issue in report.issues[:max_lines]:
+        platform = issue.platform or "—"
+        lines.append(
+            f"- {issue.object_name} · {issue.role} · "
+            f"{_diagnostic_status_label(hass, issue.status)} · "
+            f"{issue.entity_id} · Provider/Integration: {platform}"
+        )
+    if len(report.issues) > max_lines:
+        remaining = len(report.issues) - max_lines
+        lines.append(
+            localized(
+                hass,
+                de=f"- … {remaining} weitere Befunde",
+                en=f"- … {remaining} more findings",
+            )
+        )
+    if not lines:
+        lines.append(
+            localized(
+                hass,
+                de="- Keine Entity-/Provider-Probleme gefunden.",
+                en="- No entity/provider problems found.",
+            )
+        )
+    return {
+        "references_total": str(report.total_references),
+        "references_ready": str(report.ready_references),
+        "problems": str(report.problem_count),
+        "missing": str(report.missing_references),
+        "disabled": str(report.disabled_references),
+        "unavailable": str(report.unavailable_references),
+        "unknown": str(report.unknown_references),
+        "state_missing": str(report.state_missing_references),
+        "skipped_disabled_objects": str(report.skipped_disabled_objects),
+        "details": "\n".join(lines),
     }
 
 
@@ -393,6 +454,27 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
         self._pending_object_type: str | None = None
         self._pending_object: dict[str, Any] | None = None
 
+
+    def _init_placeholders(self, snapshot: dict[str, Any]) -> dict[str, str]:
+        placeholders = _status_placeholders(snapshot)
+        refresh_recommended = bool(
+            self.config_entry.options.get("dashboard_refresh_recommended", False)
+        )
+        placeholders["dashboard_hint"] = localized(
+            self.hass,
+            de=(
+                "Konfiguration geändert – Dashboard-Status prüfen."
+                if refresh_recommended
+                else "Keine ausstehende Konfigurator-Änderung markiert."
+            ),
+            en=(
+                "Configuration changed – check dashboard status."
+                if refresh_recommended
+                else "No pending Configurator change is marked."
+            ),
+        )
+        return placeholders
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
@@ -402,13 +484,14 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
         if snapshot["mode"] == CONFIGURATOR_MODE_MANUAL:
             return self.async_show_menu(
                 step_id="init",
-                menu_options=["status", "dashboard"],
-                description_placeholders=_status_placeholders(snapshot),
+                menu_options=["status", "diagnostics", "dashboard"],
+                description_placeholders=self._init_placeholders(snapshot),
             )
         return self.async_show_menu(
             step_id="init",
             menu_options=[
                 "status",
+                "diagnostics",
                 "add_room",
                 "add_light",
                 "add_cover",
@@ -417,7 +500,29 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
                 "manage",
                 "dashboard",
             ],
-            description_placeholders=_status_placeholders(snapshot),
+            description_placeholders=self._init_placeholders(snapshot),
+        )
+
+
+    async def async_step_diagnostics(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Inspect configured provider/entity references without mutation."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=self.config_entry.options)
+
+        manager = _manager(self.hass)
+        report = await async_diagnose_configured_entities(
+            self.hass,
+            manager.registry_dir,
+        )
+        return self.async_show_form(
+            step_id="diagnostics",
+            data_schema=vol.Schema({}),
+            description_placeholders=_diagnostics_placeholders(
+                self.hass,
+                report,
+            ),
         )
 
     async def async_step_status(
@@ -2326,5 +2431,8 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
                 "last_configuration_action": action,
                 "last_configuration_at": datetime.now(UTC).isoformat(),
             }
+        )
+        options["dashboard_refresh_recommended"] = not action.startswith(
+            "dashboard_"
         )
         return self.async_create_entry(title="", data=options)

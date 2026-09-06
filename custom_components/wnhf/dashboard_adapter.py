@@ -393,7 +393,10 @@ class RedQueenDashboardAdapter:
         }
         await self._manifest_store.async_save(manifest_document)
 
-        status = await self.async_status(expected_render=rendered)
+        status = await self.async_status(
+            expected_render=rendered,
+            expected_source_registry_sha256=source_registry_sha256,
+        )
         return DashboardApplyResult(
             action=action,
             status=status,
@@ -404,11 +407,18 @@ class RedQueenDashboardAdapter:
         self,
         *,
         expected_render: DashboardRenderResult | None = None,
+        expected_source_registry_sha256: str | None = None,
     ) -> DashboardLifecycleStatus:
-        """Return ownership, attachment and optional render freshness status."""
+        """Return ownership, attachment and render/source freshness status."""
         expected_sha = (
             expected_render.metadata.config_sha256
             if expected_render is not None
+            else None
+        )
+        expected_source_sha = (
+            expected_source_registry_sha256.strip()
+            if isinstance(expected_source_registry_sha256, str)
+            and expected_source_registry_sha256.strip()
             else None
         )
         manifest = await self.async_manifest()
@@ -436,9 +446,27 @@ class RedQueenDashboardAdapter:
         )
 
         current_sha = str(manifest.get("config_sha256") or "") or None
-        if expected_sha is not None and current_sha != expected_sha:
+        current_source_sha = (
+            str(manifest.get("source_registry_sha256") or "") or None
+        )
+        render_outdated = expected_sha is not None and current_sha != expected_sha
+        source_outdated = (
+            expected_source_sha is not None
+            and current_source_sha != expected_source_sha
+        )
+        if render_outdated or source_outdated:
             state = "outdated"
-            message = "Dashboard exists but does not match the current render."
+            if render_outdated and source_outdated:
+                message = (
+                    "Dashboard render and registry-source metadata are outdated."
+                )
+            elif render_outdated:
+                message = "Dashboard exists but does not match the current render."
+            else:
+                message = (
+                    "Dashboard registry-source metadata does not match the "
+                    "current Red Queen registry."
+                )
         elif attached:
             state = "ready"
             message = "Red Queen dashboard is attached and ready."
