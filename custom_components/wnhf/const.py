@@ -5,9 +5,9 @@ from __future__ import annotations
 DOMAIN = "wnhf"
 PRODUCT_NAME = "Red Queen"
 DEVELOPMENT_NAME = "WNHF"
-DEVELOPMENT_BASELINE_VERSION = "1.39.0"
-RELEASE_BASELINE = "WP-4.7.19.0"
-VERSION = "1.0.0-rc13"
+DEVELOPMENT_BASELINE_VERSION = "1.40.0"
+RELEASE_BASELINE = "WP-4.7.20.0"
+VERSION = "1.0.0-rc14"
 
 DATA_ENGINE = "engine"
 
@@ -336,8 +336,8 @@ RELEASE_INFO_API_VERSION = "1.1"
 PUBLIC_API_REGISTRY_VERSION = "1.1"
 QUALIFICATION_API_VERSION = "1.1"
 UPGRADE_CHECK_API_VERSION = "1.1"
-# Red Queen 1.0.0-rc13 is the thirteenth explicitly assigned public release candidate.
-RELEASE_CANDIDATE = "rc13"
+# Red Queen 1.0.0-rc14 is the fourteenth explicitly assigned public release candidate.
+RELEASE_CANDIDATE = "rc14"
 CANONICAL_EXECUTION_API_VERSION = "1.0"
 CANONICAL_EXECUTION_CONTRACT_VERSION = "2.3-rc11"
 LEGACY_PUBLIC_EXECUTION_API_VERSION = "1.3"
