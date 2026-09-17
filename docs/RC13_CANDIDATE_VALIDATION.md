@@ -49,3 +49,15 @@ references and hardens dashboard freshness tracking.
 - Dashboard freshness now compares both Lovelace render SHA and registry source SHA.
 - Existing RC12 dashboard manifests remain compatible.
 - Canonical physical execution semantics remain unchanged (`2.3-rc11`).
+
+## WP13.2a — Dashboard OptionsFlow Completion Fix
+
+The first RC13 live test exposed a Home Assistant Options Flow completion
+problem after successful dashboard creation: the dashboard was persisted, but
+the frontend displayed `Invalid flow specified`.
+
+Dashboard create/update now finish with an explicit translated success abort
+instead of completing through `OptionsFlowWithReload.async_create_entry()`.
+Informational config-entry options are updated directly, so dashboard-only
+operations do not request an integration reload while the frontend is finishing
+the flow. Managed registry mutations keep the normal reload path.

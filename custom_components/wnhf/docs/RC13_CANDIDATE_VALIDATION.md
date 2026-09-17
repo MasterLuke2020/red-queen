@@ -45,3 +45,13 @@ Dashboard lifecycle status now receives the current registry source SHA from the
 generation service. A registry-source mismatch marks the owned dashboard as outdated
 even when the visual render SHA did not change, allowing explicit update to refresh
 the generator metadata.
+
+## WP13.2a — Dashboard OptionsFlow Completion Fix
+
+Live-test regression: dashboard creation succeeded but the frontend reported
+`Invalid flow specified`.
+
+Dashboard create/update now terminate through a translated `async_abort` success
+result. The informational fields `last_configuration_action`,
+`last_configuration_at` and `dashboard_refresh_recommended` are updated directly
+on the config entry. Registry mutation reload behavior is unchanged.

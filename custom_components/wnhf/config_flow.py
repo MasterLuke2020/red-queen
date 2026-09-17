@@ -2422,7 +2422,42 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
                 description_placeholders={"error": str(err)},
             )
 
-        return self._finish(f"dashboard_{result.applied.action}")
+        return self._finish_dashboard(
+            action=result.applied.action,
+            dashboard_path=f"/{result.applied.status.url_path}",
+        )
+
+    def _finish_dashboard(
+        self,
+        *,
+        action: str,
+        dashboard_path: str,
+    ) -> FlowResult:
+        """Finish a dashboard action without reloading the integration mid-flow."""
+        configuration_action = f"dashboard_{action}"
+        options = dict(self.config_entry.options)
+        options.update(
+            {
+                "last_configuration_action": configuration_action,
+                "last_configuration_at": datetime.now(UTC).isoformat(),
+                "dashboard_refresh_recommended": False,
+            }
+        )
+
+        self.hass.config_entries.async_update_entry(
+            self.config_entry,
+            options=options,
+        )
+
+        reason = (
+            "dashboard_created"
+            if action == "create"
+            else "dashboard_updated"
+        )
+        return self.async_abort(
+            reason=reason,
+            description_placeholders={"dashboard_path": dashboard_path},
+        )
 
     def _finish(self, action: str) -> FlowResult:
         options = dict(self.config_entry.options)

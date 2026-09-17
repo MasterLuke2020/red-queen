@@ -37,3 +37,10 @@ and publication status will be recorded only after RC13 feature freeze.
 - Tracks generated dashboard freshness against the semantic registry source SHA.
 - Keeps manual registries read-only.
 - Keeps canonical physical execution semantics unchanged.
+
+## WP13.2a — Dashboard OptionsFlow Completion Fix
+
+- Fixes an `Invalid flow specified` popup after successful dashboard creation/update.
+- Avoids unnecessary integration reloads for dashboard-only Options Flow actions.
+- Adds explicit localized success results for dashboard create and update.
+- Keeps normal Configurator registry-change reload behavior unchanged.

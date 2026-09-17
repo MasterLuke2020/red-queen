@@ -456,7 +456,9 @@
       "dashboard_generation_failed": "The Red Queen dashboard could not be processed: {error}",
       "maintenance_unavailable": "The managed registry is not available for maintenance.",
       "no_managed_objects": "No managed objects of this type are configured.",
-      "maintenance_state_lost": "The selected maintenance state was lost. Open the dialog again."
+      "maintenance_state_lost": "The selected maintenance state was lost. Open the dialog again.",
+      "dashboard_created": "The Red Queen dashboard was successfully created at {dashboard_path}.",
+      "dashboard_updated": "The Red Queen dashboard was successfully updated. Path: {dashboard_path}."
     }
   },
   "exceptions": {

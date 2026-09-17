@@ -713,6 +713,15 @@ for marker in (
 if '"dashboard"' not in config_flow_text or "async_step_dashboard" not in config_flow_text:
     fail("Configurator must expose the RC12 dashboard lifecycle step")
 
+for marker in (
+    "_finish_dashboard",
+    '"dashboard_created"',
+    '"dashboard_updated"',
+    'description_placeholders={"dashboard_path": dashboard_path}',
+):
+    if marker not in config_flow_text:
+        fail(f"Missing RC13 dashboard flow-completion marker: {marker}")
+
 
 
 # ---------------------------------------------------------------------------
@@ -912,6 +921,7 @@ print("- native cover UX: directional/no-tilt contract PASS")
 print("- generated dashboard: model/binding/renderer/lifecycle invariants PASS")
 print("- dashboard configurator: explicit create/update lifecycle PASS")
 print("- commissioning diagnostics/dashboard freshness: PASS")
+print("- dashboard OptionsFlow completion: reload-safe PASS")
 print("- translations/configurator menu structure: PASS")
 print(f"- {candidate.upper()} LF-normalized source checksums: PASS")
 print(f"- Git whitespace hygiene: {git_whitespace_status}")

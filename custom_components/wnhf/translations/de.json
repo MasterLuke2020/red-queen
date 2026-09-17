@@ -456,7 +456,9 @@
       "dashboard_generation_failed": "Das Red-Queen-Dashboard konnte nicht verarbeitet werden: {error}",
       "maintenance_unavailable": "Die verwaltete Registry ist für Änderungen nicht verfügbar.",
       "no_managed_objects": "Für diesen Objekttyp sind keine verwalteten Objekte vorhanden.",
-      "maintenance_state_lost": "Der ausgewählte Wartungszustand ist verloren gegangen. Öffne den Dialog erneut."
+      "maintenance_state_lost": "Der ausgewählte Wartungszustand ist verloren gegangen. Öffne den Dialog erneut.",
+      "dashboard_created": "Das Red-Queen-Dashboard wurde erfolgreich unter {dashboard_path} erstellt.",
+      "dashboard_updated": "Das Red-Queen-Dashboard wurde erfolgreich aktualisiert. Pfad: {dashboard_path}."
     }
   },
   "exceptions": {
