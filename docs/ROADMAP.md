@@ -4,66 +4,46 @@ The roadmap is directional rather than a promise of exact release numbers or dat
 
 ## 1.0 release-candidate line
 
-The 1.0 RC line expands only through bounded, independently qualified capability
-packets.
-
 ### Managed configuration and commissioning — completed in RC11
 
-RC11 added explicit registry ownership modes and the transaction-safe Managed
-configuration path for rooms, lights, covers, openings, garage and Plant Care.
+RC11 added explicit registry ownership modes and the transaction-safe
+Managed configuration path.
 
-### Generated Dashboard Foundation — RC12
+### Generated Dashboard Foundation — completed in RC12
 
-RC12 adds an integration-owned native Home Assistant dashboard generated from the
+RC12 added the integration-owned native Home Assistant dashboard generated from the
 semantic house model and native Red Queen entity surface.
 
-The RC12 dashboard provides:
+### Managed maintenance and production diagnostics — RC13
 
-- overall house overview;
-- floor navigation and room subviews;
-- lighting, covers, openings/access and garage projections;
-- Plant Care and System/Diagnostics views;
-- stable unique-ID based entity binding;
-- explicit create/update lifecycle;
-- deterministic update detection;
-- restart persistence;
-- native HA cards with no mandatory custom frontend dependency.
+RC13 completes the day-two Managed configuration foundation:
 
-The dashboard never becomes a second safety engine. Physical action guards remain in
-canonical Red Queen execution.
+- transaction-safe edit/update while semantic IDs remain stable;
+- managed enable/disable;
+- guarded two-step deletion;
+- dependent-room and last-room deletion protection;
+- Entity/Provider diagnostics for explicitly configured references;
+- dashboard freshness tracking against semantic registry source changes;
+- reload-safe dashboard Options Flow completion.
 
-## Next candidates
+RC13 is feature live verified and in release freeze.
 
-### Dashboard refinement
+## Next candidate
 
-Continue visual/UX refinement only where it can remain deterministic, native and
-safe. Consider user-selectable presentation preferences without making dashboard
-correctness depend on custom frontend cards.
+### Controlled migration and repair — RC14
 
-### Commissioning refinement
+RC14 is planned as the final larger hardening candidate before stable 1.0:
 
-Continue improving managed editing, object maintenance, diagnostics and migration
-guidance without silently taking ownership of manual registries.
+- preview-only manual → managed migration planning;
+- never automatically take ownership of manual registries;
+- duplicate/invalid entity and orphan-room detection;
+- repair guidance for missing HA references and incomplete configuration;
+- transaction-safe backup/rollback for explicitly accepted migration/repair.
 
-### Plant Care extensions
+## Stable 1.0 qualification
 
-Potential later work includes season, indoor climate, light conditions,
-soil-moisture-aware recommendations, fertilizing, repotting and vacation-aware care.
+After RC14, stable qualification focuses on fresh install, upgrade, restart
+persistence, recovery, uninstall/reinstall, clean logs, hassfest/static checks and the
+final HACS installation flow rather than new feature domains.
 
-## Deferred feature candidates
-
-### Climate / temperature semantics
-
-Climate work remains intentionally deferred while the separate heating integration
-is developed with the heating-system partner.
-
-### Media
-
-Add semantic media capabilities without coupling Red Queen core architecture to one
-vendor or player implementation.
-
-## Versioning principle
-
-Compatible feature additions belong in later minor/release-candidate increments;
-defect-only corrections use patch releases. A future intentionally incompatible
-public contract would require a major version change.
+Climate, media and larger Plant Care expansions remain deferred until after 1.0.

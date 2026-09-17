@@ -4,6 +4,33 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0-rc13 candidate — WP-4.7.19.0
+
+#### Added
+- Managed object maintenance for rooms, lights, covers, openings and plants.
+- Transaction-safe enable/disable and guarded two-step deletion.
+- Entity/Provider diagnostics for explicitly configured references.
+- Dashboard freshness tracking against semantic registry source changes.
+
+#### Changed
+- Managed edits preserve stable semantic object IDs.
+- Referenced-room and last-room deletion are blocked.
+- Dashboard create/update completes without an unnecessary integration reload.
+
+#### Compatibility and safety
+- Canonical execution API remains 1.0.
+- Canonical real-execution contract remains 2.3-rc11.
+- Manual registries remain read-only and are never silently adopted.
+- Physical execution guards are unchanged.
+
+#### Validation
+- Functional live qualification passed on 2026-09-17.
+- Post-fix candidate commit: `4f35dd96ed9254ca49cc86f0d27d5ead025c24d9`.
+- Post-fix 177-file candidate SHA-256:
+  `bf43dcfb770f35e4fa93dba23b36a8d2667813459e93130f6cf174ed1bf1c7c5`.
+- Final frozen exact-package requalification remains the publication gate.
+
+
 ### 1.0.0-rc12 candidate — WP-4.7.18.0
 
 #### Added

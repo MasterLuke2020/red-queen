@@ -1,6 +1,6 @@
-# Red Queen 1.0.0-rc13 — Development Validation
+# Red Queen 1.0.0-rc13 — Candidate Validation
 
-Status: **WP13.1 DEVELOPMENT**
+Status: **RELEASE FREEZE — FINAL EXACT PACKAGE REQUALIFICATION PENDING**
 
 Baseline: WNHF `1.39.0` / `WP-4.7.19.0`
 
@@ -19,39 +19,33 @@ Maintenance operations:
 
 Semantic object IDs are immutable during updates. Updates and deletions are validated
 as a complete temporary house bundle before the live registry is replaced. Existing
-transaction backups and rollback behavior remain mandatory.
+transaction backups and rollback behavior remain mandatory. Referenced rooms and the
+last managed room cannot be deleted.
 
-Room deletion is rejected while lights, covers, openings or plants still reference
-the room, and the last managed room cannot be deleted.
-
-## UI
-
-The Options Flow exposes a dedicated **Manage objects** section for rooms, lights,
-covers, openings and plants. Edit forms preserve the semantic ID, allow
-enable/disable, and route deletion through a separate explicit confirmation step.
-
-## Not changed
-
-The canonical physical execution surface is unchanged in WP13.1.
-`CANONICAL_EXECUTION_CONTRACT_VERSION` therefore remains `2.3-rc11`.
-
-## WP13.2 — Production Diagnostics & Dashboard Freshness
+## Production Diagnostics & Dashboard Freshness
 
 `configuration_diagnostics.py` inspects only entity IDs explicitly configured in
 the Red Queen registry. It does not scan arbitrary Home Assistant entities and does
 not introduce provider fallback.
 
-Dashboard lifecycle status now receives the current registry source SHA from the
-generation service. A registry-source mismatch marks the owned dashboard as outdated
-even when the visual render SHA did not change, allowing explicit update to refresh
-the generator metadata.
+Dashboard lifecycle status receives the current registry source SHA. A source mismatch
+marks the Red Queen-owned dashboard as outdated even if the visual render SHA did not
+change.
 
-## WP13.2a — Dashboard OptionsFlow Completion Fix
+## Dashboard Options Flow completion
 
-Live-test regression: dashboard creation succeeded but the frontend reported
-`Invalid flow specified`.
+The first RC13 live test exposed an `Invalid flow specified` popup after successful
+dashboard creation. Dashboard create/update now terminate through a translated
+`async_abort` result without an unnecessary integration reload.
 
-Dashboard create/update now terminate through a translated `async_abort` success
-result. The informational fields `last_configuration_action`,
-`last_configuration_at` and `dashboard_refresh_recommended` are updated directly
-on the config entry. Registry mutation reload behavior is unchanged.
+## Functional live qualification — 2026-09-17
+
+The exact post-fix candidate at commit
+`4f35dd96ed9254ca49cc86f0d27d5ead025c24d9` passed managed commissioning,
+representative object maintenance, enable/disable, guarded deletion, dependent-room
+protection, dashboard freshness/update and restart persistence.
+
+Entity/Provider diagnostics reported 21 configured references, 21 ready and 0 findings.
+
+The release-freeze metadata/documentation change is non-runtime but changes package
+bytes, so the frozen source receives one final exact-package requalification.

@@ -1,9 +1,9 @@
-# Red Queen 1.0.0-rc13 — Development Notes
+# Red Queen 1.0.0-rc13 — Release Candidate Notes
 
 RC13 is the commissioning and maintenance hardening release on the path to Red Queen
 1.0.0.
 
-Development baseline:
+Release identity:
 
 - Red Queen `1.0.0-rc13`
 - WNHF `1.39.0`
@@ -11,36 +11,49 @@ Development baseline:
 - Canonical execution API `1.0`
 - Canonical real-execution contract `2.3-rc11`
 
-## WP13.1 — Managed Maintenance Foundation
+## Managed Maintenance
 
 - Adds managed-object selection/read/update/delete primitives.
 - Keeps semantic object IDs stable during maintenance.
-- Adds transactional enable/disable.
-- Prevents deletion of rooms that still own semantic child objects.
-- Prevents deletion of the last managed room.
+- Adds transaction-safe enable/disable.
+- Prevents deletion of referenced rooms and the last managed room.
 - Validates the complete candidate registry before every update/delete.
 - Reuses existing backup/atomic-write/rollback infrastructure.
 - Adds Configurator maintenance UI for rooms, lights, covers, openings and plants.
-- Adds explicit delete confirmation.
-- Adds German and English maintenance translations.
-- Extends repository verification with managed-maintenance invariants.
+- Adds explicit second confirmation before deletion.
 
-This file describes an active development candidate. Exact-package live qualification
-and publication status will be recorded only after RC13 feature freeze.
+## Production Diagnostics & Dashboard Freshness
 
-## WP13.2 — Production Diagnostics & Dashboard Freshness
-
-- Adds Configurator entity/provider diagnostics.
+- Adds Configurator Entity/Provider diagnostics.
 - Classifies missing, disabled, unavailable, unknown and state-missing references.
-- Shows integration/platform information where Home Assistant exposes it.
-- Adds a post-maintenance dashboard-status reminder.
-- Tracks generated dashboard freshness against the semantic registry source SHA.
+- Skips intentionally disabled Red Queen objects.
+- Tracks generated-dashboard freshness against the semantic registry source SHA.
 - Keeps manual registries read-only.
 - Keeps canonical physical execution semantics unchanged.
 
-## WP13.2a — Dashboard OptionsFlow Completion Fix
+## Dashboard Flow Hardening
 
 - Fixes an `Invalid flow specified` popup after successful dashboard creation/update.
 - Avoids unnecessary integration reloads for dashboard-only Options Flow actions.
-- Adds explicit localized success results for dashboard create and update.
+- Adds localized success completion for dashboard create and update.
 - Keeps normal Configurator registry-change reload behavior unchanged.
+
+## Live validation
+
+The post-fix RC13 feature set was live-verified on 2026-09-17. Managed commissioning,
+representative object maintenance, enable/disable, guarded deletion, diagnostics,
+dashboard freshness/update and restart persistence passed. Diagnostics reported
+21 configured references, 21 ready and 0 findings.
+
+The frozen candidate receives one final exact-package requalification before GitHub
+prerelease publication.
+
+## Compatibility and safety
+
+- Technical Home Assistant domain remains `wnhf`.
+- Canonical execution service remains `wnhf.execution_execute`.
+- Canonical execution API remains `1.0`.
+- Canonical real-execution contract remains `2.3-rc11`.
+- Physical safety/guard behavior is unchanged.
+- Manual registries are never silently adopted.
+- HACS metadata remains intentionally inactive for this prerelease.

@@ -2,62 +2,54 @@
 
 ## Current state
 
-**DEVELOPMENT — NOT YET A RELEASE CANDIDATE**
+**FEATURE LIVE VERIFIED — RELEASE FREEZE**
 
 - Red Queen: `1.0.0-rc13`
 - WNHF: `1.39.0`
 - Work-package baseline: `WP-4.7.19.0`
-- Theme: **Managed Maintenance Foundation**
+- Theme: **Managed Maintenance & Production Diagnostics**
 - Canonical execution API: `1.0`
 - Canonical real-execution contract: `2.3-rc11` (unchanged)
 
-## WP13.1 scope
+## Scope
 
-RC13 begins the final product-hardening path toward Red Queen 1.0 by adding safe
-maintenance of configurator-owned semantic registry objects.
+RC13 adds managed read/select/update for rooms, lights, covers, openings and plants;
+immutable semantic IDs during maintenance; transaction-safe enable/disable; guarded
+two-step deletion; dependent-room and last-room protection; Entity/Provider
+diagnostics for configured references; registry-source dashboard freshness; and
+reload-safe dashboard flow completion.
 
-The first work package adds:
+Manual registries remain read-only. Canonical physical execution behavior is unchanged.
 
-- read/select support for managed rooms, lights, covers, openings and plants;
-- transactional update/replace while stable semantic IDs remain immutable;
-- enable/disable maintenance;
-- guarded deletion with full-bundle validation;
-- room-deletion protection while dependent semantic objects still reference it;
-- explicit second confirmation before deletion;
-- Home Assistant Options Flow maintenance screens;
-- German and English maintenance translations;
-- repository verifier coverage for maintenance invariants.
+## Functional live qualification — 2026-09-17
 
-Every mutation continues to use the existing managed ownership marker, pre-write
-candidate validation, backup creation, atomic replacement and rollback behavior.
+The post-fix candidate at commit
+`4f35dd96ed9254ca49cc86f0d27d5ead025c24d9` was installed from an exact 177-file
+package with SHA-256
+`bf43dcfb770f35e4fa93dba23b36a8d2667813459e93130f6cf174ed1bf1c7c5`.
 
-## Qualification status
+PASS observations:
 
-No exact RC13 candidate package exists yet. Live candidate qualification, final
-source checksum freeze, hassfest and publication checks remain future release gates.
+- fresh Home Assistant onboarding and managed commissioning;
+- representative light, cover, window, door, garage and plant configuration;
+- managed edit with stable semantic identity;
+- enable/disable round trip;
+- explicit two-step deletion;
+- protected room deletion rejected while dependencies remained;
+- diagnostics: 21 references, 21 ready, 0 findings;
+- dashboard creation, registry-source freshness and update;
+- `Invalid flow specified` regression reproduced, fixed and live retested;
+- translated dashboard completion confirmed after frontend cache refresh;
+- restart persistence and HTTP 200 after restart.
 
-## WP13.2 — Production Diagnostics & Dashboard Freshness
+## Release-freeze gate
 
-WP13.2 adds read-only commissioning diagnostics for configured provider/entity
-references and hardens dashboard freshness tracking.
+This freeze updates release metadata/documentation and the integration checksum
+catalogue only. Because those files are part of the integration package, a new final
+immutable package must be built from the freeze commit.
 
-- Missing, disabled, unavailable, unknown and state-missing entities are classified.
-- Home Assistant integration/platform information is shown where available.
-- Disabled Red Queen objects/modules are skipped intentionally.
-- Diagnostics are available for managed and manual registries; manual remains read-only.
-- Registry changes set a Configurator reminder to check the generated dashboard.
-- Dashboard freshness now compares both Lovelace render SHA and registry source SHA.
-- Existing RC12 dashboard manifests remain compatible.
-- Canonical physical execution semantics remain unchanged (`2.3-rc11`).
-
-## WP13.2a — Dashboard OptionsFlow Completion Fix
-
-The first RC13 live test exposed a Home Assistant Options Flow completion
-problem after successful dashboard creation: the dashboard was persisted, but
-the frontend displayed `Invalid flow specified`.
-
-Dashboard create/update now finish with an explicit translated success abort
-instead of completing through `OptionsFlowWithReload.async_create_entry()`.
-Informational config-entry options are updated directly, so dashboard-only
-operations do not request an integration reload while the frontend is finishing
-the flow. Managed registry mutations keep the normal reload path.
+Before publication that exact package must pass repository verification, release-branch
+CI/hassfest, clean integration replacement, Home Assistant startup, managed registry
+load, dashboard update, diagnostics and restart persistence. The final package SHA is
+then recorded in root-only release documentation so the qualified integration bytes
+do not change afterward.

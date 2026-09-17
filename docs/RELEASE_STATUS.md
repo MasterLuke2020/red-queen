@@ -2,54 +2,41 @@
 
 ## Current candidate
 
-**Red Queen 1.0.0-rc12 — FINAL EXACT PACKAGE LIVE VERIFIED / CI PASS**
+**Red Queen 1.0.0-rc13 — FEATURE LIVE VERIFIED / RELEASE FREEZE**
 
-RC12 advances the development lineage to WNHF `1.38.0` / `WP-4.7.18.0` and adds the
-Generated Dashboard Foundation. Managed configuration from RC11 remains intact.
+RC13 advances the development lineage to WNHF `1.39.0` / `WP-4.7.19.0` and hardens
+managed commissioning, maintenance, diagnostics and dashboard freshness.
 
-## RC12 exact-package qualification
+## RC13 live qualification
 
-The exact final RC12 candidate package was installed on a fresh dedicated Home
-Assistant test instance and qualified on 2026-08-24.
+The exact post-fix candidate was LIVE VERIFIED on the dedicated Home Assistant test
+instance on 2026-09-17.
 
-Qualified package:
+Reference candidate:
 
-- Integration files: `174`
-- SHA-256: `d1c683f56990ed14aa7e488564dad67d008fbd483ec3353ca793af56fec135d7`
+- Commit: `4f35dd96ed9254ca49cc86f0d27d5ead025c24d9`
+- Integration files: `177`
+- Package SHA-256:
+  `bf43dcfb770f35e4fa93dba23b36a8d2667813459e93130f6cf174ed1bf1c7c5`
 
-Observed PASS results included:
-
-- Red Queen `1.0.0-rc12` startup from the exact package;
-- manual reference registry loaded and validated successfully;
-- generated model for 3 floors, 23 rooms, 34 controllable lights, 17 covers,
-  21 openings, 1 garage door and 13 plants;
-- `168/168` expected native entity bindings resolved with 0 issues;
-- explicit dashboard creation at `/red-queen`;
-- overview, floor, room, Plant Care and System/Diagnostics navigation;
-- semantic floor labels and unavailable-state handling;
-- full Home Assistant restart with dashboard persistence;
-- post-restart `Status: aktuell`;
-- no Red Queen dashboard error/traceback and no oversized validation-sensor Recorder
-  warning after restart.
-
-Home Assistant hassfest required an explicit `lovelace` manifest dependency. After
-that metadata-only correction, repository static checks and hassfest passed. The
-rebuilt final package then passed targeted startup, dashboard restore and restart
-persistence revalidation.
+PASS results included managed commissioning; representative object creation/editing;
+enable/disable; guarded deletion; dependent-room deletion protection; diagnostics
+with 21 references, 21 ready and 0 findings; dashboard source freshness and update;
+the fixed dashboard Options Flow completion; and restart persistence.
 
 ## Compatibility and safety
 
 - Home Assistant integration domain remains `wnhf`.
 - Canonical execution entry remains `wnhf.execution_execute`.
 - Canonical execution API remains `1.0`.
-- Canonical real-execution contract remains `2.3-rc11` (unchanged behavior).
+- Canonical real-execution contract remains `2.3-rc11`.
 - 8 capabilities, 23 semantic actions, 16 canonical real contracts and 68 services.
-- Dashboard writes are explicit and isolated to the Red Queen-owned dashboard.
-- Existing/default user dashboards are not rewritten.
-- Physical safety remains in canonical/native Red Queen execution, not in Lovelace.
+- Manual registries remain read-only and are never silently adopted.
+- Physical safety remains in canonical/native Red Queen execution.
 
-## Remaining RC12 publication gate
+## Remaining RC13 publication gate
 
-1. Fast-forward `main` to the verified release commit.
-2. Create annotated tag `v1.0.0-rc12`.
-3. Publish Red Queen `1.0.0-rc12` as a GitHub prerelease.
+The release-freeze commit changes metadata/documentation and therefore requires one
+final immutable package build from the frozen integration source. That exact package
+receives a short startup/dashboard/diagnostics/restart requalification before the
+final root-only qualification record, tag and GitHub prerelease.
