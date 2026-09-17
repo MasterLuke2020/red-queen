@@ -28,7 +28,7 @@ All notable public changes to Red Queen are documented here.
 - Post-fix candidate commit: `4f35dd96ed9254ca49cc86f0d27d5ead025c24d9`.
 - Post-fix 177-file candidate SHA-256:
   `bf43dcfb770f35e4fa93dba23b36a8d2667813459e93130f6cf174ed1bf1c7c5`.
-- Final frozen exact-package requalification remains the publication gate.
+- Final frozen exact-package requalification passed with 177 integration files; SHA-256 `a2d43bc3c4586d21caf7c275278980567449f0f94b75d11a4516c997f75f2b02`.
 
 
 ### 1.0.0-rc12 candidate — WP-4.7.18.0

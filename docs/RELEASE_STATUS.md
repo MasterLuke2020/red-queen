@@ -2,7 +2,7 @@
 
 ## Current candidate
 
-**Red Queen 1.0.0-rc13 — FEATURE LIVE VERIFIED / RELEASE FREEZE**
+**Red Queen 1.0.0-rc13 — FINAL EXACT PACKAGE LIVE VERIFIED / CI PASS**
 
 RC13 advances the development lineage to WNHF `1.39.0` / `WP-4.7.19.0` and hardens
 managed commissioning, maintenance, diagnostics and dashboard freshness.
@@ -34,9 +34,16 @@ the fixed dashboard Options Flow completion; and restart persistence.
 - Manual registries remain read-only and are never silently adopted.
 - Physical safety remains in canonical/native Red Queen execution.
 
-## Remaining RC13 publication gate
+## Final exact-package qualification
 
-The release-freeze commit changes metadata/documentation and therefore requires one
-final immutable package build from the frozen integration source. That exact package
-receives a short startup/dashboard/diagnostics/restart requalification before the
-final root-only qualification record, tag and GitHub prerelease.
+The frozen integration source was packaged and requalified without changing the
+integration afterward.
+
+- Integration files: `177`
+- Final package SHA-256: `a2d43bc3c4586d21caf7c275278980567449f0f94b75d11a4516c997f75f2b02`
+- Exact-package startup: PASS
+- Dashboard update: PASS
+- Entity/Provider diagnostics: PASS
+- Restart persistence: PASS
+
+RC13 is ready for the final main/tag/prerelease publication flow.

@@ -4,7 +4,7 @@
 
 - Name: **Red Queen**
 - Version: `1.0.0-rc13`
-- Status: **FEATURE LIVE VERIFIED / RELEASE FREEZE**
+- Status: **FINAL EXACT PACKAGE LIVE VERIFIED / CI PASS**
 - Channel: `release_candidate`
 - Candidate: `rc13`
 
@@ -43,15 +43,21 @@ dependent-room deletion protection, diagnostics with 21/21 references ready and
 0 findings, dashboard freshness/update, the dashboard Options Flow regression fix,
 restart persistence and HTTP 200 after restart.
 
+## RC13 exact-package qualification
+
+The final immutable candidate contains `177` integration files and has
+SHA-256 `a2d43bc3c4586d21caf7c275278980567449f0f94b75d11a4516c997f75f2b02`.
+
+The exact package passed clean integration replacement, Home Assistant startup,
+managed registry loading/validation, dashboard update, Entity/Provider diagnostics,
+restart persistence and final HTTP reachability checks.
+
 ## Remaining RC13 publication gate
 
-- Build the immutable package from this frozen integration source.
-- Requalify exact package startup, dashboard update, diagnostics and restart persistence.
-- Record the final package SHA-256 in root release documentation.
-- Confirm release-branch static checks and hassfest.
-- Fast-forward `main` to the final RC13 release commit.
+- Confirm CI/hassfest on the final root-documentation commit.
+- Fast-forward `main` to that exact commit.
 - Create annotated tag `v1.0.0-rc13`.
-- Publish Red Queen `1.0.0-rc13` as a GitHub prerelease.
+- Publish Red Queen `1.0.0-rc13` as a GitHub prerelease and attach the exact qualified ZIP.
 
 Repository owner: `MasterLuke2020`
 Repository: `MasterLuke2020/red-queen`

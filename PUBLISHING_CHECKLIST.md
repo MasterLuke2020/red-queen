@@ -21,15 +21,15 @@
 - [x] Promote RC13 from development to release-candidate metadata.
 - [x] Update public/integration documentation to RC13.
 - [x] Regenerate `checksums/rc13_source.sha256`.
-- [ ] Commit and push the freeze.
-- [ ] Confirm static repository checks pass.
-- [ ] Confirm Home Assistant hassfest passes.
-- [ ] Build the final immutable RC13 integration ZIP.
-- [ ] Record final ZIP SHA-256.
-- [ ] Clean-replace the integration on the dedicated test instance.
-- [ ] Verify startup, dashboard update and diagnostics from the exact final ZIP.
-- [ ] Verify restart persistence from the exact final ZIP.
-- [ ] Record exact-package qualification in root-only release documentation.
+- [x] Commit and push the freeze.
+- [x] Confirm static repository checks pass.
+- [x] Confirm Home Assistant hassfest passes.
+- [x] Build the final immutable RC13 integration ZIP.
+- [x] Record final ZIP SHA-256.
+- [x] Clean-replace the integration on the dedicated test instance.
+- [x] Verify startup, dashboard update and diagnostics from the exact final ZIP.
+- [x] Verify restart persistence from the exact final ZIP.
+- [x] Record exact-package qualification in root-only release documentation.
 
 ## GitHub web release flow
 
@@ -46,3 +46,11 @@
 - Do not weaken physical feedback/confirmation guards.
 - Keep climate/media expansion deferred.
 - Keep HACS metadata inactive for RC13.
+
+## Final RC13 package identity
+
+- Freeze source commit: `12437fbe50f3607f10fbf83401cdceee5764e94e`
+- Integration files: `177`
+- Archive: `red_queen_1.0.0-rc13_final_candidate.zip`
+- SHA-256: `a2d43bc3c4586d21caf7c275278980567449f0f94b75d11a4516c997f75f2b02`
+- Exact-package live qualification: **PASS**

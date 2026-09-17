@@ -4,7 +4,7 @@
 as semantic objects and state, resolves native/canonical controls, and exposes a
 stable Home Assistant surface for commissioning, operation and diagnostics.
 
-> **Current candidate:** `1.0.0-rc13` — FEATURE LIVE VERIFIED / RELEASE FREEZE
+> **Current candidate:** `1.0.0-rc13` — FINAL EXACT PACKAGE LIVE VERIFIED / CI PASS
 > **Technical Home Assistant domain:** `wnhf`
 > **Development lineage:** WNHF `1.39.0` / `WP-4.7.19.0`
 
@@ -62,10 +62,17 @@ create/update/freshness, restart persistence and the dashboard Options Flow regr
 fix. The diagnostic checkpoint reported 21 configured references, 21 ready and
 0 findings.
 
-This release-freeze commit changes release metadata/documentation only. A final
-immutable RC13 package is built from the frozen integration source and receives a
-short exact-package startup/dashboard/diagnostics/restart requalification before tag
-and prerelease publication.
+The frozen integration source was packaged into the immutable final RC13 candidate
+and live-requalified on the dedicated Home Assistant test instance.
+
+Final qualified package:
+
+- Integration files: `177`
+- SHA-256: `a2d43bc3c4586d21caf7c275278980567449f0f94b75d11a4516c997f75f2b02`
+
+The exact final package passed startup, managed registry loading, dashboard update,
+Entity/Provider diagnostics and restart persistence. No integration files were changed
+after this qualification.
 
 See `docs/RC13_CANDIDATE_VALIDATION.md` and
 `custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc13.md`.

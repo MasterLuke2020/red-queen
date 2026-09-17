@@ -2,7 +2,7 @@
 
 ## Current state
 
-**FEATURE LIVE VERIFIED — RELEASE FREEZE**
+**FINAL EXACT PACKAGE LIVE VERIFIED — PUBLICATION READY**
 
 - Red Queen: `1.0.0-rc13`
 - WNHF: `1.39.0`
@@ -42,14 +42,18 @@ PASS observations:
 - translated dashboard completion confirmed after frontend cache refresh;
 - restart persistence and HTTP 200 after restart.
 
-## Release-freeze gate
+## Final exact-package qualification
 
-This freeze updates release metadata/documentation and the integration checksum
-catalogue only. Because those files are part of the integration package, a new final
-immutable package must be built from the freeze commit.
+The final package was built from frozen commit `12437fbe50f3607f10fbf83401cdceee5764e94e` and contains
+`177` integration files.
 
-Before publication that exact package must pass repository verification, release-branch
-CI/hassfest, clean integration replacement, Home Assistant startup, managed registry
-load, dashboard update, diagnostics and restart persistence. The final package SHA is
-then recorded in root-only release documentation so the qualified integration bytes
-do not change afterward.
+SHA-256:
+
+`a2d43bc3c4586d21caf7c275278980567449f0f94b75d11a4516c997f75f2b02`
+
+The exact package was then clean-replaced on the dedicated Home Assistant test
+instance and passed startup, managed registry load/validation, dashboard update,
+Entity/Provider diagnostics and restart persistence.
+
+No file below `custom_components/wnhf` is changed by this final qualification record.
+The qualified integration bytes therefore remain identical to the tested ZIP.
