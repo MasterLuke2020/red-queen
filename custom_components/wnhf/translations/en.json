@@ -47,7 +47,8 @@
           "add_plant": "Add plant",
           "dashboard": "Dashboard",
           "manage": "Manage objects",
-          "diagnostics": "Diagnostics"
+          "diagnostics": "Diagnostics",
+          "migration_repair": "Migration & Repair"
         }
       },
       "status": {
@@ -425,6 +426,10 @@
       "diagnostics": {
         "title": "Entity and provider diagnostics",
         "description": "Configured entity references: {references_total}. Ready: {references_ready}. Findings: {problems}. Missing: {missing}, disabled: {disabled}, unavailable: {unavailable}, unknown state: {unknown}, runtime state missing: {state_missing}. Intentionally disabled Red Queen objects skipped: {skipped_disabled_objects}.\n\n### Findings\n{details}"
+      },
+      "migration_repair": {
+        "title": "Migration & Repair Preview",
+        "description": "Mode: {mode}. Source registry valid: {source_valid}. Objects: {objects_total}. Migration candidate: {migration_candidate}. Migration currently eligible: {migration_eligible}. Blockers: {blockers}, warnings: {warnings}, info: {infos}. Entity references: {entity_total}, ready: {entity_ready}. Proposed managed files: {proposed_files}. Source SHA-256: {source_sha256}. Write performed: {write_performed}. This step is strictly read-only and does not change the registry.\\n\\n### Findings\\n{details}"
       }
     },
     "error": {
@@ -458,7 +463,8 @@
       "no_managed_objects": "No managed objects of this type are configured.",
       "maintenance_state_lost": "The selected maintenance state was lost. Open the dialog again.",
       "dashboard_created": "The Red Queen dashboard was successfully created at {dashboard_path}.",
-      "dashboard_updated": "The Red Queen dashboard was successfully updated. Path: {dashboard_path}."
+      "dashboard_updated": "The Red Queen dashboard was successfully updated. Path: {dashboard_path}.",
+      "migration_repair_preview_closed": "Preview closed. No changes were made."
     }
   },
   "exceptions": {

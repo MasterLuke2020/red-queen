@@ -2,7 +2,7 @@
 
 ## Current state
 
-**DEVELOPMENT — NOT YET A RELEASE CANDIDATE**
+**WP14.1 DEVELOPMENT — READ-ONLY PREVIEW IMPLEMENTED**
 
 - Red Queen: `1.0.0-rc14`
 - WNHF: `1.40.0`
@@ -21,30 +21,31 @@ The RC14 rules are:
 
 - migration begins with preview only;
 - a manual registry is never adopted automatically;
-- every mutation requires explicit user intent;
+- every later mutation requires explicit user intent;
 - backups are mandatory before accepted migration/repair writes;
 - candidate registries must validate completely before replacement;
-- semantic IDs remain stable unless a migration explicitly creates a new managed
-  identity from a reviewed source object;
 - physical execution contracts and guards remain unchanged.
 
 ## WP14.1 — Migration & Repair Preview Foundation
 
-The first work package is intentionally read-only.
+Implemented as a strictly read-only Configurator preview.
 
-Planned preview findings include:
+The preview reports current ownership mode and source validity, duplicate semantic IDs,
+orphan-room references, malformed/incomplete object structures, full registry
+validation failures, stored HA area/floor link problems and configured entity health.
 
-- manual-registry ownership and migration eligibility;
-- duplicate semantic IDs;
-- objects referencing missing rooms;
-- missing, disabled or otherwise invalid configured Home Assistant entity references;
-- invalid/missing Home Assistant area/floor references where applicable;
-- incomplete object configuration that cannot safely become managed;
-- a deterministic proposed managed-registry result without writing it.
+It also computes a deterministic source bundle SHA-256, the proposed managed file set,
+and migration eligibility. A manual source is eligible only when it is structurally
+valid and has zero blockers.
 
-No migration or repair write operation belongs in WP14.1.
+Missing or HA-disabled entity references are blockers. Runtime-transient unavailable,
+unknown or state-missing references are warnings.
+
+The preview explicitly reports `write_performed: false`. It does not create an
+ownership marker, rewrite registry YAML, mutate Home Assistant registries or dispatch
+physical actions.
 
 ## Qualification status
 
-No RC14 runtime feature has been implemented or live-qualified yet. The branch starts
-from the published, exact-package-qualified RC13 commit.
+Repository/static verification is the current WP14.1 gate. Live qualification and
+all migration/repair write transactions remain future RC14 work packages.

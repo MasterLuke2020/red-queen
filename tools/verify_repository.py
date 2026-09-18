@@ -235,6 +235,7 @@ required_paths = [
     INTEGRATION / "config_flow.py",
     INTEGRATION / "configuration.py",
     INTEGRATION / "configuration_diagnostics.py",
+    INTEGRATION / "migration_repair.py",
     INTEGRATION / "cover.py",
     INTEGRATION / "light.py",
     INTEGRATION / "localization.py",
@@ -645,6 +646,7 @@ try:
         "add_plant",
         "manage",
         "diagnostics",
+        "migration_repair",
         "dashboard",
     ):
         if key not in menu:
@@ -759,6 +761,47 @@ for marker in (
 ):
     if marker not in config_flow_text:
         fail(f"Missing RC13 Configurator diagnostics marker: {marker}")
+
+# ---------------------------------------------------------------------------
+# RC14 read-only migration / repair preview
+# ---------------------------------------------------------------------------
+
+migration_repair_text = read_text(INTEGRATION / "migration_repair.py")
+for marker in (
+    'MIGRATION_REPAIR_PREVIEW_CONTRACT_VERSION = "1.0"',
+    "MigrationRepairFinding",
+    "MigrationRepairPreview",
+    "async_build_migration_repair_preview",
+    '"duplicate_semantic_id"',
+    '"orphan_room_reference"',
+    '"registry_validation_error"',
+    "proposed_managed_files",
+    "write_performed=False",
+):
+    if marker not in migration_repair_text:
+        fail(f"Missing RC14 migration/repair preview marker: {marker}")
+
+for forbidden in (
+    "os.replace",
+    "_write_transaction",
+    "create_managed_base(",
+    "update_object(",
+    "delete_object(",
+    "set_object_enabled(",
+):
+    if forbidden in migration_repair_text:
+        fail(
+            "RC14 WP14.1 migration/repair preview must remain read-only; "
+            f"found forbidden mutation marker: {forbidden}"
+        )
+
+for marker in (
+    "async_step_migration_repair",
+    "async_build_migration_repair_preview",
+    '"migration_repair"',
+):
+    if marker not in config_flow_text:
+        fail(f"Missing RC14 Configurator migration/repair marker: {marker}")
 
 # ---------------------------------------------------------------------------
 # Reference configuration regression
@@ -921,6 +964,7 @@ print("- native cover UX: directional/no-tilt contract PASS")
 print("- generated dashboard: model/binding/renderer/lifecycle invariants PASS")
 print("- dashboard configurator: explicit create/update lifecycle PASS")
 print("- commissioning diagnostics/dashboard freshness: PASS")
+print("- RC14 migration/repair preview: read-only invariants PASS")
 print("- dashboard OptionsFlow completion: reload-safe PASS")
 print("- translations/configurator menu structure: PASS")
 print(f"- {candidate.upper()} LF-normalized source checksums: PASS")

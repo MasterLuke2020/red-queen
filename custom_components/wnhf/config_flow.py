@@ -31,6 +31,11 @@ from .dashboard_service import (
     dashboard_generation_service,
 )
 from .localization import localized
+from .migration_repair import (
+    MigrationRepairFinding,
+    MigrationRepairPreview,
+    async_build_migration_repair_preview,
+)
 
 CONF_BUILDING_ID = "building_id"
 CONF_BUILDING_NAME = "building_name"
@@ -186,6 +191,109 @@ def _diagnostics_placeholders(
         "unknown": str(report.unknown_references),
         "state_missing": str(report.state_missing_references),
         "skipped_disabled_objects": str(report.skipped_disabled_objects),
+        "details": "\n".join(lines),
+    }
+
+
+def _migration_finding_label(hass, finding: MigrationRepairFinding) -> str:
+    labels = {
+        "missing_registry_file": ("Registry-Datei fehlt", "registry file missing"),
+        "invalid_registry_document": ("Registry-Datei ungültig", "invalid registry document"),
+        "invalid_root_list": ("Registry-Liste ungültig", "invalid registry list"),
+        "invalid_object_entry": ("Objekteintrag ungültig", "invalid object entry"),
+        "missing_object_id": ("Semantische ID fehlt", "semantic ID missing"),
+        "duplicate_semantic_id": ("Doppelte semantische ID", "duplicate semantic ID"),
+        "incomplete_object": ("Objekt unvollständig", "incomplete object"),
+        "orphan_room_reference": ("Raumreferenz verwaist", "orphan room reference"),
+        "registry_validation_error": ("Registry-Validierung fehlgeschlagen", "registry validation failed"),
+        "invalid_ha_area": ("Home-Assistant-Bereich ungültig", "invalid Home Assistant area"),
+        "invalid_ha_floor": ("Home-Assistant-Etage ungültig", "invalid Home Assistant floor"),
+        "area_floor_mismatch": ("Bereich/Etage widersprüchlich", "area/floor mismatch"),
+        "managed_maintenance_limited": (
+            "Nur eingeschränkt über Managed Maintenance bearbeitbar",
+            "limited managed-maintenance support",
+        ),
+        "entity_missing": ("Entity fehlt", "entity missing"),
+        "entity_disabled": ("Entity deaktiviert", "entity disabled"),
+        "entity_unavailable": ("Entity nicht verfügbar", "entity unavailable"),
+        "entity_unknown": ("Entity-Status unbekannt", "entity state unknown"),
+        "entity_state_missing": ("Entity ohne Laufzeitzustand", "entity runtime state missing"),
+        "already_managed": ("Registry bereits verwaltet", "registry already managed"),
+    }
+    de, en = labels.get(finding.code, (finding.code, finding.code))
+    return localized(hass, de=de, en=en)
+
+
+def _migration_severity_label(hass, severity: str) -> str:
+    labels = {
+        "blocker": ("BLOCKER", "BLOCKER"),
+        "warning": ("Warnung", "Warning"),
+        "info": ("Hinweis", "Info"),
+    }
+    de, en = labels.get(severity, (severity, severity))
+    return localized(hass, de=de, en=en)
+
+
+def _migration_repair_placeholders(
+    hass,
+    preview: MigrationRepairPreview,
+) -> dict[str, str]:
+    max_lines = 30
+    lines: list[str] = []
+    for finding in preview.findings[:max_lines]:
+        subject = "/".join(
+            value for value in (finding.object_type, finding.object_id) if value
+        ) or "Registry"
+        context_parts = [
+            value for value in (finding.field, finding.value, finding.detail) if value
+        ]
+        context = " · ".join(context_parts)
+        suffix = f" · {context}" if context else ""
+        lines.append(
+            f"- {_migration_severity_label(hass, finding.severity)} · "
+            f"{_migration_finding_label(hass, finding)} · {subject}{suffix}"
+        )
+
+    if len(preview.findings) > max_lines:
+        remaining = len(preview.findings) - max_lines
+        lines.append(
+            localized(
+                hass,
+                de=f"- … {remaining} weitere Befunde",
+                en=f"- … {remaining} more findings",
+            )
+        )
+
+    if not lines:
+        lines.append(
+            localized(
+                hass,
+                de="- Keine Migrations-/Reparaturprobleme gefunden.",
+                en="- No migration/repair problems found.",
+            )
+        )
+
+    def yes_no(value: bool) -> str:
+        return localized(
+            hass,
+            de="ja" if value else "nein",
+            en="yes" if value else "no",
+        )
+
+    return {
+        "mode": preview.mode,
+        "source_valid": yes_no(preview.source_valid),
+        "migration_candidate": yes_no(preview.migration_candidate),
+        "migration_eligible": yes_no(preview.migration_eligible),
+        "write_performed": yes_no(preview.write_performed),
+        "objects_total": str(preview.total_objects),
+        "blockers": str(preview.blocker_count),
+        "warnings": str(preview.warning_count),
+        "infos": str(preview.info_count),
+        "entity_total": str(preview.entity_references_total),
+        "entity_ready": str(preview.entity_references_ready),
+        "proposed_files": ", ".join(preview.proposed_managed_files),
+        "source_sha256": preview.source_sha256,
         "details": "\n".join(lines),
     }
 
@@ -484,7 +592,12 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
         if snapshot["mode"] == CONFIGURATOR_MODE_MANUAL:
             return self.async_show_menu(
                 step_id="init",
-                menu_options=["status", "diagnostics", "dashboard"],
+                menu_options=[
+                    "status",
+                    "diagnostics",
+                    "migration_repair",
+                    "dashboard",
+                ],
                 description_placeholders=self._init_placeholders(snapshot),
             )
         return self.async_show_menu(
@@ -492,6 +605,7 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
             menu_options=[
                 "status",
                 "diagnostics",
+                "migration_repair",
                 "add_room",
                 "add_light",
                 "add_cover",
@@ -522,6 +636,27 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
             description_placeholders=_diagnostics_placeholders(
                 self.hass,
                 report,
+            ),
+        )
+
+    async def async_step_migration_repair(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Show a strictly read-only migration/repair preview."""
+        if user_input is not None:
+            return self.async_abort(reason="migration_repair_preview_closed")
+
+        manager = _manager(self.hass)
+        preview = await async_build_migration_repair_preview(
+            self.hass,
+            manager.registry_dir,
+        )
+        return self.async_show_form(
+            step_id="migration_repair",
+            data_schema=vol.Schema({}),
+            description_placeholders=_migration_repair_placeholders(
+                self.hass,
+                preview,
             ),
         )
 

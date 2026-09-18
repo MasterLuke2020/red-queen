@@ -47,7 +47,8 @@
           "add_plant": "Pflanze hinzufügen",
           "dashboard": "Dashboard",
           "manage": "Objekte verwalten",
-          "diagnostics": "Diagnose"
+          "diagnostics": "Diagnose",
+          "migration_repair": "Migration & Reparatur"
         }
       },
       "status": {
@@ -425,6 +426,10 @@
       "diagnostics": {
         "title": "Entity- und Provider-Diagnose",
         "description": "Konfigurierte Entity-Referenzen: {references_total}. Bereit: {references_ready}. Befunde: {problems}. Fehlend: {missing}, deaktiviert: {disabled}, nicht verfügbar: {unavailable}, Status unbekannt: {unknown}, kein Laufzeitzustand: {state_missing}. Bewusst deaktivierte Red-Queen-Objekte übersprungen: {skipped_disabled_objects}.\n\n### Befunde\n{details}"
+      },
+      "migration_repair": {
+        "title": "Migration & Reparatur – Vorschau",
+        "description": "Modus: {mode}. Quell-Registry gültig: {source_valid}. Objekte: {objects_total}. Migrationskandidat: {migration_candidate}. Migration derzeit möglich: {migration_eligible}. Blocker: {blockers}, Warnungen: {warnings}, Hinweise: {infos}. Entity-Referenzen: {entity_total}, davon bereit: {entity_ready}. Vorgeschlagene verwaltete Dateien: {proposed_files}. Quellen-SHA-256: {source_sha256}. Schreibvorgang ausgeführt: {write_performed}. Dieser Schritt ist strikt schreibgeschützt und verändert keine Registry.\\n\\n### Befunde\\n{details}"
       }
     },
     "error": {
@@ -458,7 +463,8 @@
       "no_managed_objects": "Für diesen Objekttyp sind keine verwalteten Objekte vorhanden.",
       "maintenance_state_lost": "Der ausgewählte Wartungszustand ist verloren gegangen. Öffne den Dialog erneut.",
       "dashboard_created": "Das Red-Queen-Dashboard wurde erfolgreich unter {dashboard_path} erstellt.",
-      "dashboard_updated": "Das Red-Queen-Dashboard wurde erfolgreich aktualisiert. Pfad: {dashboard_path}."
+      "dashboard_updated": "Das Red-Queen-Dashboard wurde erfolgreich aktualisiert. Pfad: {dashboard_path}.",
+      "migration_repair_preview_closed": "Vorschau geschlossen. Es wurden keine Änderungen vorgenommen."
     }
   },
   "exceptions": {
