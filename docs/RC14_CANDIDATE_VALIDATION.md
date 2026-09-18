@@ -2,7 +2,7 @@
 
 ## Current state
 
-**WP14.1 DEVELOPMENT — READ-ONLY PREVIEW IMPLEMENTED**
+**WP14.1 LIVE QUALIFIED — READ-ONLY PREVIEW COMPLETE**
 
 - Red Queen: `1.0.0-rc14`
 - WNHF: `1.40.0`
@@ -45,7 +45,52 @@ The preview explicitly reports `write_performed: false`. It does not create an
 ownership marker, rewrite registry YAML, mutate Home Assistant registries or dispatch
 physical actions.
 
+## WP14.1 live qualification
+
+WP14.1 is live-qualified on the isolated Home Assistant test environment.
+
+### Managed registry case
+
+- mode detected as `managed`;
+- source registry valid;
+- 9 configured Red Queen objects;
+- 23 configured entity references / 23 ready;
+- 0 blockers / 0 warnings;
+- one informational `already_managed` finding;
+- `write_performed: false`;
+- registry SHA-256 set before/after preview was byte-identical;
+- existing `configurator.yaml` remained byte-identical.
+
+### Manual registry blocker case
+
+The managed test registry was copied into a separate isolated HA instance and
+`configurator.yaml` removed. Two configured light feedback references were then
+deliberately changed to the nonexistent
+`binary_sensor.rc14_missing_manual_test`.
+
+Observed result:
+
+- mode detected as `manual`;
+- source registry remained structurally valid;
+- 9 configured Red Queen objects;
+- migration candidate: yes;
+- migration eligible: no;
+- 23 configured entity references / 21 ready;
+- exactly 2 blockers;
+- both blockers identified the two missing configured entity references;
+- 0 warnings / 0 informational findings;
+- `write_performed: false`;
+- all five manual registry YAML files were byte-identical before/after preview;
+- no `configurator.yaml` was created.
+
+The UI formatting fix was also live-verified: finding sections now render with real
+line breaks instead of literal `\\n` sequences.
+
 ## Qualification status
 
-Repository/static verification is the current WP14.1 gate. Live qualification and
-all migration/repair write transactions remain future RC14 work packages.
+**WP14.1 COMPLETE.**
+
+The read-only migration/repair preview has passed repository verification, hassfest,
+static CI and both managed/manual live qualification cases. RC14 may proceed to an
+explicitly confirmed migration transaction work package. No migration write path has
+been live-qualified yet.
