@@ -138,6 +138,72 @@ def registry_bundle_sha256(registry_dir: Path, filenames: list[str]) -> str:
     return digest.hexdigest()
 
 
+def _replace_nested_entity_reference(
+    item: dict[str, Any],
+    *,
+    role: str,
+    expected_entity_id: str,
+    replacement_entity_id: str,
+) -> dict[str, Any]:
+    """Replace exactly one diagnostic entity path without changing object identity."""
+    parts = [part for part in role.split(".") if part]
+    if not parts:
+        raise WNHFConfigurationError("Repair role must not be empty.")
+    if not (
+        parts[-1] == "entity_id" or parts[-1].endswith("_entity_id")
+    ):
+        raise WNHFConfigurationError(
+            f"Repair role is not an entity reference: {role}"
+        )
+
+    replacement = deepcopy(item)
+    node: Any = replacement
+    for part in parts[:-1]:
+        if isinstance(node, dict):
+            if part not in node:
+                raise WNHFConfigurationError(
+                    f"Repair path no longer exists: {role}"
+                )
+            node = node[part]
+            continue
+        if isinstance(node, list) and part.isdigit():
+            index = int(part)
+            if index >= len(node):
+                raise WNHFConfigurationError(
+                    f"Repair list path no longer exists: {role}"
+                )
+            node = node[index]
+            continue
+        raise WNHFConfigurationError(
+            f"Repair path is not traversable: {role}"
+        )
+
+    final = parts[-1]
+    if isinstance(node, dict):
+        current = node.get(final)
+        if current != expected_entity_id:
+            raise WNHFConfigurationError(
+                "Repair source changed after preview; expected entity reference "
+                "no longer matches."
+            )
+        node[final] = replacement_entity_id
+        return replacement
+
+    if isinstance(node, list) and final.isdigit():
+        index = int(final)
+        if index >= len(node) or node[index] != expected_entity_id:
+            raise WNHFConfigurationError(
+                "Repair source changed after preview; expected entity reference "
+                "no longer matches."
+            )
+        node[index] = replacement_entity_id
+        return replacement
+
+    raise WNHFConfigurationError(
+        f"Repair target is not writable: {role}"
+    )
+
+
 class RegistryConfigurationManager:
     """Inspect and safely update one installation-owned registry bundle."""
 
@@ -421,6 +487,105 @@ class RegistryConfigurationManager:
         replacement = self.get_object(object_type, object_id)
         replacement["enabled"] = bool(enabled)
         return self.update_object(object_type, object_id, replacement)
+
+    def _managed_source_sha256(self) -> str:
+        """Fingerprint the current Configurator-owned semantic registry files."""
+        source_files = [
+            filename
+            for filename in MANAGED_REGISTRY_FILES
+            if (self.registry_dir / filename).is_file()
+        ]
+        return registry_bundle_sha256(self.registry_dir, source_files)
+
+    def repair_entity_reference(
+        self,
+        *,
+        object_type: str,
+        object_id: str,
+        role: str,
+        expected_entity_id: str,
+        replacement_entity_id: str,
+        expected_source_sha256: str,
+    ) -> ConfigurationApplyResult:
+        """Repair one explicit configured entity reference transactionally."""
+        self._require_managed()
+        if self._managed_source_sha256() != expected_source_sha256:
+            raise WNHFConfigurationError(
+                "Repair source changed after preview; repair aborted."
+            )
+        if not replacement_entity_id or "." not in replacement_entity_id:
+            raise WNHFConfigurationError(
+                "Replacement entity ID must be a valid Home Assistant entity ID."
+            )
+        expected_domain = expected_entity_id.partition(".")[0]
+        replacement_domain = replacement_entity_id.partition(".")[0]
+        if expected_domain and replacement_domain != expected_domain:
+            raise WNHFConfigurationError(
+                "Replacement entity domain must match the original reference."
+            )
+        if replacement_entity_id == expected_entity_id:
+            raise WNHFConfigurationError(
+                "Replacement entity must differ from the broken reference."
+            )
+
+        current = self.get_object(object_type, object_id)
+        replacement = _replace_nested_entity_reference(
+            current,
+            role=role,
+            expected_entity_id=expected_entity_id,
+            replacement_entity_id=replacement_entity_id,
+        )
+
+        if self._managed_source_sha256() != expected_source_sha256:
+            raise WNHFConfigurationError(
+                "Repair source changed after validation; repair aborted."
+            )
+        result = self.update_object(object_type, object_id, replacement)
+        return ConfigurationApplyResult(
+            action="repair_entity_reference",
+            changed_files=result.changed_files,
+            backup_path=result.backup_path,
+            validation=result.validation,
+        )
+
+    def repair_room_ha_link(
+        self,
+        *,
+        object_id: str,
+        ha_area_id: str,
+        ha_floor_id: str | None,
+        expected_source_sha256: str,
+    ) -> ConfigurationApplyResult:
+        """Repair stored HA area/floor metadata without changing semantic identity."""
+        self._require_managed()
+        if self._managed_source_sha256() != expected_source_sha256:
+            raise WNHFConfigurationError(
+                "Repair source changed after preview; repair aborted."
+            )
+        if not ha_area_id:
+            raise WNHFConfigurationError(
+                "A Home Assistant area is required for room-link repair."
+            )
+
+        current = self.get_object("rooms", object_id)
+        replacement = deepcopy(current)
+        replacement["ha_area_id"] = ha_area_id
+        if ha_floor_id:
+            replacement["ha_floor_id"] = ha_floor_id
+        else:
+            replacement.pop("ha_floor_id", None)
+
+        if self._managed_source_sha256() != expected_source_sha256:
+            raise WNHFConfigurationError(
+                "Repair source changed after validation; repair aborted."
+            )
+        result = self.update_object("rooms", object_id, replacement)
+        return ConfigurationApplyResult(
+            action="repair_room_ha_link",
+            changed_files=result.changed_files,
+            backup_path=result.backup_path,
+            validation=result.validation,
+        )
 
     def delete_object(
         self,

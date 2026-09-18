@@ -49,3 +49,19 @@ RC14 gates.
 - config-entry mode updated only after success.
 
 WP14.2 is implemented but not yet live-qualified.
+
+## WP14.3 — Guided Repair & RC14 Closure
+
+- Adds explicit guided repair for managed registries.
+- Replaces missing/disabled configured entity references only with a user-selected
+  same-domain entity.
+- Re-links invalid HA area/floor source metadata from an explicitly selected HA area.
+- Keeps semantic IDs stable.
+- Uses the preview source SHA as a stale-write guard.
+- Reuses full candidate validation plus managed backup/rollback transactions.
+- Does not auto-repair transient runtime states, duplicate IDs, orphaned room references
+  or malformed semantic objects.
+- Does not mutate Home Assistant registries or physical execution contracts.
+
+WP14.3 is implemented; live qualification is the remaining RC14 functional gate before
+candidate freeze.

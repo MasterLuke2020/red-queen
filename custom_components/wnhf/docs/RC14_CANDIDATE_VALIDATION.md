@@ -38,3 +38,18 @@ registry before adding any accepted migration transaction.
 Manual → managed adoption now requires an eligible preview and second confirmation.
 It is source-SHA guarded, candidate-validated, backup-first, transactionally replaced
 with rollback, and writes `configurator.yaml` last. Live qualification is pending.
+
+## WP14.3 — Guided Repair
+
+The Configurator can now guide deterministic repairs on a managed registry. Missing or
+disabled configured entity references can be replaced with an explicitly selected
+same-domain entity. Invalid stored HA area/floor metadata can be re-linked to a selected
+HA area and its current floor assignment.
+
+Repair selection is generated only from the production Migration & Repair findings.
+The preview source SHA protects against stale writes, semantic IDs cannot change, the
+complete candidate is validated through managed maintenance, and the existing
+transaction path provides backup/rollback behavior.
+
+Transient runtime states, duplicate IDs, orphan-room references and malformed objects
+are deliberately not auto-repaired.

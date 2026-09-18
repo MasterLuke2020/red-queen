@@ -431,10 +431,12 @@
         "title": "Migration & Repair Preview",
         "description": "Mode: {mode}. Source registry valid: {source_valid}. Objects: {objects_total}. Migration candidate: {migration_candidate}. Migration currently eligible: {migration_eligible}. Blockers: {blockers}, warnings: {warnings}, info: {infos}. Entity references: {entity_total}, ready: {entity_ready}. Proposed managed files: {proposed_files}. Source SHA-256: {source_sha256}. Write performed: {write_performed}. This step is strictly read-only and does not change the registry.\n\n### Findings\n{details}",
         "data": {
-          "prepare_migration": "Prepare migration"
+          "prepare_migration": "Prepare migration",
+          "start_repair": "Start guided repair"
         },
         "data_description": {
-          "prepare_migration": "Available only when the preview has no blockers. A second explicit confirmation follows."
+          "prepare_migration": "Available only when the preview has no blockers. A second explicit confirmation follows.",
+          "start_repair": "Available only for deterministic repair findings in a managed registry. Red Queen changes nothing without selection and confirmation."
         }
       },
       "migration_repair_confirm": {
@@ -442,6 +444,29 @@
         "description": "Final confirmation before ownership transfer. Source SHA-256: {source_sha256}. Objects: {objects_total}. Warnings: {warnings}. Managed files: {proposed_files}. Red Queen revalidates the complete candidate, creates a mandatory backup of the current manual registry, then transactionally replaces the managed registry files with rollback on write failure.",
         "data": {
           "confirm": "Adopt this manual registry as Red Queen managed now"
+        }
+      },
+      "repair_select": {
+        "title": "Select repair",
+        "description": "Select exactly one deterministic repair finding detected by Red Queen.",
+        "data": {
+          "repair_id": "Repairable finding"
+        }
+      },
+      "repair_entity": {
+        "title": "Repair entity reference",
+        "description": "Object: {object_id}. Field: {role}. Current reference: {old_entity_id}. Select a replacement entity of the same domain. The semantic object ID remains unchanged.",
+        "data": {
+          "replacement_entity_id": "New Home Assistant entity",
+          "confirm": "Replace this entity reference"
+        }
+      },
+      "repair_room_link": {
+        "title": "Repair Home Assistant room link",
+        "description": "Red Queen room: {object_id}. Finding: {finding}. Current value: {old_value}. Select the correct Home Assistant area. Its current floor assignment is stored as source metadata.",
+        "data": {
+          "area_id": "Home Assistant area",
+          "confirm": "Apply this area/floor link"
         }
       }
     },
@@ -467,7 +492,13 @@
       "cannot_delete_object": "The object could not be deleted safely. The registry remained unchanged or was rolled back.",
       "migration_source_changed": "The registry changed since preview. Migration was aborted; start the preview again.",
       "migration_ownership_conflict": "A conflicting ownership marker already exists. Red Queen will not overwrite it automatically.",
-      "migration_apply_failed": "The registry could not be adopted safely. Migration was not completed."
+      "migration_apply_failed": "The registry could not be adopted safely. Migration was not completed.",
+      "repair_issue_changed": "The selected finding is no longer current.",
+      "repair_same_entity": "Select a different entity from the broken reference.",
+      "repair_replacement_missing": "The selected replacement entity does not exist.",
+      "repair_replacement_disabled": "The selected replacement entity is disabled in Home Assistant.",
+      "repair_source_changed": "The registry changed since the repair preview. Nothing was repaired.",
+      "repair_apply_failed": "The repair could not be applied safely."
     },
     "abort": {
       "commissioning_state_lost": "The commissioning draft was lost. Start again.",
@@ -483,7 +514,10 @@
       "migration_repair_preview_closed": "Preview closed. No changes were made.",
       "migration_not_eligible": "The registry is not currently eligible for migration.",
       "migration_state_lost": "Migration state was lost. Start the preview again.",
-      "migration_source_changed": "The registry changed since preview. Nothing was adopted."
+      "migration_source_changed": "The registry changed since preview. Nothing was adopted.",
+      "repair_not_available": "There is currently no guided repair case.",
+      "repair_source_changed": "The registry or finding changed. Start the repair again.",
+      "repair_not_supported": "This finding cannot be safely repaired by the guided flow."
     }
   },
   "exceptions": {

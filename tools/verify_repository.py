@@ -865,6 +865,45 @@ for marker in (
         fail(f"Missing RC14 WP14.2 Configurator invariant: {marker}")
 
 # ---------------------------------------------------------------------------
+# RC14 WP14.3 guided repair
+# ---------------------------------------------------------------------------
+
+for marker in (
+    "def repair_entity_reference(",
+    "def repair_room_ha_link(",
+    "_replace_nested_entity_reference",
+    "Replacement entity domain must match the original reference.",
+    "Repair source changed after preview",
+    'action="repair_entity_reference"',
+    'action="repair_room_ha_link"',
+):
+    if marker not in configuration_text:
+        fail(f"Missing RC14 WP14.3 repair invariant: {marker}")
+
+for marker in (
+    "_REPAIRABLE_FINDING_CODES",
+    '"entity_missing"',
+    '"entity_disabled"',
+    '"invalid_ha_area"',
+    '"invalid_ha_floor"',
+    '"area_floor_mismatch"',
+    "async_step_repair_select",
+    "async_step_repair_entity",
+    "async_step_repair_room_link",
+    "_async_current_pending_repair",
+    "_finish_repair",
+    "repair_replacement_missing",
+    "repair_replacement_disabled",
+):
+    if marker not in config_flow_text:
+        fail(f"Missing RC14 WP14.3 Configurator repair invariant: {marker}")
+
+if 'CONF_START_REPAIR = "start_repair"' not in config_flow_text:
+    fail("RC14 WP14.3 repair must require explicit user start intent")
+if 'vol.Required(CONF_CONFIRM, default=False)' not in config_flow_text:
+    fail("RC14 WP14.3 repair must retain explicit confirmation")
+
+# ---------------------------------------------------------------------------
 # Reference configuration regression
 # ---------------------------------------------------------------------------
 
@@ -1027,6 +1066,7 @@ print("- dashboard configurator: explicit create/update lifecycle PASS")
 print("- commissioning diagnostics/dashboard freshness: PASS")
 print("- RC14 migration/repair preview: read-only invariants PASS")
 print("- RC14 manual adoption: SHA/backup/confirm/rollback invariants PASS")
+print("- RC14 guided repair: managed/source-guard/backup invariants PASS")
 print("- dashboard OptionsFlow completion: reload-safe PASS")
 print("- translations/configurator menu structure: PASS")
 print(f"- {candidate.upper()} LF-normalized source checksums: PASS")

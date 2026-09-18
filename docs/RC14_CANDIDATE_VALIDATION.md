@@ -2,7 +2,7 @@
 
 ## Current state
 
-**WP14.2 LIVE QUALIFIED — CONTROLLED MANUAL ADOPTION COMPLETE**
+**WP14.3 DEVELOPMENT — GUIDED REPAIR IMPLEMENTED**
 
 - Red Queen: `1.0.0-rc14`
 - WNHF: `1.40.0`
@@ -137,9 +137,33 @@ After restarting the isolated Home Assistant test container, Red Queen still rep
 registry mode `managed`. The full managed Configurator menu returned, including add and
 object-maintenance actions.
 
+## WP14.3 — Guided Repair & RC14 Closure
+
+Implemented as an explicitly accepted managed-registry repair path.
+
+The guided repair surface intentionally covers only deterministic, user-selectable
+repairs:
+
+- missing or HA-disabled configured entity references can be replaced by a user-selected
+  entity of the same Home Assistant domain;
+- invalid stored HA Area/Floor source links can be re-linked by selecting a Home
+  Assistant area; Red Queen stores that area's current floor assignment;
+- runtime-transient unavailable/unknown/state-missing entities remain diagnostic
+  warnings and are not rewritten;
+- duplicate semantic IDs, orphan-room references and malformed semantic objects remain
+  diagnosis/manual-maintenance cases rather than guessed automatic repairs.
+
+Every guided repair is available only for `managed` ownership, keeps semantic object IDs
+stable, carries the preview source SHA as a stale-write guard, validates the complete
+candidate through the existing managed transaction path, creates a transaction backup
+before replacement, and requires explicit confirmation.
+
+No Home Assistant Area/Floor/Entity registry is mutated and no physical action is
+dispatched.
+
 ## Qualification status
 
-**WP14.1 COMPLETE. WP14.2 COMPLETE AND LIVE QUALIFIED.**
+**WP14.1 COMPLETE. WP14.2 COMPLETE. WP14.3 IMPLEMENTED; LIVE QUALIFICATION PENDING.**
 
 RC14 controlled migration now has live proof for read-only preview behavior, blocker
 handling, source-SHA fail-closed refusal, explicit successful ownership transfer,

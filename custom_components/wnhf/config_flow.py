@@ -12,7 +12,12 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.helpers import area_registry as ar, floor_registry as fr, selector
+from homeassistant.helpers import (
+    area_registry as ar,
+    entity_registry as er,
+    floor_registry as fr,
+    selector,
+)
 from homeassistant.util import slugify
 
 from .configuration import (
@@ -79,6 +84,9 @@ CONF_OBJECT_ID = "object_id"
 CONF_ENABLED = "enabled"
 CONF_DELETE_OBJECT = "delete_object"
 CONF_PREPARE_MIGRATION = "prepare_migration"
+CONF_START_REPAIR = "start_repair"
+CONF_REPAIR_ID = "repair_id"
+CONF_REPLACEMENT_ENTITY_ID = "replacement_entity_id"
 
 
 def _manager(hass) -> RegistryConfigurationManager:
@@ -311,6 +319,98 @@ def _migration_confirm_placeholders(
         "objects_total": str(preview.total_objects),
         "warnings": str(preview.warning_count),
         "proposed_files": ", ".join(preview.proposed_managed_files),
+    }
+
+
+_REPAIRABLE_FINDING_CODES = frozenset(
+    {
+        "entity_missing",
+        "entity_disabled",
+        "invalid_ha_area",
+        "invalid_ha_floor",
+        "area_floor_mismatch",
+    }
+)
+
+
+def _repairable_findings(
+    preview: MigrationRepairPreview,
+) -> tuple[MigrationRepairFinding, ...]:
+    if preview.mode != CONFIGURATOR_MODE_MANAGED:
+        return ()
+    return tuple(
+        finding
+        for finding in preview.findings
+        if finding.code in _REPAIRABLE_FINDING_CODES
+        and finding.object_type
+        and finding.object_id
+    )
+
+
+def _repair_key(finding: MigrationRepairFinding) -> str:
+    return "|".join(
+        (
+            finding.code,
+            finding.object_type or "",
+            finding.object_id or "",
+            finding.field or "",
+            finding.value or "",
+        )
+    )
+
+
+def _repair_options(
+    hass,
+    preview: MigrationRepairPreview,
+) -> list[dict[str, str]]:
+    options: list[dict[str, str]] = []
+    for finding in _repairable_findings(preview):
+        subject = f"{finding.object_type}/{finding.object_id}"
+        value = f" · {finding.value}" if finding.value else ""
+        options.append(
+            {
+                "value": _repair_key(finding),
+                "label": (
+                    f"{_migration_finding_label(hass, finding)} · "
+                    f"{subject}{value}"
+                ),
+            }
+        )
+    return options
+
+
+def _repair_find(
+    preview: MigrationRepairPreview,
+    repair_id: str,
+) -> MigrationRepairFinding | None:
+    return next(
+        (
+            finding
+            for finding in _repairable_findings(preview)
+            if _repair_key(finding) == repair_id
+        ),
+        None,
+    )
+
+
+def _repair_entity_placeholders(
+    finding: MigrationRepairFinding,
+) -> dict[str, str]:
+    return {
+        "object_id": str(finding.object_id or "—"),
+        "role": str(finding.field or "—"),
+        "old_entity_id": str(finding.value or "—"),
+    }
+
+
+def _repair_room_placeholders(
+    hass,
+    finding: MigrationRepairFinding,
+) -> dict[str, str]:
+    return {
+        "object_id": str(finding.object_id or "—"),
+        "finding": _migration_finding_label(hass, finding),
+        "old_value": str(finding.value or "—"),
     }
 
 
@@ -578,6 +678,7 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
         self._pending_object_type: str | None = None
         self._pending_object: dict[str, Any] | None = None
         self._pending_migration_sha256: str | None = None
+        self._pending_repair: dict[str, Any] | None = None
 
 
     def _init_placeholders(self, snapshot: dict[str, Any]) -> dict[str, str]:
@@ -666,6 +767,11 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
         )
 
         if user_input is not None:
+            if user_input.get(CONF_START_REPAIR, False):
+                if not _repairable_findings(preview):
+                    return self.async_abort(reason="repair_not_available")
+                return await self.async_step_repair_select()
+
             if not user_input.get(CONF_PREPARE_MIGRATION, False):
                 return self.async_abort(reason="migration_repair_preview_closed")
             if not preview.migration_eligible:
@@ -676,6 +782,8 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
         schema: dict[Any, Any] = {}
         if preview.migration_eligible:
             schema[vol.Required(CONF_PREPARE_MIGRATION, default=False)] = bool
+        if _repairable_findings(preview):
+            schema[vol.Required(CONF_START_REPAIR, default=False)] = bool
 
         return self.async_show_form(
             step_id="migration_repair",
@@ -739,6 +847,197 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
             ),
             errors=errors,
             description_placeholders=_migration_confirm_placeholders(preview),
+        )
+
+    async def async_step_repair_select(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        manager = _manager(self.hass)
+        preview = await async_build_migration_repair_preview(
+            self.hass,
+            manager.registry_dir,
+        )
+        options = _repair_options(self.hass, preview)
+        if not options:
+            return self.async_abort(reason="repair_not_available")
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            repair_id = str(user_input[CONF_REPAIR_ID])
+            finding = _repair_find(preview, repair_id)
+            if finding is None:
+                errors[CONF_REPAIR_ID] = "repair_issue_changed"
+            else:
+                self._pending_repair = {
+                    "source_sha256": preview.source_sha256,
+                    "repair_id": repair_id,
+                    "finding": finding,
+                }
+                if finding.code in {"entity_missing", "entity_disabled"}:
+                    return await self.async_step_repair_entity()
+                return await self.async_step_repair_room_link()
+
+        return self.async_show_form(
+            step_id="repair_select",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_REPAIR_ID): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=options,
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
+            errors=errors,
+        )
+
+    async def _async_current_pending_repair(
+        self,
+    ) -> tuple[MigrationRepairPreview, MigrationRepairFinding] | None:
+        pending = self._pending_repair
+        if pending is None:
+            return None
+        manager = _manager(self.hass)
+        preview = await async_build_migration_repair_preview(
+            self.hass,
+            manager.registry_dir,
+        )
+        if preview.source_sha256 != pending["source_sha256"]:
+            return None
+        finding = _repair_find(preview, str(pending["repair_id"]))
+        if finding is None:
+            return None
+        return preview, finding
+
+    async def async_step_repair_entity(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        current = await self._async_current_pending_repair()
+        if current is None:
+            self._pending_repair = None
+            return self.async_abort(reason="repair_source_changed")
+        preview, finding = current
+
+        old_entity_id = str(finding.value or "")
+        domain = old_entity_id.partition(".")[0]
+        if not domain:
+            self._pending_repair = None
+            return self.async_abort(reason="repair_not_supported")
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            replacement_entity_id = str(
+                user_input[CONF_REPLACEMENT_ENTITY_ID]
+            )
+            if not user_input.get(CONF_CONFIRM, False):
+                errors["base"] = "confirmation_required"
+            elif replacement_entity_id == old_entity_id:
+                errors[CONF_REPLACEMENT_ENTITY_ID] = "repair_same_entity"
+            else:
+                entity_registry = er.async_get(self.hass)
+                entry = entity_registry.async_get(replacement_entity_id)
+                state = self.hass.states.get(replacement_entity_id)
+                if entry is None and state is None:
+                    errors[CONF_REPLACEMENT_ENTITY_ID] = (
+                        "repair_replacement_missing"
+                    )
+                elif entry is not None and entry.disabled_by is not None:
+                    errors[CONF_REPLACEMENT_ENTITY_ID] = (
+                        "repair_replacement_disabled"
+                    )
+                else:
+                    try:
+                        result = await self.hass.async_add_executor_job(
+                            partial(
+                                _manager(self.hass).repair_entity_reference,
+                                object_type=str(finding.object_type),
+                                object_id=str(finding.object_id),
+                                role=str(finding.field),
+                                expected_entity_id=old_entity_id,
+                                replacement_entity_id=replacement_entity_id,
+                                expected_source_sha256=preview.source_sha256,
+                            )
+                        )
+                    except WNHFConfigurationError as err:
+                        if "source changed" in str(err):
+                            errors["base"] = "repair_source_changed"
+                        else:
+                            errors["base"] = "repair_apply_failed"
+                    else:
+                        self._pending_repair = None
+                        return self._finish_repair(result)
+
+        return self.async_show_form(
+            step_id="repair_entity",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_REPLACEMENT_ENTITY_ID
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain=domain)
+                    ),
+                    vol.Required(CONF_CONFIRM, default=False): bool,
+                }
+            ),
+            errors=errors,
+            description_placeholders=_repair_entity_placeholders(finding),
+        )
+
+    async def async_step_repair_room_link(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        current = await self._async_current_pending_repair()
+        if current is None:
+            self._pending_repair = None
+            return self.async_abort(reason="repair_source_changed")
+        preview, finding = current
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if not user_input.get(CONF_CONFIRM, False):
+                errors["base"] = "confirmation_required"
+            else:
+                area_id = str(user_input[CONF_AREA_ID])
+                areas = ar.async_get(self.hass)
+                area = areas.async_get_area(area_id)
+                if area is None:
+                    errors[CONF_AREA_ID] = "invalid_area"
+                else:
+                    try:
+                        result = await self.hass.async_add_executor_job(
+                            partial(
+                                _manager(self.hass).repair_room_ha_link,
+                                object_id=str(finding.object_id),
+                                ha_area_id=area.id,
+                                ha_floor_id=area.floor_id,
+                                expected_source_sha256=preview.source_sha256,
+                            )
+                        )
+                    except WNHFConfigurationError as err:
+                        if "source changed" in str(err):
+                            errors["base"] = "repair_source_changed"
+                        else:
+                            errors["base"] = "repair_apply_failed"
+                    else:
+                        self._pending_repair = None
+                        return self._finish_repair(result)
+
+        return self.async_show_form(
+            step_id="repair_room_link",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_AREA_ID): selector.AreaSelector(
+                        selector.AreaSelectorConfig(multiple=False)
+                    ),
+                    vol.Required(CONF_CONFIRM, default=False): bool,
+                }
+            ),
+            errors=errors,
+            description_placeholders=_repair_room_placeholders(
+                self.hass,
+                finding,
+            ),
         )
 
     async def async_step_status(
@@ -2674,6 +2973,19 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
             reason=reason,
             description_placeholders={"dashboard_path": dashboard_path},
         )
+
+    def _finish_repair(self, result) -> FlowResult:
+        """Finish one accepted repair and retain its transaction backup path."""
+        options = dict(self.config_entry.options)
+        options.update(
+            {
+                "last_configuration_action": result.action,
+                "last_configuration_at": datetime.now(UTC).isoformat(),
+                "last_configuration_backup_path": result.backup_path,
+                "dashboard_refresh_recommended": True,
+            }
+        )
+        return self.async_create_entry(title="", data=options)
 
     def _finish_migration(
         self,

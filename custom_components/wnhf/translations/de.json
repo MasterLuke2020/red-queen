@@ -431,10 +431,12 @@
         "title": "Migration & Reparatur – Vorschau",
         "description": "Modus: {mode}. Quell-Registry gültig: {source_valid}. Objekte: {objects_total}. Migrationskandidat: {migration_candidate}. Migration derzeit möglich: {migration_eligible}. Blocker: {blockers}, Warnungen: {warnings}, Hinweise: {infos}. Entity-Referenzen: {entity_total}, davon bereit: {entity_ready}. Vorgeschlagene verwaltete Dateien: {proposed_files}. Quellen-SHA-256: {source_sha256}. Schreibvorgang ausgeführt: {write_performed}. Dieser Schritt ist strikt schreibgeschützt und verändert keine Registry.\n\n### Befunde\n{details}",
         "data": {
-          "prepare_migration": "Migration vorbereiten"
+          "prepare_migration": "Migration vorbereiten",
+          "start_repair": "Geführte Reparatur starten"
         },
         "data_description": {
-          "prepare_migration": "Nur verfügbar, wenn die Vorschau keinen Blocker enthält. Es folgt noch eine zweite ausdrückliche Bestätigung."
+          "prepare_migration": "Nur verfügbar, wenn die Vorschau keinen Blocker enthält. Es folgt noch eine zweite ausdrückliche Bestätigung.",
+          "start_repair": "Nur bei eindeutig reparierbaren Befunden in einer verwalteten Registry. Red Queen ändert nichts ohne Auswahl und Bestätigung."
         }
       },
       "migration_repair_confirm": {
@@ -442,6 +444,29 @@
         "description": "Letzte Bestätigung vor der Ownership-Übernahme. Quelle SHA-256: {source_sha256}. Objekte: {objects_total}. Warnungen: {warnings}. Verwaltete Dateien: {proposed_files}. Red Queen validiert den vollständigen Kandidaten erneut, erstellt zwingend ein Backup der bisherigen Manual-Registry und ersetzt anschließend die verwalteten Registry-Dateien transaktional mit Rollback bei einem Schreibfehler.",
         "data": {
           "confirm": "Manual-Registry jetzt als Red-Queen-managed übernehmen"
+        }
+      },
+      "repair_select": {
+        "title": "Reparatur auswählen",
+        "description": "Wähle genau einen von Red Queen erkannten, deterministisch reparierbaren Befund.",
+        "data": {
+          "repair_id": "Reparierbarer Befund"
+        }
+      },
+      "repair_entity": {
+        "title": "Entity-Referenz reparieren",
+        "description": "Objekt: {object_id}. Feld: {role}. Bisherige Referenz: {old_entity_id}. Wähle eine neue Entity desselben Typs. Die semantische Objekt-ID bleibt unverändert.",
+        "data": {
+          "replacement_entity_id": "Neue Home-Assistant-Entity",
+          "confirm": "Diese Entity-Referenz ersetzen"
+        }
+      },
+      "repair_room_link": {
+        "title": "Home-Assistant-Raumlink reparieren",
+        "description": "Red-Queen-Raum: {object_id}. Befund: {finding}. Bisheriger Wert: {old_value}. Wähle den richtigen Home-Assistant-Bereich. Dessen aktuelle Etagenzuordnung wird als Quellmetadatum übernommen.",
+        "data": {
+          "area_id": "Home-Assistant-Bereich",
+          "confirm": "Diese Bereichs-/Etagenverknüpfung übernehmen"
         }
       }
     },
@@ -467,7 +492,13 @@
       "cannot_delete_object": "Das Objekt konnte nicht sicher gelöscht werden. Die Registry blieb unverändert bzw. wurde zurückgerollt.",
       "migration_source_changed": "Die Registry hat sich seit der Vorschau geändert. Die Migration wurde abgebrochen; starte die Vorschau erneut.",
       "migration_ownership_conflict": "Es existiert bereits ein widersprüchlicher Ownership-Marker. Red Queen überschreibt ihn nicht automatisch.",
-      "migration_apply_failed": "Die Registry konnte nicht sicher übernommen werden. Die Migration wurde nicht abgeschlossen."
+      "migration_apply_failed": "Die Registry konnte nicht sicher übernommen werden. Die Migration wurde nicht abgeschlossen.",
+      "repair_issue_changed": "Der ausgewählte Befund ist nicht mehr aktuell.",
+      "repair_same_entity": "Wähle eine andere Entity als die defekte Referenz.",
+      "repair_replacement_missing": "Die gewählte Ersatz-Entity existiert nicht.",
+      "repair_replacement_disabled": "Die gewählte Ersatz-Entity ist in Home Assistant deaktiviert.",
+      "repair_source_changed": "Die Registry hat sich seit der Reparaturvorschau geändert. Es wurde nichts repariert.",
+      "repair_apply_failed": "Die Reparatur konnte nicht sicher angewendet werden."
     },
     "abort": {
       "commissioning_state_lost": "Der Einrichtungsentwurf ist verloren gegangen. Starte erneut.",
@@ -483,7 +514,10 @@
       "migration_repair_preview_closed": "Vorschau geschlossen. Es wurden keine Änderungen vorgenommen.",
       "migration_not_eligible": "Die Registry ist derzeit nicht für eine Migration freigegeben.",
       "migration_state_lost": "Der Migrationsentwurf ist verloren gegangen. Starte die Vorschau erneut.",
-      "migration_source_changed": "Die Registry hat sich seit der Vorschau geändert. Es wurde nichts übernommen."
+      "migration_source_changed": "Die Registry hat sich seit der Vorschau geändert. Es wurde nichts übernommen.",
+      "repair_not_available": "Es gibt derzeit keinen geführten Reparaturfall.",
+      "repair_source_changed": "Die Registry oder der Befund hat sich geändert. Starte die Reparatur erneut.",
+      "repair_not_supported": "Dieser Befund kann nicht gefahrlos geführt repariert werden."
     }
   },
   "exceptions": {
