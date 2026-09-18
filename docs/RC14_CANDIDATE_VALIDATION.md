@@ -2,7 +2,7 @@
 
 ## Current state
 
-**WP14.2 DEVELOPMENT — CONTROLLED MANUAL ADOPTION IMPLEMENTED**
+**WP14.2 LIVE QUALIFIED — CONTROLLED MANUAL ADOPTION COMPLETE**
 
 - Red Queen: `1.0.0-rc14`
 - WNHF: `1.40.0`
@@ -97,11 +97,51 @@ candidate, creates a mandatory backup of the manual source, stages all managed f
 writes `configurator.yaml` last, and rolls back already-replaced files on write
 failure. The config entry is switched to managed mode only after success.
 
+## WP14.2 live qualification
+
+WP14.2 is live-qualified on the isolated manual-registry Home Assistant test instance.
+
+### Source-SHA refusal case
+
+An eligible manual preview was opened and its source SHA retained. Before the second
+confirmation, `rooms.yaml` was deliberately changed without breaking YAML validity.
+
+Observed result:
+
+- Red Queen refused adoption with the source-changed message;
+- no `configurator.yaml` was created;
+- ownership remained manual;
+- the original `rooms.yaml` was restored before the success case.
+
+### Successful manual → managed adoption
+
+The clean manual source was then adopted without modifying files between preview and
+confirmation.
+
+Observed result:
+
+- `configurator.yaml` was created with `mode: managed`;
+- owner is `red_queen_configurator`;
+- managed files are `covers.yaml`, `lights.yaml`, `openings.yaml`, `plants.yaml`,
+  and `rooms.yaml`;
+- migration metadata records source mode `manual`;
+- recorded source SHA-256:
+  `d327e58c408322bba8ec4303682d842fdbf7c503369536fdf469182a648ca1b8`;
+- a mandatory backup directory was created before adoption;
+- the backup contains exactly the five original manual registry files;
+- backup SHA-256 values matched the clean pre-migration manual baseline byte-for-byte.
+
+### Restart / ownership persistence
+
+After restarting the isolated Home Assistant test container, Red Queen still reported
+registry mode `managed`. The full managed Configurator menu returned, including add and
+object-maintenance actions.
+
 ## Qualification status
 
-**WP14.1 COMPLETE. WP14.2 IMPLEMENTED; LIVE QUALIFICATION PENDING.**
+**WP14.1 COMPLETE. WP14.2 COMPLETE AND LIVE QUALIFIED.**
 
-The read-only migration/repair preview has passed repository verification, hassfest,
-static CI and both managed/manual live qualification cases. RC14 may proceed to an
-explicitly confirmed migration transaction work package. No migration write path has
-been live-qualified yet.
+RC14 controlled migration now has live proof for read-only preview behavior, blocker
+handling, source-SHA fail-closed refusal, explicit successful ownership transfer,
+mandatory source backup, managed ownership persistence, and post-restart Configurator
+availability. No physical execution contract changed.
