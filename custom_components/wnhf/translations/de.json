@@ -429,7 +429,7 @@
       },
       "migration_repair": {
         "title": "Migration & Reparatur – Vorschau",
-        "description": "Modus: {mode}. Quell-Registry gültig: {source_valid}. Objekte: {objects_total}. Migrationskandidat: {migration_candidate}. Migration derzeit möglich: {migration_eligible}. Blocker: {blockers}, Warnungen: {warnings}, Hinweise: {infos}. Entity-Referenzen: {entity_total}, davon bereit: {entity_ready}. Vorgeschlagene verwaltete Dateien: {proposed_files}. Quellen-SHA-256: {source_sha256}. Schreibvorgang ausgeführt: {write_performed}. Dieser Schritt ist strikt schreibgeschützt und verändert keine Registry.\\n\\n### Befunde\\n{details}"
+        "description": "Modus: {mode}. Quell-Registry gültig: {source_valid}. Objekte: {objects_total}. Migrationskandidat: {migration_candidate}. Migration derzeit möglich: {migration_eligible}. Blocker: {blockers}, Warnungen: {warnings}, Hinweise: {infos}. Entity-Referenzen: {entity_total}, davon bereit: {entity_ready}. Vorgeschlagene verwaltete Dateien: {proposed_files}. Quellen-SHA-256: {source_sha256}. Schreibvorgang ausgeführt: {write_performed}. Dieser Schritt ist strikt schreibgeschützt und verändert keine Registry.\n\n### Befunde\n{details}"
       }
     },
     "error": {

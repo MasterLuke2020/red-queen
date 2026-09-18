@@ -803,6 +803,27 @@ for marker in (
     if marker not in config_flow_text:
         fail(f"Missing RC14 Configurator migration/repair marker: {marker}")
 
+for language in ("de", "en"):
+    translation = json.loads(
+        read_text(INTEGRATION / "translations" / f"{language}.json")
+    )
+    migration_description = (
+        translation.get("options", {})
+        .get("step", {})
+        .get("migration_repair", {})
+        .get("description", "")
+    )
+    if "\\n" in migration_description:
+        fail(
+            "RC14 migration/repair translation contains literal newline escapes: "
+            f"{language}"
+        )
+    if "\n" not in migration_description:
+        fail(
+            "RC14 migration/repair translation must contain real line breaks: "
+            f"{language}"
+        )
+
 # ---------------------------------------------------------------------------
 # Reference configuration regression
 # ---------------------------------------------------------------------------

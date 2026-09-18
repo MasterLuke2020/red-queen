@@ -429,7 +429,7 @@
       },
       "migration_repair": {
         "title": "Migration & Repair Preview",
-        "description": "Mode: {mode}. Source registry valid: {source_valid}. Objects: {objects_total}. Migration candidate: {migration_candidate}. Migration currently eligible: {migration_eligible}. Blockers: {blockers}, warnings: {warnings}, info: {infos}. Entity references: {entity_total}, ready: {entity_ready}. Proposed managed files: {proposed_files}. Source SHA-256: {source_sha256}. Write performed: {write_performed}. This step is strictly read-only and does not change the registry.\\n\\n### Findings\\n{details}"
+        "description": "Mode: {mode}. Source registry valid: {source_valid}. Objects: {objects_total}. Migration candidate: {migration_candidate}. Migration currently eligible: {migration_eligible}. Blockers: {blockers}, warnings: {warnings}, info: {infos}. Entity references: {entity_total}, ready: {entity_ready}. Proposed managed files: {proposed_files}. Source SHA-256: {source_sha256}. Write performed: {write_performed}. This step is strictly read-only and does not change the registry.\n\n### Findings\n{details}"
       }
     },
     "error": {
