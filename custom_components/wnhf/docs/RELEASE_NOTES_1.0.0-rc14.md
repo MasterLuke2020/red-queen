@@ -36,3 +36,16 @@ Development identity:
 
 Live qualification, accepted migration transactions and publication remain future
 RC14 gates.
+
+## WP14.2 — Controlled Manual Registry Adoption
+
+- eligible preview plus second confirmation;
+- source SHA-256 guard;
+- conflicting ownership marker refusal;
+- complete candidate validation;
+- mandatory backup-first transaction;
+- staged replacement with rollback;
+- `configurator.yaml` written last;
+- config-entry mode updated only after success.
+
+WP14.2 is implemented but not yet live-qualified.

@@ -78,6 +78,7 @@ CONF_PLANT_MOISTURE_SENSOR_ENTITY_ID = "plant_moisture_sensor_entity_id"
 CONF_OBJECT_ID = "object_id"
 CONF_ENABLED = "enabled"
 CONF_DELETE_OBJECT = "delete_object"
+CONF_PREPARE_MIGRATION = "prepare_migration"
 
 
 def _manager(hass) -> RegistryConfigurationManager:
@@ -219,6 +220,10 @@ def _migration_finding_label(hass, finding: MigrationRepairFinding) -> str:
         "entity_unknown": ("Entity-Status unbekannt", "entity state unknown"),
         "entity_state_missing": ("Entity ohne Laufzeitzustand", "entity runtime state missing"),
         "already_managed": ("Registry bereits verwaltet", "registry already managed"),
+        "ownership_marker_conflict": (
+            "Vorhandener Ownership-Marker blockiert die Übernahme",
+            "existing ownership marker blocks adoption",
+        ),
     }
     de, en = labels.get(finding.code, (finding.code, finding.code))
     return localized(hass, de=de, en=en)
@@ -295,6 +300,17 @@ def _migration_repair_placeholders(
         "proposed_files": ", ".join(preview.proposed_managed_files),
         "source_sha256": preview.source_sha256,
         "details": "\n".join(lines),
+    }
+
+
+def _migration_confirm_placeholders(
+    preview: MigrationRepairPreview,
+) -> dict[str, str]:
+    return {
+        "source_sha256": preview.source_sha256,
+        "objects_total": str(preview.total_objects),
+        "warnings": str(preview.warning_count),
+        "proposed_files": ", ".join(preview.proposed_managed_files),
     }
 
 
@@ -561,6 +577,7 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
         self._pending_door_opener_enabled = False
         self._pending_object_type: str | None = None
         self._pending_object: dict[str, Any] | None = None
+        self._pending_migration_sha256: str | None = None
 
 
     def _init_placeholders(self, snapshot: dict[str, Any]) -> dict[str, str]:
@@ -642,22 +659,86 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
     async def async_step_migration_repair(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Show a strictly read-only migration/repair preview."""
+        manager = _manager(self.hass)
+        preview = await async_build_migration_repair_preview(
+            self.hass,
+            manager.registry_dir,
+        )
+
         if user_input is not None:
-            return self.async_abort(reason="migration_repair_preview_closed")
+            if not user_input.get(CONF_PREPARE_MIGRATION, False):
+                return self.async_abort(reason="migration_repair_preview_closed")
+            if not preview.migration_eligible:
+                return self.async_abort(reason="migration_not_eligible")
+            self._pending_migration_sha256 = preview.source_sha256
+            return await self.async_step_migration_repair_confirm()
+
+        schema: dict[Any, Any] = {}
+        if preview.migration_eligible:
+            schema[vol.Required(CONF_PREPARE_MIGRATION, default=False)] = bool
+
+        return self.async_show_form(
+            step_id="migration_repair",
+            data_schema=vol.Schema(schema),
+            description_placeholders=_migration_repair_placeholders(
+                self.hass,
+                preview,
+            ),
+        )
+
+    async def async_step_migration_repair_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        expected_sha256 = self._pending_migration_sha256
+        if expected_sha256 is None:
+            return self.async_abort(reason="migration_state_lost")
 
         manager = _manager(self.hass)
         preview = await async_build_migration_repair_preview(
             self.hass,
             manager.registry_dir,
         )
+        if (
+            not preview.migration_eligible
+            or preview.source_sha256 != expected_sha256
+        ):
+            self._pending_migration_sha256 = None
+            return self.async_abort(reason="migration_source_changed")
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if not user_input.get(CONF_CONFIRM, False):
+                errors["base"] = "confirmation_required"
+            else:
+                try:
+                    result = await self.hass.async_add_executor_job(
+                        partial(
+                            manager.adopt_manual_registry,
+                            expected_source_sha256=expected_sha256,
+                        )
+                    )
+                except WNHFConfigurationError as err:
+                    message = str(err)
+                    if "source changed" in message:
+                        errors["base"] = "migration_source_changed"
+                    elif "ownership marker" in message:
+                        errors["base"] = "migration_ownership_conflict"
+                    else:
+                        errors["base"] = "migration_apply_failed"
+                else:
+                    self._pending_migration_sha256 = None
+                    return self._finish_migration(
+                        result=result,
+                        source_sha256=expected_sha256,
+                    )
+
         return self.async_show_form(
-            step_id="migration_repair",
-            data_schema=vol.Schema({}),
-            description_placeholders=_migration_repair_placeholders(
-                self.hass,
-                preview,
+            step_id="migration_repair_confirm",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_CONFIRM, default=False): bool}
             ),
+            errors=errors,
+            description_placeholders=_migration_confirm_placeholders(preview),
         )
 
     async def async_step_status(
@@ -2593,6 +2674,31 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
             reason=reason,
             description_placeholders={"dashboard_path": dashboard_path},
         )
+
+    def _finish_migration(
+        self,
+        *,
+        result,
+        source_sha256: str,
+    ) -> FlowResult:
+        data = dict(self.config_entry.data)
+        data["registry_mode"] = CONFIGURATOR_MODE_MANAGED
+        self.hass.config_entries.async_update_entry(
+            self.config_entry,
+            data=data,
+        )
+
+        options = dict(self.config_entry.options)
+        options.update(
+            {
+                "last_configuration_action": result.action,
+                "last_configuration_at": datetime.now(UTC).isoformat(),
+                "last_configuration_backup_path": result.backup_path,
+                "last_migration_source_sha256": source_sha256,
+                "dashboard_refresh_recommended": True,
+            }
+        )
+        return self.async_create_entry(title="", data=options)
 
     def _finish(self, action: str) -> FlowResult:
         options = dict(self.config_entry.options)

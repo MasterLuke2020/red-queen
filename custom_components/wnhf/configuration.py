@@ -35,6 +35,11 @@ OPTIONAL_REGISTRY_FILES: dict[str, str] = {
     "notification_targets.yaml": "notification_targets",
 }
 
+# Files eligible for controlled ownership transfer.
+MANAGED_REGISTRY_FILES: tuple[str, ...] = tuple(
+    sorted((*REQUIRED_REGISTRY_FILES, "plants.yaml"))
+)
+
 # Configurator-owned semantic object collections. These are deliberately limited
 # to the house registry files that the managed commissioning flow owns.
 _MANAGED_OBJECT_SPECS: dict[str, tuple[str, str]] = {
@@ -118,6 +123,19 @@ def _write_fsync(path: Path, content: str) -> None:
         stream.write(content)
         stream.flush()
         os.fsync(stream.fileno())
+
+
+def registry_bundle_sha256(registry_dir: Path, filenames: list[str]) -> str:
+    digest = sha256()
+    for filename in sorted(filenames):
+        path = registry_dir / filename
+        if not path.is_file():
+            continue
+        digest.update(filename.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n"))
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 class RegistryConfigurationManager:
@@ -537,6 +555,86 @@ class RegistryConfigurationManager:
             validation=validation,
         )
 
+    def adopt_manual_registry(
+        self,
+        *,
+        expected_source_sha256: str,
+    ) -> ConfigurationApplyResult:
+        snapshot = self.snapshot()
+        if snapshot["mode"] != CONFIGURATOR_MODE_MANUAL:
+            raise WNHFConfigurationError(
+                "Manual registry adoption requires registry mode 'manual'."
+            )
+        if self.manifest_path.is_file():
+            raise WNHFConfigurationError(
+                "Manual registry has an existing configurator ownership marker; refusing to overwrite it."
+            )
+        if not snapshot["validation"].get("valid"):
+            raise WNHFConfigurationError(
+                "Manual registry is not valid and cannot be adopted."
+            )
+        if not expected_source_sha256:
+            raise WNHFConfigurationError(
+                "Expected manual source SHA-256 is required."
+            )
+
+        source_files = [
+            filename
+            for filename in MANAGED_REGISTRY_FILES
+            if (self.registry_dir / filename).is_file()
+        ]
+        if registry_bundle_sha256(self.registry_dir, source_files) != expected_source_sha256:
+            raise WNHFConfigurationError(
+                "Manual registry source changed after preview; migration aborted."
+            )
+
+        documents: dict[str, dict[str, Any]] = {}
+        for filename in MANAGED_REGISTRY_FILES:
+            path = self.registry_dir / filename
+            if path.is_file():
+                documents[filename] = _read_yaml_document(path)
+            elif filename == "plants.yaml":
+                documents[filename] = {"plants": []}
+            else:
+                raise WNHFConfigurationError(
+                    f"Manual registry is missing required file: {filename}"
+                )
+
+        validation = self._validate_documents(documents)
+
+        if registry_bundle_sha256(self.registry_dir, source_files) != expected_source_sha256:
+            raise WNHFConfigurationError(
+                "Manual registry source changed after validation; migration aborted."
+            )
+
+        now = _utc_now()
+        manifest = {
+            "api_version": CONFIGURATION_API_VERSION,
+            "mode": CONFIGURATOR_MODE_MANAGED,
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+            "owner": _MANAGED_OWNER,
+            "managed_files": list(MANAGED_REGISTRY_FILES),
+            "migration": {
+                "source_mode": CONFIGURATOR_MODE_MANUAL,
+                "source_sha256": expected_source_sha256,
+                "adopted_at": now.isoformat(),
+            },
+        }
+        changed = {**documents, CONFIGURATOR_MANIFEST_FILE: manifest}
+        backup = self._write_transaction(changed, managed=True)
+        if backup is None:
+            raise WNHFConfigurationError(
+                "Manual registry migration did not produce the mandatory backup."
+            )
+
+        return ConfigurationApplyResult(
+            action="adopt_manual_registry",
+            changed_files=tuple(sorted(changed)),
+            backup_path=backup,
+            validation=validation,
+        )
+
     def add_room(self, room: dict[str, Any]) -> ConfigurationApplyResult:
         """Append one room to a managed registry and validate the whole bundle."""
         return self._append_managed_entry(
@@ -701,14 +799,21 @@ class RegistryConfigurationManager:
             if (self.registry_dir / filename).is_file()
         ]
         backup_dir: Path | None = None
-        if existing:
-            backup_dir = self.backup_root / f"{_timestamp()}_{uuid4().hex[:8]}"
-            backup_dir.mkdir(parents=True, exist_ok=False)
-            for filename in existing:
-                shutil.copy2(
-                    self.registry_dir / filename,
-                    backup_dir / filename,
-                )
+        try:
+            if existing:
+                backup_dir = self.backup_root / f"{_timestamp()}_{uuid4().hex[:8]}"
+                backup_dir.mkdir(parents=True, exist_ok=False)
+                for filename in existing:
+                    shutil.copy2(
+                        self.registry_dir / filename,
+                        backup_dir / filename,
+                    )
+        except OSError as err:
+            if backup_dir is not None:
+                shutil.rmtree(backup_dir, ignore_errors=True)
+            raise WNHFConfigurationError(
+                f"Configuration backup failed; no files were changed: {err}"
+            ) from err
 
         staged: dict[str, Path] = {}
         replaced: list[str] = []
@@ -718,7 +823,14 @@ class RegistryConfigurationManager:
                 _write_fsync(stage, _render_yaml(document, managed=managed))
                 staged[filename] = stage
 
-            for filename in sorted(staged):
+            replace_order = sorted(
+                staged,
+                key=lambda filename: (
+                    filename == CONFIGURATOR_MANIFEST_FILE,
+                    filename,
+                ),
+            )
+            for filename in replace_order:
                 os.replace(staged[filename], self.registry_dir / filename)
                 replaced.append(filename)
         except OSError as err:

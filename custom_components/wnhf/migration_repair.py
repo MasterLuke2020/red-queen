@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -15,8 +14,10 @@ from homeassistant.helpers import area_registry as ar, floor_registry as fr
 from .configuration import (
     CONFIGURATOR_MODE_MANAGED,
     CONFIGURATOR_MODE_MANUAL,
+    MANAGED_REGISTRY_FILES,
     REQUIRED_REGISTRY_FILES,
     RegistryConfigurationManager,
+    registry_bundle_sha256,
 )
 from .configuration_diagnostics import async_diagnose_configured_entities
 from .registry import WNHFRegistryError, load_house
@@ -141,19 +142,6 @@ def _finding(
         value=None if value is None else str(value),
         detail=detail,
     )
-
-
-def _bundle_sha256(registry_dir: Path, filenames: list[str]) -> str:
-    digest = sha256()
-    for filename in sorted(filenames):
-        path = registry_dir / filename
-        if not path.is_file():
-            continue
-        digest.update(filename.encode("utf-8"))
-        digest.update(b"\0")
-        digest.update(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n"))
-        digest.update(b"\0")
-    return digest.hexdigest()
 
 
 def _nested_entity_id(item: dict[str, Any], *path: str) -> str | None:
@@ -341,10 +329,10 @@ def _load_raw_preview(registry_dir: Path) -> _RawPreview:
         except (OSError, WNHFRegistryError) as err:
             findings.append(_finding("blocker", "registry_validation_error", detail=str(err)))
 
-    proposed_managed_files = sorted({*REQUIRED_REGISTRY_FILES, "plants.yaml"})
+    proposed_managed_files = list(MANAGED_REGISTRY_FILES)
     total_objects = sum(len(items) for items in objects_by_type.values())
     rooms = tuple(objects_by_type.get("rooms", []))
-    source_hash = _bundle_sha256(registry_dir, present_files)
+    source_hash = registry_bundle_sha256(registry_dir, present_files)
 
     findings.sort(
         key=lambda item: (
@@ -420,6 +408,18 @@ async def async_build_migration_repair_preview(hass: HomeAssistant, registry_dir
         error = str(snapshot["validation"]["error"])
         if not any(item.code == "registry_validation_error" and item.detail == error for item in findings):
             findings.append(_finding("blocker", "registry_validation_error", detail=error))
+
+    if mode == CONFIGURATOR_MODE_MANUAL and manager.manifest_path.is_file():
+        findings.append(
+            _finding(
+                "blocker",
+                "ownership_marker_conflict",
+                detail=str(
+                    snapshot.get("manifest_error")
+                    or "Existing configurator.yaml is not valid managed ownership."
+                ),
+            )
+        )
 
     if mode == CONFIGURATOR_MODE_MANAGED:
         findings.append(_finding("info", "already_managed", detail="Migration is not required; preview acts as repair analysis."))

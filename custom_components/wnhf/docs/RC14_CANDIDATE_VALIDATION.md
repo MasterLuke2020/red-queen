@@ -1,6 +1,6 @@
 # Red Queen 1.0.0-rc14 — Development Validation
 
-Status: **WP14.1 READ-ONLY PREVIEW IMPLEMENTED**
+Status: **WP14.2 CONTROLLED MANUAL ADOPTION IMPLEMENTED**
 
 Baseline: WNHF `1.40.0` / `WP-4.7.20.0`
 
@@ -32,3 +32,9 @@ options or requesting a reload.
 
 Live-test preview behavior on a manual reference registry and on the managed test
 registry before adding any accepted migration transaction.
+
+## WP14.2 contract
+
+Manual → managed adoption now requires an eligible preview and second confirmation.
+It is source-SHA guarded, candidate-validated, backup-first, transactionally replaced
+with rollback, and writes `configurator.yaml` last. Live qualification is pending.

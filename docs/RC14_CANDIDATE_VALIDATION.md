@@ -2,7 +2,7 @@
 
 ## Current state
 
-**WP14.1 LIVE QUALIFIED — READ-ONLY PREVIEW COMPLETE**
+**WP14.2 DEVELOPMENT — CONTROLLED MANUAL ADOPTION IMPLEMENTED**
 
 - Red Queen: `1.0.0-rc14`
 - WNHF: `1.40.0`
@@ -86,9 +86,20 @@ Observed result:
 The UI formatting fix was also live-verified: finding sections now render with real
 line breaks instead of literal `\\n` sequences.
 
+## WP14.2 — Controlled Manual → Managed Adoption
+
+Implemented after the live-qualified WP14.1 preview. Adoption requires an eligible
+preview, a separate prepare action, and a second explicit confirmation. The preview
+source SHA-256 is retained and rechecked before the write transaction.
+
+The transaction refuses conflicting ownership markers, validates the complete
+candidate, creates a mandatory backup of the manual source, stages all managed files,
+writes `configurator.yaml` last, and rolls back already-replaced files on write
+failure. The config entry is switched to managed mode only after success.
+
 ## Qualification status
 
-**WP14.1 COMPLETE.**
+**WP14.1 COMPLETE. WP14.2 IMPLEMENTED; LIVE QUALIFICATION PENDING.**
 
 The read-only migration/repair preview has passed repository verification, hassfest,
 static CI and both managed/manual live qualification cases. RC14 may proceed to an

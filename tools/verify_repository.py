@@ -825,6 +825,46 @@ for language in ("de", "en"):
         )
 
 # ---------------------------------------------------------------------------
+# RC14 WP14.2 controlled manual -> managed adoption
+# ---------------------------------------------------------------------------
+
+configuration_text = read_text(INTEGRATION / "configuration.py")
+for marker in (
+    "MANAGED_REGISTRY_FILES",
+    "registry_bundle_sha256",
+    "def adopt_manual_registry(",
+    "expected_source_sha256",
+    "Manual registry source changed after preview",
+    "Manual registry source changed after validation",
+    'action="adopt_manual_registry"',
+    "Configuration backup failed; no files were changed",
+    "filename == CONFIGURATOR_MANIFEST_FILE",
+):
+    if marker not in configuration_text:
+        fail(f"Missing RC14 WP14.2 configuration invariant: {marker}")
+
+for marker in (
+    "ownership_marker_conflict",
+    "manager.manifest_path.is_file()",
+    "registry_bundle_sha256",
+):
+    if marker not in migration_repair_text:
+        fail(f"Missing RC14 WP14.2 preview invariant: {marker}")
+
+for marker in (
+    "CONF_PREPARE_MIGRATION",
+    "async_step_migration_repair_confirm",
+    "_pending_migration_sha256",
+    "manager.adopt_manual_registry",
+    "_finish_migration",
+    '"registry_mode"] = CONFIGURATOR_MODE_MANAGED',
+    '"last_configuration_backup_path"',
+    '"last_migration_source_sha256"',
+):
+    if marker not in config_flow_text:
+        fail(f"Missing RC14 WP14.2 Configurator invariant: {marker}")
+
+# ---------------------------------------------------------------------------
 # Reference configuration regression
 # ---------------------------------------------------------------------------
 
@@ -986,6 +1026,7 @@ print("- generated dashboard: model/binding/renderer/lifecycle invariants PASS")
 print("- dashboard configurator: explicit create/update lifecycle PASS")
 print("- commissioning diagnostics/dashboard freshness: PASS")
 print("- RC14 migration/repair preview: read-only invariants PASS")
+print("- RC14 manual adoption: SHA/backup/confirm/rollback invariants PASS")
 print("- dashboard OptionsFlow completion: reload-safe PASS")
 print("- translations/configurator menu structure: PASS")
 print(f"- {candidate.upper()} LF-normalized source checksums: PASS")

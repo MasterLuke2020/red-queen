@@ -429,7 +429,20 @@
       },
       "migration_repair": {
         "title": "Migration & Reparatur – Vorschau",
-        "description": "Modus: {mode}. Quell-Registry gültig: {source_valid}. Objekte: {objects_total}. Migrationskandidat: {migration_candidate}. Migration derzeit möglich: {migration_eligible}. Blocker: {blockers}, Warnungen: {warnings}, Hinweise: {infos}. Entity-Referenzen: {entity_total}, davon bereit: {entity_ready}. Vorgeschlagene verwaltete Dateien: {proposed_files}. Quellen-SHA-256: {source_sha256}. Schreibvorgang ausgeführt: {write_performed}. Dieser Schritt ist strikt schreibgeschützt und verändert keine Registry.\n\n### Befunde\n{details}"
+        "description": "Modus: {mode}. Quell-Registry gültig: {source_valid}. Objekte: {objects_total}. Migrationskandidat: {migration_candidate}. Migration derzeit möglich: {migration_eligible}. Blocker: {blockers}, Warnungen: {warnings}, Hinweise: {infos}. Entity-Referenzen: {entity_total}, davon bereit: {entity_ready}. Vorgeschlagene verwaltete Dateien: {proposed_files}. Quellen-SHA-256: {source_sha256}. Schreibvorgang ausgeführt: {write_performed}. Dieser Schritt ist strikt schreibgeschützt und verändert keine Registry.\n\n### Befunde\n{details}",
+        "data": {
+          "prepare_migration": "Migration vorbereiten"
+        },
+        "data_description": {
+          "prepare_migration": "Nur verfügbar, wenn die Vorschau keinen Blocker enthält. Es folgt noch eine zweite ausdrückliche Bestätigung."
+        }
+      },
+      "migration_repair_confirm": {
+        "title": "Manual-Registry übernehmen",
+        "description": "Letzte Bestätigung vor der Ownership-Übernahme. Quelle SHA-256: {source_sha256}. Objekte: {objects_total}. Warnungen: {warnings}. Verwaltete Dateien: {proposed_files}. Red Queen validiert den vollständigen Kandidaten erneut, erstellt zwingend ein Backup der bisherigen Manual-Registry und ersetzt anschließend die verwalteten Registry-Dateien transaktional mit Rollback bei einem Schreibfehler.",
+        "data": {
+          "confirm": "Manual-Registry jetzt als Red-Queen-managed übernehmen"
+        }
       }
     },
     "error": {
@@ -451,7 +464,10 @@
       "unsupported_opening_type": "Dieser Öffnungstyp kann noch nicht über den Konfigurator bearbeitet werden.",
       "entity_required": "Für die aktivierte Funktion ist eine Entity erforderlich.",
       "object_in_use": "Das Objekt kann nicht gelöscht werden, solange abhängige Objekte darauf verweisen oder solange es der letzte verwaltete Raum ist.",
-      "cannot_delete_object": "Das Objekt konnte nicht sicher gelöscht werden. Die Registry blieb unverändert bzw. wurde zurückgerollt."
+      "cannot_delete_object": "Das Objekt konnte nicht sicher gelöscht werden. Die Registry blieb unverändert bzw. wurde zurückgerollt.",
+      "migration_source_changed": "Die Registry hat sich seit der Vorschau geändert. Die Migration wurde abgebrochen; starte die Vorschau erneut.",
+      "migration_ownership_conflict": "Es existiert bereits ein widersprüchlicher Ownership-Marker. Red Queen überschreibt ihn nicht automatisch.",
+      "migration_apply_failed": "Die Registry konnte nicht sicher übernommen werden. Die Migration wurde nicht abgeschlossen."
     },
     "abort": {
       "commissioning_state_lost": "Der Einrichtungsentwurf ist verloren gegangen. Starte erneut.",
@@ -464,7 +480,10 @@
       "maintenance_state_lost": "Der ausgewählte Wartungszustand ist verloren gegangen. Öffne den Dialog erneut.",
       "dashboard_created": "Das Red-Queen-Dashboard wurde erfolgreich unter {dashboard_path} erstellt.",
       "dashboard_updated": "Das Red-Queen-Dashboard wurde erfolgreich aktualisiert. Pfad: {dashboard_path}.",
-      "migration_repair_preview_closed": "Vorschau geschlossen. Es wurden keine Änderungen vorgenommen."
+      "migration_repair_preview_closed": "Vorschau geschlossen. Es wurden keine Änderungen vorgenommen.",
+      "migration_not_eligible": "Die Registry ist derzeit nicht für eine Migration freigegeben.",
+      "migration_state_lost": "Der Migrationsentwurf ist verloren gegangen. Starte die Vorschau erneut.",
+      "migration_source_changed": "Die Registry hat sich seit der Vorschau geändert. Es wurde nichts übernommen."
     }
   },
   "exceptions": {

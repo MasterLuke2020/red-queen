@@ -429,7 +429,20 @@
       },
       "migration_repair": {
         "title": "Migration & Repair Preview",
-        "description": "Mode: {mode}. Source registry valid: {source_valid}. Objects: {objects_total}. Migration candidate: {migration_candidate}. Migration currently eligible: {migration_eligible}. Blockers: {blockers}, warnings: {warnings}, info: {infos}. Entity references: {entity_total}, ready: {entity_ready}. Proposed managed files: {proposed_files}. Source SHA-256: {source_sha256}. Write performed: {write_performed}. This step is strictly read-only and does not change the registry.\n\n### Findings\n{details}"
+        "description": "Mode: {mode}. Source registry valid: {source_valid}. Objects: {objects_total}. Migration candidate: {migration_candidate}. Migration currently eligible: {migration_eligible}. Blockers: {blockers}, warnings: {warnings}, info: {infos}. Entity references: {entity_total}, ready: {entity_ready}. Proposed managed files: {proposed_files}. Source SHA-256: {source_sha256}. Write performed: {write_performed}. This step is strictly read-only and does not change the registry.\n\n### Findings\n{details}",
+        "data": {
+          "prepare_migration": "Prepare migration"
+        },
+        "data_description": {
+          "prepare_migration": "Available only when the preview has no blockers. A second explicit confirmation follows."
+        }
+      },
+      "migration_repair_confirm": {
+        "title": "Adopt manual registry",
+        "description": "Final confirmation before ownership transfer. Source SHA-256: {source_sha256}. Objects: {objects_total}. Warnings: {warnings}. Managed files: {proposed_files}. Red Queen revalidates the complete candidate, creates a mandatory backup of the current manual registry, then transactionally replaces the managed registry files with rollback on write failure.",
+        "data": {
+          "confirm": "Adopt this manual registry as Red Queen managed now"
+        }
       }
     },
     "error": {
@@ -451,7 +464,10 @@
       "unsupported_opening_type": "This opening type cannot yet be maintained through the configurator.",
       "entity_required": "An entity is required for the enabled function.",
       "object_in_use": "The object cannot be deleted while dependent objects reference it or while it is the last managed room.",
-      "cannot_delete_object": "The object could not be deleted safely. The registry remained unchanged or was rolled back."
+      "cannot_delete_object": "The object could not be deleted safely. The registry remained unchanged or was rolled back.",
+      "migration_source_changed": "The registry changed since preview. Migration was aborted; start the preview again.",
+      "migration_ownership_conflict": "A conflicting ownership marker already exists. Red Queen will not overwrite it automatically.",
+      "migration_apply_failed": "The registry could not be adopted safely. Migration was not completed."
     },
     "abort": {
       "commissioning_state_lost": "The commissioning draft was lost. Start again.",
@@ -464,7 +480,10 @@
       "maintenance_state_lost": "The selected maintenance state was lost. Open the dialog again.",
       "dashboard_created": "The Red Queen dashboard was successfully created at {dashboard_path}.",
       "dashboard_updated": "The Red Queen dashboard was successfully updated. Path: {dashboard_path}.",
-      "migration_repair_preview_closed": "Preview closed. No changes were made."
+      "migration_repair_preview_closed": "Preview closed. No changes were made.",
+      "migration_not_eligible": "The registry is not currently eligible for migration.",
+      "migration_state_lost": "Migration state was lost. Start the preview again.",
+      "migration_source_changed": "The registry changed since preview. Nothing was adopted."
     }
   },
   "exceptions": {
