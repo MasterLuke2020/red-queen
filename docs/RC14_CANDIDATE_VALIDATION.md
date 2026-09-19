@@ -2,7 +2,7 @@
 
 ## Current state
 
-**RC14 FUNCTIONAL LIVE QUALIFIED — RELEASE FREEZE**
+**RC14 FINAL EXACT PACKAGE LIVE VERIFIED**
 
 - Red Queen: `1.0.0-rc14`
 - WNHF: `1.40.0`
@@ -209,10 +209,39 @@ Observed result:
 
 The test registry was returned to its clean managed state after qualification.
 
+## Final exact-package qualification
+
+The frozen integration source at commit
+`5ec86514f96f88104a3531f669ca3d58b49910cb` was packaged as:
+
+- `red_queen_1.0.0-rc14_final_candidate.zip`
+- 180 integration files
+- SHA-256
+  `a30b91ae143dfb089795d623b45fd26483f9dc6bad0852374b6d0f8f1bc1ad98`
+
+The exact archive was clean-installed on the isolated managed Home Assistant test
+instance.
+
+Observed result:
+
+- integration version `1.0.0-rc14`;
+- candidate status `release_candidate`;
+- no packaged `__pycache__` directories;
+- Home Assistant returned HTTP 200 after startup;
+- only the normal Home Assistant custom-integration warning appeared in the relevant
+  startup log slice;
+- managed Configurator menu loaded normally;
+- diagnostics reported 23 configured references / 23 ready / 0 problems;
+- Migration & Repair reported managed mode, valid source, 0 blockers and 0 warnings;
+- the generated Red Queen dashboard loaded normally;
+- restart returned HTTP 200;
+- registry SHA-256 set remained unchanged across restart;
+- no Red Queen traceback or integration error was observed.
+
 ## Qualification status
 
-**WP14.1 COMPLETE. WP14.2 COMPLETE. WP14.3 COMPLETE AND LIVE QUALIFIED.**
+**WP14.1 COMPLETE. WP14.2 COMPLETE. WP14.3 COMPLETE. FINAL EXACT PACKAGE LIVE VERIFIED.**
 
-RC14 controlled migration and guided repair are functionally live-qualified.
-RC14 is now in release freeze. The next gate is immutable exact-package
-requalification of this frozen integration source. No physical execution contract changed.
+No integration source changed after the frozen package was built. RC14 is ready for
+final root-commit CI and the normal main/tag/prerelease publication flow. No physical
+execution contract changed.

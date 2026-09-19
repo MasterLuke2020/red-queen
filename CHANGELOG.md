@@ -29,7 +29,10 @@ All notable public changes to Red Queen are documented here.
 - WP14.1 preview qualification: PASS.
 - WP14.2 manual adoption, source-SHA refusal, backup and restart persistence: PASS.
 - WP14.3 entity repair, repair stale-source refusal and HA area/floor-link repair: PASS.
-- RC14 is frozen for immutable exact-package requalification.
+- Freeze source commit: `5ec86514f96f88104a3531f669ca3d58b49910cb`.
+- Final frozen exact-package requalification passed with 180 integration files.
+- Final package SHA-256:
+  `a30b91ae143dfb089795d623b45fd26483f9dc6bad0852374b6d0f8f1bc1ad98`.
 
 
 ### 1.0.0-rc13 candidate — WP-4.7.19.0

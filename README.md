@@ -4,7 +4,7 @@
 semantic objects and state, resolves native/canonical controls, and exposes a stable
 Home Assistant surface for commissioning, operation and diagnostics.
 
-> **Current candidate:** `1.0.0-rc14` — FUNCTIONAL LIVE VERIFIED / RELEASE FREEZE
+> **Current candidate:** `1.0.0-rc14` — FINAL EXACT PACKAGE LIVE VERIFIED
 > **Technical Home Assistant domain:** `wnhf`
 > **Development lineage:** WNHF `1.40.0` / `WP-4.7.20.0`
 
@@ -52,14 +52,19 @@ Canonical real-execution contract: `2.3-rc11`
 
 ## Qualification status
 
-RC14 WP14.1, WP14.2 and WP14.3 are functionally live-qualified on isolated Home
-Assistant test instances. Coverage includes preview immutability, blocker handling,
-source-SHA refusal, explicit ownership adoption, mandatory source backup, restart
-persistence, guided entity repair, stale-source repair refusal and HA area/floor-link
-repair.
+RC14 WP14.1, WP14.2 and WP14.3 are functionally live-qualified. The immutable package
+built from freeze commit `5ec86514f96f88104a3531f669ca3d58b49910cb` was then
+clean-installed and requalified on the isolated Home Assistant test instance.
 
-RC14 is now in release freeze. The next gate is immutable exact-package
-requalification before tag/publication.
+Final qualified package:
+
+- Integration files: `180`
+- Archive: `red_queen_1.0.0-rc14_final_candidate.zip`
+- SHA-256: `a30b91ae143dfb089795d623b45fd26483f9dc6bad0852374b6d0f8f1bc1ad98`
+
+The exact package passed startup, managed-registry loading, clean diagnostics,
+Migration & Repair, generated dashboard operation and restart persistence. The frozen
+integration source was not changed after packaging.
 
 See `docs/RC14_CANDIDATE_VALIDATION.md` and
 `custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc14.md`.
