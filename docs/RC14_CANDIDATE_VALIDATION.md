@@ -2,7 +2,7 @@
 
 ## Current state
 
-**WP14.3 DEVELOPMENT — GUIDED REPAIR IMPLEMENTED**
+**WP14.3 LIVE QUALIFIED — GUIDED REPAIR COMPLETE**
 
 - Red Queen: `1.0.0-rc14`
 - WNHF: `1.40.0`
@@ -161,11 +161,58 @@ before replacement, and requires explicit confirmation.
 No Home Assistant Area/Floor/Entity registry is mutated and no physical action is
 dispatched.
 
+## WP14.3 live qualification
+
+WP14.3 is live-qualified on the isolated managed-registry Home Assistant test instance.
+
+### Guided entity-reference repair
+
+A single valid light feedback reference was deliberately replaced with the missing
+`binary_sensor.rc14_wp14_3_missing_repair_test`.
+
+Observed result:
+
+- Migration & Repair reported 23 configured references / 22 ready;
+- exactly one blocker identified the deliberately missing reference;
+- the guided-repair selector offered exactly that repairable finding;
+- `binary_sensor.rc13_test_light_feedback` was selected as the same-domain replacement;
+- the semantic light ID remained unchanged;
+- after repair both configured light feedback references pointed to the valid entity;
+- a new transaction backup was created before replacement;
+- the backup preserved the deliberately missing pre-repair reference.
+
+### Repair stale-source guard
+
+A second guided entity repair was opened. Before final confirmation another managed
+registry file was changed without invalidating YAML.
+
+Observed result:
+
+- Red Queen aborted with the source/finding-changed message;
+- the selected repair was not applied;
+- no accepted repair transaction was produced.
+
+### Guided HA area/floor-link repair
+
+The first room's stored `ha_area_id` was deliberately changed from `rc13_testraum` to
+`rc14_wp14_3_missing_area`.
+
+Observed result:
+
+- Red Queen detected the invalid Home Assistant area link;
+- the guided room-link repair offered the real `RC13 Testraum`;
+- accepted repair restored `ha_area_id: rc13_testraum`;
+- the selected area's current floor assignment remained
+  `ha_floor_id: rc13_testetage`;
+- semantic room ID `house.rc13_testetage.rc13_testraum` remained unchanged;
+- the new transaction backup preserved the deliberately invalid pre-repair area ID.
+
+The test registry was returned to its clean managed state after qualification.
+
 ## Qualification status
 
-**WP14.1 COMPLETE. WP14.2 COMPLETE. WP14.3 IMPLEMENTED; LIVE QUALIFICATION PENDING.**
+**WP14.1 COMPLETE. WP14.2 COMPLETE. WP14.3 COMPLETE AND LIVE QUALIFIED.**
 
-RC14 controlled migration now has live proof for read-only preview behavior, blocker
-handling, source-SHA fail-closed refusal, explicit successful ownership transfer,
-mandatory source backup, managed ownership persistence, and post-restart Configurator
-availability. No physical execution contract changed.
+RC14 controlled migration and guided repair are now functionally live-qualified.
+The next gate is RC14 release freeze followed by immutable exact-package
+requalification. No physical execution contract changed.
