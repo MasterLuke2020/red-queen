@@ -1,6 +1,6 @@
 # Red Queen 1.0.0-rc14 — Development Validation
 
-Status: **WP14.2 CONTROLLED MANUAL ADOPTION IMPLEMENTED**
+Status: **FUNCTIONAL LIVE QUALIFIED / RELEASE FREEZE**
 
 Baseline: WNHF `1.40.0` / `WP-4.7.20.0`
 
@@ -37,7 +37,8 @@ registry before adding any accepted migration transaction.
 
 Manual → managed adoption now requires an eligible preview and second confirmation.
 It is source-SHA guarded, candidate-validated, backup-first, transactionally replaced
-with rollback, and writes `configurator.yaml` last. Live qualification is pending.
+with rollback, and writes `configurator.yaml` last. Live qualification passed, including
+stale-source refusal, successful ownership transfer, backup verification and restart persistence.
 
 ## WP14.3 — Guided Repair
 
@@ -53,3 +54,20 @@ transaction path provides backup/rollback behavior.
 
 Transient runtime states, duplicate IDs, orphan-room references and malformed objects
 are deliberately not auto-repaired.
+
+
+## WP14.3 live qualification
+
+Guided repair passed live qualification on the isolated managed-registry test instance.
+
+- A deliberately missing light feedback reference produced exactly one repairable blocker
+  at 22/23 ready references.
+- Explicit same-domain replacement restored the valid configured feedback reference.
+- The transaction backup preserved the broken pre-repair source value.
+- A stale-source change between preview and confirmation failed closed.
+- An invalid stored room `ha_area_id` was repaired by selecting the real Home Assistant
+  area; the real floor assignment was retained and semantic room identity stayed stable.
+- The room-link transaction backup preserved the invalid pre-repair source value.
+
+WP14.1, WP14.2 and WP14.3 are complete. RC14 is frozen for immutable exact-package
+requalification.

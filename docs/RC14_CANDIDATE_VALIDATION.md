@@ -2,7 +2,7 @@
 
 ## Current state
 
-**WP14.3 LIVE QUALIFIED — GUIDED REPAIR COMPLETE**
+**RC14 FUNCTIONAL LIVE QUALIFIED — RELEASE FREEZE**
 
 - Red Queen: `1.0.0-rc14`
 - WNHF: `1.40.0`
@@ -213,6 +213,6 @@ The test registry was returned to its clean managed state after qualification.
 
 **WP14.1 COMPLETE. WP14.2 COMPLETE. WP14.3 COMPLETE AND LIVE QUALIFIED.**
 
-RC14 controlled migration and guided repair are now functionally live-qualified.
-The next gate is RC14 release freeze followed by immutable exact-package
-requalification. No physical execution contract changed.
+RC14 controlled migration and guided repair are functionally live-qualified.
+RC14 is now in release freeze. The next gate is immutable exact-package
+requalification of this frozen integration source. No physical execution contract changed.

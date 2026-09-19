@@ -1,4 +1,4 @@
-# Red Queen 1.0.0-rc13
+# Red Queen 1.0.0-rc14
 
 Red Queen is a semantic home framework for Home Assistant. The public product name is
 **Red Queen**; the technical Home Assistant domain remains **`wnhf`** for compatibility.
@@ -6,41 +6,52 @@ Red Queen is a semantic home framework for Home Assistant. The public product na
 ## Release identity
 
 - Product: Red Queen
-- Version: `1.0.0-rc13`
+- Version: `1.0.0-rc14`
 - Channel: `release_candidate`
-- Candidate: `rc13`
-- Development baseline: WNHF `1.39.0` / `WP-4.7.19.0`
+- Candidate: `rc14`
+- Development baseline: WNHF `1.40.0` / `WP-4.7.20.0`
 - Canonical execution entry: `wnhf.execution_execute`
 - Canonical execution API: `1.0`
 - Canonical real-execution contract: `2.3-rc11`
 
-## RC13 managed configurator
+## Managed configurator
 
 The managed configurator supports transaction-safe commissioning and maintenance for
-rooms, impulse lights, venetian blinds, windows, sliding doors, doors, garage doors
-and Plant Care.
+rooms, impulse lights, venetian blinds, windows, sliding doors, doors, garage doors and
+Plant Care. Stable semantic object IDs are preserved during maintenance.
 
-RC13 adds edit/update, enable/disable and guarded deletion. Semantic IDs remain stable.
-Every mutation is ownership-gated, validated as a complete registry bundle and
-protected by backup/atomic-replace/rollback. Referenced rooms and the last managed
-room cannot be deleted. Manual registries remain read-only.
+Manual registries remain read-only until an explicit RC14 migration is accepted.
 
-## Diagnostics and dashboard freshness
+## RC14 migration and repair
 
-Entity/Provider diagnostics inspect only entity IDs explicitly configured in the Red
-Queen registry and classify missing, HA-disabled, unavailable, unknown and
-state-missing references.
+RC14 adds a read-only Migration & Repair preview, explicit source-SHA guarded
+manual → managed adoption, and deterministic guided repair for managed registries.
 
-The generated `/red-queen` dashboard resolves native Red Queen entities through stable
-unique IDs and now tracks freshness against the semantic registry source SHA.
-Dashboard create/update remains explicit and reload-safe. `garage.stop` and all other
-physical controls continue through canonical guarded execution.
+Guided repair can replace a missing/HA-disabled configured entity reference with a
+user-selected same-domain entity and can repair invalid stored HA area/floor source
+metadata from a selected Home Assistant area.
+
+Accepted migration/repair writes use complete candidate validation and the existing
+managed backup/replace/rollback transaction. Stale source changes fail closed.
+
+Red Queen does not auto-repair ambiguous structural findings or transient runtime
+states, does not mutate Home Assistant registries during repair, and does not bypass
+canonical physical execution guards.
+
+## Diagnostics and dashboard
+
+Entity/Provider diagnostics inspect only explicitly configured references. The managed
+`/red-queen` dashboard uses native Red Queen entities through stable unique-ID binding
+and tracks freshness against semantic registry changes.
+
+`garage.stop` and all other physical controls continue through canonical guarded
+execution.
 
 ## Qualification status
 
-RC13 managed maintenance, diagnostics, dashboard freshness and restart persistence
-were live verified on 2026-09-17. The release is frozen for final exact-package
-requalification before tag/publication.
+RC14 WP14.1, WP14.2 and WP14.3 are functionally live-qualified on isolated Home
+Assistant test instances. RC14 is in release freeze for immutable exact-package
+requalification.
 
-See `docs/FEATURE_MATRIX.md`, `docs/RC13_CANDIDATE_VALIDATION.md`, and
-`docs/RELEASE_NOTES_1.0.0-rc13.md`.
+See `docs/FEATURE_MATRIX.md`, `docs/RC14_CANDIDATE_VALIDATION.md`, and
+`docs/RELEASE_NOTES_1.0.0-rc14.md`.

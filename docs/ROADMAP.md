@@ -32,13 +32,18 @@ RC13 is feature live verified and in release freeze.
 
 ### Controlled migration and repair — RC14
 
-RC14 is planned as the final larger hardening candidate before stable 1.0:
+RC14 is functionally live-qualified and in release freeze.
+
+Completed scope:
 
 - preview-only manual → managed migration planning;
-- never automatically take ownership of manual registries;
+- no automatic ownership takeover of manual registries;
 - duplicate/invalid entity and orphan-room detection;
-- repair guidance for missing HA references and incomplete configuration;
-- transaction-safe backup/rollback for explicitly accepted migration/repair.
+- source-SHA guarded explicit manual → managed adoption;
+- mandatory source backup and rollback protection;
+- deterministic guided entity-reference repair;
+- deterministic HA area/floor source-link repair;
+- stale-source fail-closed behavior.
 
 ## Stable 1.0 qualification
 

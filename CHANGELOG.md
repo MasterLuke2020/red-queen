@@ -4,6 +4,34 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0-rc14 candidate — WP-4.7.20.0
+
+#### Added
+- Read-only Migration & Repair preview for manual and managed registries.
+- Source-SHA guarded explicit manual → managed adoption.
+- Guided repair for missing/disabled configured entity references.
+- Guided repair for invalid stored Home Assistant area/floor links.
+
+#### Changed
+- Manual registries can be explicitly adopted only after eligibility preview and a
+  second confirmation.
+- Accepted migration/repair writes use complete candidate validation and managed
+  backup/rollback transactions.
+- Repair preserves semantic object IDs and fails closed when source data changes.
+
+#### Compatibility and safety
+- Canonical execution API remains 1.0.
+- Canonical real-execution contract remains 2.3-rc11.
+- Home Assistant registries are not mutated by guided repair.
+- Physical execution guards are unchanged.
+
+#### Validation
+- WP14.1 preview qualification: PASS.
+- WP14.2 manual adoption, source-SHA refusal, backup and restart persistence: PASS.
+- WP14.3 entity repair, repair stale-source refusal and HA area/floor-link repair: PASS.
+- RC14 is frozen for immutable exact-package requalification.
+
+
 ### 1.0.0-rc13 candidate — WP-4.7.19.0
 
 #### Added

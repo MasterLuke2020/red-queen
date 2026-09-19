@@ -1,4 +1,4 @@
-# Red Queen 1.0.0-rc14 — Development Notes
+# Red Queen 1.0.0-rc14 — Release Candidate Notes
 
 RC14 is the controlled migration and repair hardening release on the path to stable
 Red Queen 1.0.0.
@@ -48,7 +48,7 @@ RC14 gates.
 - `configurator.yaml` written last;
 - config-entry mode updated only after success.
 
-WP14.2 is implemented but not yet live-qualified.
+WP14.2 is live-qualified, including stale-source refusal, explicit ownership transfer, mandatory source backup and restart persistence.
 
 ## WP14.3 — Guided Repair & RC14 Closure
 
@@ -63,5 +63,7 @@ WP14.2 is implemented but not yet live-qualified.
   or malformed semantic objects.
 - Does not mutate Home Assistant registries or physical execution contracts.
 
-WP14.3 is implemented; live qualification is the remaining RC14 functional gate before
-candidate freeze.
+WP14.3 is live-qualified, including guided entity repair, repair stale-source refusal,
+HA area/floor-link repair and backup preservation of the pre-repair fault state.
+
+RC14 is now in release freeze for immutable exact-package requalification.

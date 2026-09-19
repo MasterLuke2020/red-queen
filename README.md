@@ -1,29 +1,29 @@
 # Red Queen
 
-**Red Queen** is a semantic home framework for Home Assistant. It models the house
-as semantic objects and state, resolves native/canonical controls, and exposes a
-stable Home Assistant surface for commissioning, operation and diagnostics.
+**Red Queen** is a semantic home framework for Home Assistant. It models the house as
+semantic objects and state, resolves native/canonical controls, and exposes a stable
+Home Assistant surface for commissioning, operation and diagnostics.
 
-> **Current candidate:** `1.0.0-rc13` — FINAL EXACT PACKAGE LIVE VERIFIED / CI PASS
+> **Current candidate:** `1.0.0-rc14` — FUNCTIONAL LIVE VERIFIED / RELEASE FREEZE
 > **Technical Home Assistant domain:** `wnhf`
-> **Development lineage:** WNHF `1.39.0` / `WP-4.7.19.0`
+> **Development lineage:** WNHF `1.40.0` / `WP-4.7.20.0`
 
-## RC13 candidate changes
+## RC14 candidate changes
 
-RC13 hardens commissioning and day-two maintenance on top of the RC12 generated
-dashboard foundation.
+RC14 completes the controlled migration and repair hardening planned before stable 1.0.
 
-- Adds transaction-safe managed editing for rooms, lights, covers, openings and plants.
-- Keeps semantic object IDs stable during maintenance.
-- Adds enable/disable and guarded deletion with explicit second confirmation.
-- Prevents deletion of referenced rooms and the last managed room.
-- Adds Entity/Provider diagnostics for configured references only.
-- Classifies missing, HA-disabled, unavailable, unknown and state-missing references.
-- Marks the generated dashboard outdated when the semantic registry source changes.
-- Keeps dashboard create/update explicit and restart persistence non-destructive.
-- Fixes the `Invalid flow specified` dashboard Options Flow completion regression.
-- Keeps manual registries read-only and never silently adopts them.
-- Keeps the canonical physical execution contract unchanged.
+- Adds read-only Migration & Repair preview for manual and managed registries.
+- Detects structural blockers, duplicate IDs, orphan-room references and configured
+  entity health problems.
+- Adds deterministic source bundle SHA-256 protection.
+- Adds explicit, confirmed manual → managed adoption with mandatory source backup.
+- Adds guided managed repair for missing/disabled configured entity references.
+- Adds guided repair of invalid stored HA area/floor source links.
+- Preserves semantic object IDs through repair.
+- Reuses complete candidate validation and transaction backup/rollback.
+- Refuses stale migration/repair writes when the source changed after preview.
+- Never silently adopts manual configuration.
+- Does not change the canonical physical execution contract.
 
 ## Current canonical real-execution surface
 
@@ -52,30 +52,17 @@ Canonical real-execution contract: `2.3-rc11`
 
 ## Qualification status
 
-The RC13 feature set was live-qualified on a dedicated Home Assistant test instance
-on 2026-09-17 using the exact post-fix candidate at commit
-`4f35dd96ed9254ca49cc86f0d27d5ead025c24d9`.
+RC14 WP14.1, WP14.2 and WP14.3 are functionally live-qualified on isolated Home
+Assistant test instances. Coverage includes preview immutability, blocker handling,
+source-SHA refusal, explicit ownership adoption, mandatory source backup, restart
+persistence, guided entity repair, stale-source repair refusal and HA area/floor-link
+repair.
 
-Qualification covered fresh managed commissioning, managed object creation and
-maintenance, enable/disable, guarded deletion, diagnostics, dashboard
-create/update/freshness, restart persistence and the dashboard Options Flow regression
-fix. The diagnostic checkpoint reported 21 configured references, 21 ready and
-0 findings.
+RC14 is now in release freeze. The next gate is immutable exact-package
+requalification before tag/publication.
 
-The frozen integration source was packaged into the immutable final RC13 candidate
-and live-requalified on the dedicated Home Assistant test instance.
-
-Final qualified package:
-
-- Integration files: `177`
-- SHA-256: `a2d43bc3c4586d21caf7c275278980567449f0f94b75d11a4516c997f75f2b02`
-
-The exact final package passed startup, managed registry loading, dashboard update,
-Entity/Provider diagnostics and restart persistence. No integration files were changed
-after this qualification.
-
-See `docs/RC13_CANDIDATE_VALIDATION.md` and
-`custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc13.md`.
+See `docs/RC14_CANDIDATE_VALIDATION.md` and
+`custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc14.md`.
 
 ## Installation
 
@@ -83,7 +70,7 @@ Copy `custom_components/wnhf` to `/config/custom_components/wnhf`, restart Home
 Assistant, and add/reload **Red Queen** through **Settings → Devices & services**.
 
 Installation-owned semantic data remains below `/config/wnhf`. Existing manual
-registries are not silently adopted or rewritten by the managed configurator.
+registries are not silently adopted or rewritten.
 
 ## License
 
