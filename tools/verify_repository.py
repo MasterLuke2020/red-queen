@@ -151,6 +151,8 @@ except Exception as exc:
 required_release_fields = (
     "product_name",
     "version",
+    "channel",
+    "phase",
     "candidate",
     "development_baseline_version",
     "release_baseline",
@@ -166,7 +168,10 @@ for field in required_release_fields:
         fail(f"RELEASE.json missing required field: {field}")
 
 version = str(release.get("version") or "")
-candidate = str(release.get("candidate") or "")
+channel = str(release.get("channel") or "")
+phase = str(release.get("phase") or "")
+candidate_raw = release.get("candidate")
+candidate = str(candidate_raw or "")
 development_baseline = str(release.get("development_baseline_version") or "")
 release_baseline = str(release.get("release_baseline") or "")
 canonical_contract = str(release.get("canonical_execution_contract") or "")
@@ -175,17 +180,23 @@ expected_real = int(release.get("canonical_real_action_count") or 0)
 expected_services = int(release.get("home_assistant_service_count") or 0)
 candidate_status = str(release.get("candidate_status") or "")
 development_candidate = candidate_status == "development"
+stable_release = version == "1.0.0" and channel == "stable" and phase == "stable"
+release_label = "STABLE 1.0" if stable_release else candidate.upper()
 
 if release.get("product_name") != "Red Queen":
     fail("RELEASE.json product_name must be Red Queen")
 if release.get("canonical_execution_api_version") != "1.0":
     fail("Canonical execution API must remain 1.0")
-if not re.fullmatch(r"1\.0\.0-rc\d+", version):
-    fail(f"Unexpected RC version format: {version!r}")
-if not re.fullmatch(r"rc\d+", candidate):
-    fail(f"Unexpected candidate format: {candidate!r}")
-if candidate and not version.endswith(f"-{candidate}"):
-    fail(f"Version {version!r} does not match candidate {candidate!r}")
+if stable_release:
+    if candidate_raw is not None:
+        fail("Stable 1.0 must not carry a release-candidate label")
+else:
+    if not re.fullmatch(r"1\.0\.0-rc\d+", version):
+        fail(f"Unexpected RC version format: {version!r}")
+    if not re.fullmatch(r"rc\d+", candidate):
+        fail(f"Unexpected candidate format: {candidate!r}")
+    if candidate and not version.endswith(f"-{candidate}"):
+        fail(f"Version {version!r} does not match candidate {candidate!r}")
 
 expected_manifest = {
     "domain": "wnhf",
@@ -204,12 +215,18 @@ for key, value in expected_manifest.items():
 # Candidate-specific paths derived from metadata
 # ---------------------------------------------------------------------------
 
-root_validation = ROOT / "docs" / f"{candidate.upper()}_CANDIDATE_VALIDATION.md"
-integration_validation = (
-    INTEGRATION / "docs" / f"{candidate.upper()}_CANDIDATE_VALIDATION.md"
-)
-release_notes = INTEGRATION / "docs" / f"RELEASE_NOTES_{version}.md"
-checksum_file = ROOT / "checksums" / f"{candidate}_source.sha256"
+if stable_release:
+    root_validation = ROOT / "docs" / "STABLE_1_0_VALIDATION.md"
+    integration_validation = INTEGRATION / "docs" / "STABLE_1_0_VALIDATION.md"
+    release_notes = INTEGRATION / "docs" / "RELEASE_NOTES_1.0.0.md"
+    checksum_file = ROOT / "checksums" / "1.0.0_source.sha256"
+else:
+    root_validation = ROOT / "docs" / f"{candidate.upper()}_CANDIDATE_VALIDATION.md"
+    integration_validation = (
+        INTEGRATION / "docs" / f"{candidate.upper()}_CANDIDATE_VALIDATION.md"
+    )
+    release_notes = INTEGRATION / "docs" / f"RELEASE_NOTES_{version}.md"
+    checksum_file = ROOT / "checksums" / f"{candidate}_source.sha256"
 
 required_paths = [
     ROOT / "README.md",
@@ -323,7 +340,7 @@ try:
         fail("const.py release baseline does not match RELEASE.json")
     if module_assignment(const_path, "VERSION") != version:
         fail("const.py public version does not match RELEASE.json")
-    if module_assignment(const_path, "RELEASE_CANDIDATE") != candidate:
+    if module_assignment(const_path, "RELEASE_CANDIDATE") != candidate_raw:
         fail("const.py candidate marker does not match RELEASE.json")
 
     generic_execution = module_assignment(
@@ -347,7 +364,9 @@ try:
     manager_version = class_assignment(
         manager_path, "SemanticExecutionManager", "VERSION"
     )
-    if not isinstance(manager_version, str) or candidate not in manager_version:
+    if not isinstance(manager_version, str):
+        fail("SemanticExecutionManager.VERSION must be a string")
+    elif not stable_release and candidate not in manager_version:
         fail(
             "SemanticExecutionManager.VERSION must carry the current candidate marker"
         )
@@ -966,7 +985,7 @@ else:
             "LIVE VERIFIED",
         ),
         ROOT / "docs" / "ROADMAP.md": (
-            candidate.upper(),
+            release_label,
             "Managed configuration",
         ),
         INTEGRATION / "README.md": (
@@ -1031,7 +1050,7 @@ else:
     )
     if checksum_paths != expected_source_paths:
         fail(
-            f"{candidate.upper()} checksum catalogue must list every "
+            f"{release_label} checksum catalogue must list every "
             "integration file exactly once"
         )
 
@@ -1053,6 +1072,8 @@ if ERRORS:
 print("Red Queen repository verification PASS")
 print(f"- integration: {manifest.get('name')} {version} ({manifest.get('domain')})")
 print(f"- development baseline: {development_baseline} / {release_baseline}")
+print(f"- release channel: {channel}")
+print(f"- release phase: {phase}")
 print(f"- candidate status: {candidate_status}")
 print(f"- services: {len(service_keys)}")
 print("- capabilities: 8")
@@ -1069,6 +1090,6 @@ print("- RC14 manual adoption: SHA/backup/confirm/rollback invariants PASS")
 print("- RC14 guided repair: managed/source-guard/backup invariants PASS")
 print("- dashboard OptionsFlow completion: reload-safe PASS")
 print("- translations/configurator menu structure: PASS")
-print(f"- {candidate.upper()} LF-normalized source checksums: PASS")
+print(f"- {release_label} LF-normalized source checksums: PASS")
 print(f"- Git whitespace hygiene: {git_whitespace_status}")
 print("- active HACS metadata: intentionally disabled")

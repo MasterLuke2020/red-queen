@@ -30,7 +30,7 @@ from .release_scope import ReleaseScopeManager
 
 
 class ReleaseProfile:
-    """Immutable product metadata for the Red Queen 1.0 release candidate."""
+    """Immutable product metadata for the Red Queen 1.0 release line."""
 
     VERSION = "3.1-rc12"
     CHANNEL = RELEASE_CHANNEL
@@ -160,7 +160,9 @@ class ReleaseProfile:
                 "channel": cls.CHANNEL,
                 "phase": cls.PHASE,
                 "phase_name": (
-                    f"Release Candidate {cls.CANDIDATE.removeprefix('rc')}"
+                    "Stable 1.0"
+                    if cls.PHASE == "stable"
+                    else f"Release Candidate {cls.CANDIDATE.removeprefix('rc')}"
                 ),
                 "candidate": cls.CANDIDATE,
                 "candidate_assigned": cls.CANDIDATE is not None,
@@ -310,7 +312,7 @@ class ReleaseProfile:
         system_status: dict[str, Any],
         execution_qualification: dict[str, Any],
     ) -> dict[str, Any]:
-        """Return release-candidate diagnostics from current runtime truth."""
+        """Return release qualification diagnostics from current runtime truth."""
         checks_by_id = {
             item["check_id"]: item
             for item in system_status.get("checks", [])

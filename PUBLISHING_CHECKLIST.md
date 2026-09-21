@@ -1,61 +1,49 @@
 # Publishing Checklist
 
-## RC14 candidate preparation
+## Stable 1.0 qualification setup
 
-- [x] Start from published RC13.
-- [x] Add read-only Migration & Repair preview.
-- [x] Detect migration blockers and configured entity/HA-link problems.
-- [x] Add source-SHA guarded manual → managed adoption.
-- [x] Require explicit prepare action and second confirmation.
-- [x] Require mandatory source backup before adoption.
-- [x] Add deterministic guided entity-reference repair.
-- [x] Add deterministic HA area/floor source-link repair.
-- [x] Preserve stable semantic IDs during repair.
-- [x] Keep physical execution contract `2.3-rc11` unchanged.
-- [x] Complete WP14.1 live qualification.
-- [x] Complete WP14.2 live qualification.
-- [x] Complete WP14.3 live qualification.
-- [x] Preserve 8 capabilities, 23 semantic actions, 16 canonical real contracts and
-  68 Home Assistant services.
-- [x] Keep HACS metadata inactive.
+- [x] Start from published and exact-package-qualified RC14.
+- [x] Create dedicated `release/1.0.0` branch.
+- [x] Promote public version metadata to `1.0.0`.
+- [x] Remove release-candidate label from stable runtime metadata.
+- [x] Retain WNHF `1.40.0` / `WP-4.7.20.0`.
+- [x] Keep canonical execution API `1.0`.
+- [x] Keep canonical real-execution contract `2.3-rc11`.
+- [x] Keep 8 capabilities, 23 semantic actions, 16 real contracts and 68 services.
+- [x] Keep HACS metadata inactive during initial qualification.
 
-## RC14 release freeze
+## Stable qualification gates
 
-- [x] Promote RC14 from development to release-candidate metadata.
-- [x] Update public/integration documentation to RC14.
-- [x] Regenerate `checksums/rc14_source.sha256`.
-- [x] Commit and push the freeze.
-- [x] Confirm static repository checks pass.
-- [x] Confirm Home Assistant hassfest passes.
-- [x] Build the final immutable RC14 integration ZIP.
-- [x] Record final ZIP SHA-256.
-- [x] Clean-replace the integration on the dedicated test instance.
-- [x] Verify startup, managed registry, Migration & Repair and diagnostics from the exact ZIP.
-- [x] Verify restart persistence from the exact ZIP.
-- [x] Record exact-package qualification in root-only release documentation.
+- [ ] Fresh install on a clean isolated Home Assistant instance.
+- [ ] Initial managed commissioning and generated dashboard.
+- [ ] Clean diagnostics and Migration & Repair.
+- [ ] Upgrade exact RC14 installation to stable 1.0.0 preserving `/config/wnhf`.
+- [ ] Managed ownership and semantic IDs survive upgrade.
+- [ ] Restart persistence.
+- [ ] Recovery/fail-closed behavior.
+- [ ] Uninstall/reinstall behavior.
+- [ ] Relevant logs clean.
+- [ ] Static repository checks.
+- [ ] Home Assistant hassfest.
+- [ ] Activate final HACS metadata.
+- [ ] Real HACS clean installation.
+- [ ] HACS update/reinstall behavior.
 
-## GitHub web release flow
+## Stable freeze/publication
 
-- [ ] Fast-forward `main` to the final RC14 release commit.
-- [ ] Create annotated tag `v1.0.0-rc14` on that exact commit.
-- [ ] Publish GitHub Pre-Release `v1.0.0-rc14` using
-  `custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc14.md`.
-- [ ] Attach the exact qualified RC14 ZIP to the release.
+- [ ] Freeze stable integration source.
+- [ ] Regenerate `checksums/1.0.0_source.sha256`.
+- [ ] Build immutable `red_queen_1.0.0.zip`.
+- [ ] Exact-package live requalification.
+- [ ] Record final ZIP SHA-256 and qualification.
+- [ ] Fast-forward `main`.
+- [ ] Create annotated tag `v1.0.0`.
+- [ ] Publish non-prerelease GitHub release with exact qualified ZIP.
 
 ## Boundaries
 
-- Do not rename the `wnhf` domain, public services, semantic IDs or persisted paths.
-- Do not silently adopt or rewrite a manual registry.
-- Do not auto-repair ambiguous structural findings or transient runtime states.
+- No new feature domains during stable qualification.
+- Do not rename `wnhf`, public services, semantic IDs or persisted paths.
+- Never silently adopt manual registries.
 - Do not weaken physical feedback/confirmation guards.
-- Keep climate/media expansion deferred.
-- Keep HACS metadata inactive for RC14.
-
-
-## Final RC14 package identity
-
-- Freeze source commit: `5ec86514f96f88104a3531f669ca3d58b49910cb`
-- Integration files: `180`
-- Archive: `red_queen_1.0.0-rc14_final_candidate.zip`
-- SHA-256: `a30b91ae143dfb089795d623b45fd26483f9dc6bad0852374b6d0f8f1bc1ad98`
-- Exact-package live qualification: **PASS**
+- Climate, media and larger Plant Care remain deferred beyond 1.0.

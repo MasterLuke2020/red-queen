@@ -7,7 +7,7 @@ PRODUCT_NAME = "Red Queen"
 DEVELOPMENT_NAME = "WNHF"
 DEVELOPMENT_BASELINE_VERSION = "1.40.0"
 RELEASE_BASELINE = "WP-4.7.20.0"
-VERSION = "1.0.0-rc14"
+VERSION = "1.0.0"
 
 DATA_ENGINE = "engine"
 
@@ -315,8 +315,8 @@ SERVICE_RELEASE_SCOPE = "release_scope"
 ACTION_RELEASE_SCOPE = "release_scope"
 SIGNAL_RELEASE_SCOPE_UPDATED = "wnhf_release_scope_updated"
 RELEASE_SCOPE_API_VERSION = "1.1"
-RELEASE_CHANNEL = "release_candidate"
-RELEASE_PHASE = "rc"
+RELEASE_CHANNEL = "stable"
+RELEASE_PHASE = "stable"
 
 
 # Release Profile - Stage 3.10 / WP-4.7.8.5
@@ -336,8 +336,8 @@ RELEASE_INFO_API_VERSION = "1.1"
 PUBLIC_API_REGISTRY_VERSION = "1.1"
 QUALIFICATION_API_VERSION = "1.1"
 UPGRADE_CHECK_API_VERSION = "1.1"
-# Red Queen 1.0.0-rc14 is the fourteenth explicitly assigned public release candidate.
-RELEASE_CANDIDATE = "rc14"
+# Red Queen 1.0.0 is the first stable public release.
+RELEASE_CANDIDATE = None
 CANONICAL_EXECUTION_API_VERSION = "1.0"
 CANONICAL_EXECUTION_CONTRACT_VERSION = "2.3-rc11"
 LEGACY_PUBLIC_EXECUTION_API_VERSION = "1.3"

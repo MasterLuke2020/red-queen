@@ -47,8 +47,10 @@ Completed scope:
 
 ## Stable 1.0 qualification
 
-After RC14, stable qualification focuses on fresh install, upgrade, restart
-persistence, recovery, uninstall/reinstall, clean logs, hassfest/static checks and the
-final HACS installation flow rather than new feature domains.
+Stable `1.0.0` qualification is now in progress from the published RC14 baseline.
+
+The gates are fresh install, RC14 → 1.0.0 upgrade, restart persistence, recovery,
+uninstall/reinstall, clean logs, hassfest/static checks and the final HACS installation
+flow. No new feature domain is planned for this phase.
 
 Climate, media and larger Plant Care expansions remain deferred until after 1.0.
