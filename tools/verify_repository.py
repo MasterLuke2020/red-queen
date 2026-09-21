@@ -17,6 +17,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 INTEGRATION = ROOT / "custom_components" / "wnhf"
 ERRORS: list[str] = []
+BINARY_SOURCE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".ico"}
 
 
 def fail(message: str) -> None:
@@ -28,9 +29,22 @@ def read_text(path: Path) -> str:
 
 
 def normalized_sha256(path: Path) -> str:
-    """Hash text independently of LF/CRLF checkout conversion."""
-    data = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    """Hash text LF-normalized and binary assets byte-for-byte."""
+    data = path.read_bytes()
+    if path.suffix.lower() not in BINARY_SOURCE_SUFFIXES:
+        data = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
     return hashlib.sha256(data).hexdigest()
+
+
+def png_dimensions(path: Path) -> tuple[int, int] | None:
+    """Return PNG dimensions without adding an image-library dependency."""
+    data = path.read_bytes()
+    if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    return (
+        int.from_bytes(data[16:20], "big"),
+        int.from_bytes(data[20:24], "big"),
+    )
 
 
 def verify_git_whitespace() -> str:
@@ -286,6 +300,15 @@ required_paths = [
     integration_validation,
     release_notes,
 ]
+if stable_release:
+    required_paths.extend(
+        [
+            ROOT / "hacs.json",
+            INTEGRATION / "brand" / "icon.png",
+            INTEGRATION / "brand" / "icon@2x.png",
+        ]
+    )
+
 for path in required_paths:
     if not path.exists():
         fail(f"Missing required path: {path.relative_to(ROOT)}")
@@ -1056,11 +1079,46 @@ else:
 
 
 # ---------------------------------------------------------------------------
-# Publication boundary
+# HACS publication / qualification boundary
 # ---------------------------------------------------------------------------
 
-if (ROOT / "hacs.json").exists():
-    fail("hacs.json is active, but this candidate remains pre-publication")
+hacs_path = ROOT / "hacs.json"
+brand_icon = INTEGRATION / "brand" / "icon.png"
+brand_icon_2x = INTEGRATION / "brand" / "icon@2x.png"
+
+if stable_release:
+    if not hacs_path.exists():
+        fail("Stable 1.0 HACS qualification requires root hacs.json")
+    else:
+        try:
+            hacs = json.loads(read_text(hacs_path))
+        except Exception as exc:
+            fail(f"hacs.json invalid: {exc}")
+            hacs = {}
+        if hacs.get("name") != "Red Queen":
+            fail("hacs.json name must be Red Queen")
+        if hacs.get("zip_release") is True:
+            fail(
+                "Stable 1.0 HACS qualification must use repository layout; "
+                "zip_release is not enabled"
+            )
+
+    expected_brand_sizes = (
+        (brand_icon, (256, 256)),
+        (brand_icon_2x, (512, 512)),
+    )
+    for path, expected_size in expected_brand_sizes:
+        if path.exists():
+            actual_size = png_dimensions(path)
+            if actual_size != expected_size:
+                fail(
+                    f"Brand asset {path.relative_to(ROOT)} must be "
+                    f"{expected_size[0]}x{expected_size[1]} PNG; "
+                    f"got {actual_size!r}"
+                )
+else:
+    if hacs_path.exists():
+        fail("hacs.json must remain inactive for release-candidate builds")
 
 
 if ERRORS:
@@ -1092,4 +1150,4 @@ print("- dashboard OptionsFlow completion: reload-safe PASS")
 print("- translations/configurator menu structure: PASS")
 print(f"- {release_label} LF-normalized source checksums: PASS")
 print(f"- Git whitespace hygiene: {git_whitespace_status}")
-print("- active HACS metadata: intentionally disabled")
+print("- active HACS metadata: PASS (stable qualification gate active)")

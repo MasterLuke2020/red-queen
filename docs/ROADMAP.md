@@ -47,10 +47,16 @@ Completed scope:
 
 ## Stable 1.0 qualification
 
-Stable `1.0.0` qualification is now in progress from the published RC14 baseline.
+Stable `1.0.0` qualification is in its HACS/publication phase from the published RC14
+baseline.
 
-The gates are fresh install, RC14 → 1.0.0 upgrade, restart persistence, recovery,
-uninstall/reinstall, clean logs, hassfest/static checks and the final HACS installation
-flow. No new feature domain is planned for this phase.
+Fresh install, managed commissioning, RC14 → 1.0.0 upgrade, restart persistence,
+recovery/fail-closed behavior, uninstall/reinstall and clean runtime gates have passed.
+HACS metadata and local brand assets are now active for the final HACS installation and
+update/reinstall qualification.
+
+After the HACS gate, the remaining work is stable freeze, immutable exact-package
+qualification and final `v1.0.0` publication. No new feature domain is planned for this
+phase.
 
 Climate, media and larger Plant Care expansions remain deferred until after 1.0.
