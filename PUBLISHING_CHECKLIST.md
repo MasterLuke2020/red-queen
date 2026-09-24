@@ -36,14 +36,16 @@
 
 ## Stable freeze/publication
 
-- [ ] Commit stable integration source freeze.
+- [x] Commit stable integration source freeze.
 - [x] Regenerate `checksums/1.0.0_source.sha256` as part of freeze preparation.
 - [x] Update public release documentation to stable 1.0.0 freeze state.
-- [ ] Static repository checks on exact freeze commit.
-- [ ] Home Assistant hassfest on exact freeze commit.
-- [ ] Build immutable `red_queen_1.0.0.zip`.
-- [ ] Exact-package live requalification.
-- [ ] Record final ZIP SHA-256 and qualification.
+- [x] Static repository checks on exact freeze commit.
+- [x] Home Assistant hassfest on exact freeze commit.
+- [x] Build immutable `red_queen_1.0.0.zip`.
+- [x] Exact-package live requalification.
+- [x] Record final ZIP SHA-256 and qualification in root-only records.
+- [ ] Commit root-only final qualification records.
+- [ ] Final CI on root-only qualification record commit.
 - [ ] Fast-forward `main`.
 - [ ] Restore `main` as repository default branch.
 - [ ] Create annotated tag `v1.0.0`.

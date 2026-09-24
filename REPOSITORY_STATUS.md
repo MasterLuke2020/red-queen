@@ -4,7 +4,7 @@
 
 - Name: **Red Queen**
 - Version: `1.0.0`
-- Status: **STABLE FREEZE — FUNCTIONAL/HACS LIVE VERIFIED**
+- Status: **FINAL EXACT PACKAGE LIVE VERIFIED — READY FOR PUBLICATION**
 - Channel: `stable`
 - Candidate: none
 - Candidate status: `stable`
@@ -60,18 +60,51 @@ PASS:
 - `/config/wnhf` remained byte-identical through HACS redownload.
 
 During qualification HACS first attempted a short-SHA archive URL and received HTTP
-404, then completed the supported file-by-file fallback. The installed integration was
-complete and correct both times. This is recorded as HACS client behavior, not a Red
-Queen runtime failure.
+404, then completed its file-by-file fallback. The installed integration was complete
+and correct both times. This is recorded as HACS client behavior, not a Red Queen
+runtime failure.
+
+## Final exact-package qualification
+
+PASS on 2026-09-24.
+
+Frozen integration source commit:
+
+`21f2f948d2bd44c9d4723afd316b30dacc4a0aa3`
+
+Final immutable package:
+
+- Archive: `red_queen_1.0.0.zip`
+- Integration files: `184`
+- Size: `443865` bytes
+- SHA-256:
+  `dde35ba7a2139689ca8868e0572227da80ecaead2523c226d7cd3548c487299a`
+
+Exact-package verification passed:
+
+- package SHA-256 matched before installation;
+- archive contained exactly 184 integration files;
+- no packaged `__pycache__`;
+- embedded identity was `1.0.0 / stable / stable / candidate null`;
+- `candidate_status` was `stable`;
+- only `custom_components/wnhf` was replaced;
+- `/config/wnhf` was byte-identical before first startup;
+- Home Assistant returned HTTP 200 after installation;
+- semantic Registry remained byte-identical;
+- entire `/config/wnhf` tree remained byte-identical after startup;
+- restart persistence passed with the Registry and `/config/wnhf` still unchanged;
+- managed/valid Red Queen configuration and `/red-queen` dashboard passed UI check;
+- no Red Queen traceback, exception or runtime error was observed.
+
+The integration source was not changed after the frozen package was built.
 
 ## Remaining publication gate
 
-The integration source is ready to freeze. Remaining steps:
+Only release publication steps remain:
 
-1. commit the stable source freeze;
-2. run Static repository checks and hassfest on the exact freeze commit;
-3. build deterministic `red_queen_1.0.0.zip` from that exact commit;
-4. live-qualify that exact ZIP without changing the frozen integration afterward;
-5. record the final ZIP SHA-256 in root-only release records;
-6. fast-forward `main`, restore `main` as default branch, create annotated tag
-   `v1.0.0`, and publish the non-prerelease GitHub release.
+1. commit these root-only qualification records;
+2. run final repository CI on that root-only record commit;
+3. fast-forward `main`;
+4. restore `main` as repository default branch;
+5. create annotated tag `v1.0.0`;
+6. publish the non-prerelease GitHub release with the exact qualified ZIP.

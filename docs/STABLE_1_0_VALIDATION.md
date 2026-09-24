@@ -2,7 +2,7 @@
 
 ## Current state
 
-**STABLE SOURCE FREEZE — FUNCTIONAL/HACS LIVE VERIFIED**
+**FINAL EXACT PACKAGE LIVE VERIFIED — READY FOR PUBLICATION**
 
 Baseline:
 
@@ -14,10 +14,8 @@ Baseline:
   `4f96e4f70a0a307127c87eb0a9ea2e232e9a0a44`
 - HACS activation / qualified source commit:
   `419dbe16dfb65d44dbf7691d69a6c4bac8876d3a`
-- Functional qualification ZIP:
-  `red_queen_1.0.0_stable_qualification_candidate.zip`
-- Functional qualification ZIP SHA-256:
-  `5d6ceadcb8e26f0cb8f12b71c02f6d3a0ae1d6d6e110567c7a599b764ec26d75`
+- Stable source freeze commit:
+  `21f2f948d2bd44c9d4723afd316b30dacc4a0aa3`
 - Stable target: `1.0.0`
 - Home Assistant domain: `wnhf`
 - WNHF baseline: `1.40.0`
@@ -63,19 +61,56 @@ PASS:
 Observed HACS client behavior:
 
 - HACS first attempted `archive/refs/heads/419dbe1.zip` and received HTTP 404.
-- HACS then completed its fallback file-by-file installation successfully.
+- HACS then completed its file-by-file installation successfully.
 - The same fallback occurred on redownload.
 - The installed Red Queen integration was complete and correct after both operations.
-- This is recorded as HACS client download behavior and did not produce a Red Queen
-  runtime failure.
+- This did not produce a Red Queen runtime failure.
 
-## Remaining qualification
+## Final exact-package qualification
 
-1. Commit this stable source freeze.
-2. Run Static repository checks and hassfest on the exact freeze commit.
-3. Build immutable `red_queen_1.0.0.zip` from that exact commit.
-4. Live-requalify that exact package.
-5. Record final package SHA-256 in root-only release records.
-6. Publish annotated `v1.0.0` as a non-prerelease GitHub release.
+PASS on 2026-09-24.
+
+Frozen source:
+
+`21f2f948d2bd44c9d4723afd316b30dacc4a0aa3`
+
+Final package:
+
+- `red_queen_1.0.0.zip`
+- `184` integration files
+- `443865` bytes
+- SHA-256:
+  `dde35ba7a2139689ca8868e0572227da80ecaead2523c226d7cd3548c487299a`
+
+Qualification results:
+
+- exact SHA-256 before installation: PASS;
+- exact 184-file package shape: PASS;
+- packaged `__pycache__`: none;
+- embedded stable identity: PASS;
+- `/config/wnhf` unchanged immediately after integration replacement: PASS;
+- Home Assistant startup / HTTP 200: PASS;
+- semantic Registry unchanged after startup: PASS;
+- complete `/config/wnhf` tree unchanged after startup: PASS;
+- restart persistence: PASS;
+- semantic Registry unchanged after restart: PASS;
+- complete `/config/wnhf` tree unchanged after restart: PASS;
+- managed/valid configuration UI: PASS;
+- generated `/red-queen` dashboard: PASS;
+- Red Queen traceback/exception/runtime error: none observed.
+
+The final ZIP is the release artifact. `custom_components/wnhf` must remain byte-identical
+to the frozen source used to build it.
+
+## Remaining publication
+
+Only publication remains:
+
+1. commit this root-only qualification record;
+2. final CI on that record commit;
+3. fast-forward `main`;
+4. restore `main` as default branch;
+5. create annotated `v1.0.0`;
+6. publish the non-prerelease GitHub release with the exact qualified ZIP.
 
 Climate, media and larger Plant Care expansion remain deferred beyond 1.0.

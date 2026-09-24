@@ -21,7 +21,10 @@ All notable public changes to Red Queen are documented here.
 - Config-entry remove/re-add: PASS.
 - Real HACS clean installation: PASS.
 - HACS redownload/reinstall with byte-identical `/config/wnhf`: PASS.
-- Final immutable exact-package qualification remains the last release gate.
+- Final immutable exact-package qualification: PASS (2026-09-24).
+- Freeze commit: `21f2f948d2bd44c9d4723afd316b30dacc4a0aa3`.
+- Final package: `red_queen_1.0.0.zip` (184 integration files).
+- Final SHA-256: `dde35ba7a2139689ca8868e0572227da80ecaead2523c226d7cd3548c487299a`.
 
 ### 1.0.0-rc14 candidate — WP-4.7.20.0
 

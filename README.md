@@ -52,15 +52,25 @@ Canonical real-execution contract: `2.3-rc11`
 
 ## Qualification status
 
-Stable functional and HACS qualification is **LIVE VERIFIED**.
+Stable functional, HACS and final exact-package qualification are **LIVE VERIFIED**.
+
+Final frozen source commit:
+
+`21f2f948d2bd44c9d4723afd316b30dacc4a0aa3`
+
+Final qualified package:
+
+- Archive: `red_queen_1.0.0.zip`
+- Integration files: `184`
+- Size: `443865` bytes
+- SHA-256:
+  `dde35ba7a2139689ca8868e0572227da80ecaead2523c226d7cd3548c487299a`
 
 Verified coverage includes clean fresh installation, managed commissioning, RC14 →
 1.0.0 upgrade, restart persistence, fail-closed registry recovery, config-entry
 remove/re-add, clean runtime operation, real HACS clean install, HACS redownload and
-byte-identical preservation of `/config/wnhf`.
-
-The final immutable `red_queen_1.0.0.zip` is built only after the stable source freeze
-and is qualified byte-for-byte before the `v1.0.0` release is published.
+byte-identical preservation of `/config/wnhf`. The final immutable ZIP was then
+installed exactly and passed startup, persistence and UI/dashboard requalification.
 
 See `docs/STABLE_1_0_VALIDATION.md` and
 `custom_components/wnhf/docs/RELEASE_NOTES_1.0.0.md`.
