@@ -2,7 +2,7 @@
 
 ## Current state
 
-**FUNCTIONAL STABLE GATES PASSED — HACS QUALIFICATION ACTIVE**
+**STABLE SOURCE FREEZE — FUNCTIONAL/HACS LIVE VERIFIED**
 
 Baseline:
 
@@ -10,8 +10,10 @@ Baseline:
 - RC14 final commit: `2d89ba1b9fe514c86fe815a155d2b9e8cb70cff4`
 - RC14 qualified ZIP SHA-256:
   `a30b91ae143dfb089795d623b45fd26483f9dc6bad0852374b6d0f8f1bc1ad98`
-- Stable qualification source commit:
+- Stable initialization commit:
   `4f96e4f70a0a307127c87eb0a9ea2e232e9a0a44`
+- HACS activation / qualified source commit:
+  `419dbe16dfb65d44dbf7691d69a6c4bac8876d3a`
 - Functional qualification ZIP:
   `red_queen_1.0.0_stable_qualification_candidate.zip`
 - Functional qualification ZIP SHA-256:
@@ -26,32 +28,54 @@ Baseline:
 Stable 1.0 is a promotion and qualification of the RC14 feature set, not a feature
 expansion release.
 
-## Completed functional qualification
+## Functional qualification
 
-- Fresh installation on a completely clean isolated Home Assistant instance: PASS.
-- Initial managed commissioning and generated dashboard: PASS.
-- Clean diagnostics and Migration & Repair state: PASS.
-- Exact RC14 → 1.0.0 upgrade preserving `/config/wnhf`: PASS.
-- Managed ownership and semantic registry identity preserved across upgrade: PASS.
-- Restart persistence on fresh and upgraded installations: PASS.
-- Missing-registry recovery / fail-closed behavior: PASS.
-- Recovery did not recreate or mutate missing/remaining registry files: PASS.
-- Exact restoration returned the installation to normal operation: PASS.
-- Config-entry uninstall/reinstall preserved `/config/wnhf` and managed dashboard storage: PASS.
-- Clean runtime sanity checks on fresh and upgraded installations: PASS.
-- Static repository checks and hassfest passed for the stable initialization commit.
+PASS:
 
-## Active HACS qualification gate
+- Fresh installation on a completely clean isolated Home Assistant instance.
+- Initial managed commissioning and generated dashboard.
+- Clean diagnostics and Migration & Repair state.
+- Exact RC14 → 1.0.0 upgrade preserving `/config/wnhf`.
+- Managed ownership and semantic registry identity preserved across upgrade.
+- Restart persistence on fresh and upgraded installations.
+- Missing-registry recovery / fail-closed behavior.
+- Recovery did not recreate or mutate missing/remaining registry files.
+- Exact restoration returned the installation to normal operation.
+- Config-entry uninstall/reinstall preserved `/config/wnhf` and dashboard storage.
+- Clean runtime sanity checks on fresh and upgraded installations.
 
-The repository now carries the HACS metadata and local Home Assistant brand assets
-required for the stable publication path:
+## HACS qualification
 
-- root `hacs.json`;
-- `custom_components/wnhf/brand/icon.png` (256x256);
-- `custom_components/wnhf/brand/icon@2x.png` (512x512).
+PASS:
 
-The repository remains unpublished/private during this preparation step. Real HACS
-installation, update/reinstall qualification, stable freeze, exact-package
-requalification and final publication remain outstanding.
+- HACS metadata and local Red Queen brand assets active.
+- Repository made public and HACS-addressable.
+- Static repository checks after HACS activation: PASS.
+- Home Assistant hassfest after HACS activation: PASS.
+- Real HACS clean installation on an isolated Home Assistant instance: PASS.
+- HACS installed Red Queen `1.0.0`, channel `stable`, phase `stable`,
+  candidate `null`.
+- HACS redownload/reinstall: PASS.
+- Registry hashes remained byte-identical through HACS redownload.
+- Entire `/config/wnhf` tree remained byte-identical through HACS redownload.
+- Restart persistence after HACS commissioning: PASS.
+
+Observed HACS client behavior:
+
+- HACS first attempted `archive/refs/heads/419dbe1.zip` and received HTTP 404.
+- HACS then completed its fallback file-by-file installation successfully.
+- The same fallback occurred on redownload.
+- The installed Red Queen integration was complete and correct after both operations.
+- This is recorded as HACS client download behavior and did not produce a Red Queen
+  runtime failure.
+
+## Remaining qualification
+
+1. Commit this stable source freeze.
+2. Run Static repository checks and hassfest on the exact freeze commit.
+3. Build immutable `red_queen_1.0.0.zip` from that exact commit.
+4. Live-requalify that exact package.
+5. Record final package SHA-256 in root-only release records.
+6. Publish annotated `v1.0.0` as a non-prerelease GitHub release.
 
 Climate, media and larger Plant Care expansion remain deferred beyond 1.0.

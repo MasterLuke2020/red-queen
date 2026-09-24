@@ -1,20 +1,11 @@
 # Release Status
 
-## Current candidate
+## Current release
 
-**Red Queen 1.0.0-rc14 — FINAL EXACT PACKAGE LIVE VERIFIED**
+**Red Queen 1.0.0 — STABLE FREEZE — FUNCTIONAL/HACS LIVE VERIFIED**
 
-RC14 advances the lineage to WNHF `1.40.0` / `WP-4.7.20.0` and completes the
-controlled migration and guided repair hardening planned before stable 1.0.
-
-## Functional live qualification
-
-WP14.1, WP14.2 and WP14.3 passed isolated Home Assistant live qualification.
-
-Coverage includes read-only migration/repair preview, manual registry blocker handling,
-source-SHA fail-closed refusal, explicit manual → managed adoption, mandatory
-byte-faithful source backup, restart ownership persistence, guided missing-entity
-reference repair, repair stale-source refusal and guided HA area/floor-link repair.
+Red Queen 1.0.0 promotes the live-qualified RC14 feature set to the first stable
+release while retaining WNHF `1.40.0` / `WP-4.7.20.0`.
 
 ## Compatibility and safety
 
@@ -28,27 +19,35 @@ reference repair, repair stale-source refusal and guided HA area/floor-link repa
 - Home Assistant registries are not mutated by repair.
 - Physical safety remains in canonical/native Red Queen execution.
 
+## Stable functional qualification
+
+LIVE VERIFIED:
+
+- clean fresh installation;
+- managed commissioning and generated dashboard;
+- RC14 → 1.0.0 upgrade preserving semantic data;
+- restart persistence;
+- fail-closed registry recovery and exact restoration;
+- config-entry remove/re-add;
+- clean runtime operation.
+
+## HACS qualification
+
+LIVE VERIFIED:
+
+- HACS metadata and Red Queen brand assets;
+- real HACS clean install;
+- real HACS redownload/reinstall;
+- version remained `1.0.0`, channel/phase remained `stable`;
+- `/config/wnhf` and its Registry remained byte-identical.
+
+A HACS short-SHA ZIP attempt returned HTTP 404 during both download tests; HACS then
+completed its fallback download successfully. No Red Queen runtime error resulted.
+
 ## Final exact-package qualification
 
-Freeze commit:
-`5ec86514f96f88104a3531f669ca3d58b49910cb`
+Pending after this stable source freeze.
 
-The frozen integration source was packaged and requalified without changing the
-integration afterward.
-
-- Integration files: `180`
-- Final archive: `red_queen_1.0.0-rc14_final_candidate.zip`
-- Final package SHA-256:
-  `a30b91ae143dfb089795d623b45fd26483f9dc6bad0852374b6d0f8f1bc1ad98`
-- Clean replacement: PASS
-- Home Assistant startup / HTTP 200: PASS
-- Managed registry load: PASS
-- Entity/Provider diagnostics: 23/23 ready, 0 problems
-- Migration & Repair: managed, source valid, 0 blockers, 0 warnings
-- Generated dashboard: PASS
-- Restart persistence: PASS
-- Registry unchanged across restart: PASS
-- Relevant Red Queen errors/tracebacks: none observed
-
-The exact RC14 package is live-qualified. Only root-only release records may change
-before tag/publication.
+The final package will be built deterministically from the exact freeze commit and
+requalified on an isolated Home Assistant instance. The integration source must not be
+changed after that package is built.

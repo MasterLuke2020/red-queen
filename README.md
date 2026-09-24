@@ -4,28 +4,28 @@
 semantic objects and state, resolves native/canonical controls, and exposes a stable
 Home Assistant surface for commissioning, operation and diagnostics.
 
-> **Current candidate:** `1.0.0-rc14` — FINAL EXACT PACKAGE LIVE VERIFIED
+> **Stable release:** `1.0.0`
 > **Technical Home Assistant domain:** `wnhf`
 > **Development lineage:** WNHF `1.40.0` / `WP-4.7.20.0`
 
-## RC14 candidate changes
+## Stable 1.0 scope
 
-RC14 completes the controlled migration and repair hardening planned before stable 1.0.
+Red Queen 1.0 promotes the fully qualified RC14 feature set to the first stable line.
 
-- Adds read-only Migration & Repair preview for manual and managed registries.
-- Detects structural blockers, duplicate IDs, orphan-room references and configured
-  entity health problems.
-- Adds deterministic source bundle SHA-256 protection.
-- Adds explicit, confirmed manual → managed adoption with mandatory source backup.
-- Adds guided managed repair for missing/disabled configured entity references.
-- Adds guided repair of invalid stored HA area/floor source links.
-- Preserves semantic object IDs through repair.
-- Reuses complete candidate validation and transaction backup/rollback.
-- Refuses stale migration/repair writes when the source changed after preview.
-- Never silently adopts manual configuration.
-- Does not change the canonical physical execution contract.
+- Managed commissioning and transaction-safe configuration.
+- Stable semantic IDs and explicit ownership modes.
+- Native Home Assistant lights, covers, openings, locks, garage and Plant Care.
+- Native generated `/red-queen` dashboard.
+- Entity/Provider diagnostics and dashboard freshness tracking.
+- Read-only Migration & Repair preview.
+- Explicit, source-SHA guarded manual → managed adoption with mandatory backup.
+- Guided managed repair for supported entity and Home Assistant area/floor references.
+- Guarded canonical physical execution, including `garage.stop`.
+- HACS installation metadata and Red Queen brand assets.
 
-## Current canonical real-execution surface
+No new climate, media or larger Plant Care domain is added in 1.0.
+
+## Canonical real-execution surface
 
 ```text
 lighting.turn_on
@@ -52,27 +52,24 @@ Canonical real-execution contract: `2.3-rc11`
 
 ## Qualification status
 
-RC14 WP14.1, WP14.2 and WP14.3 are functionally live-qualified. The immutable package
-built from freeze commit `5ec86514f96f88104a3531f669ca3d58b49910cb` was then
-clean-installed and requalified on the isolated Home Assistant test instance.
+Stable functional and HACS qualification is **LIVE VERIFIED**.
 
-Final qualified package:
+Verified coverage includes clean fresh installation, managed commissioning, RC14 →
+1.0.0 upgrade, restart persistence, fail-closed registry recovery, config-entry
+remove/re-add, clean runtime operation, real HACS clean install, HACS redownload and
+byte-identical preservation of `/config/wnhf`.
 
-- Integration files: `180`
-- Archive: `red_queen_1.0.0-rc14_final_candidate.zip`
-- SHA-256: `a30b91ae143dfb089795d623b45fd26483f9dc6bad0852374b6d0f8f1bc1ad98`
+The final immutable `red_queen_1.0.0.zip` is built only after the stable source freeze
+and is qualified byte-for-byte before the `v1.0.0` release is published.
 
-The exact package passed startup, managed-registry loading, clean diagnostics,
-Migration & Repair, generated dashboard operation and restart persistence. The frozen
-integration source was not changed after packaging.
-
-See `docs/RC14_CANDIDATE_VALIDATION.md` and
-`custom_components/wnhf/docs/RELEASE_NOTES_1.0.0-rc14.md`.
+See `docs/STABLE_1_0_VALIDATION.md` and
+`custom_components/wnhf/docs/RELEASE_NOTES_1.0.0.md`.
 
 ## Installation
 
-Copy `custom_components/wnhf` to `/config/custom_components/wnhf`, restart Home
-Assistant, and add/reload **Red Queen** through **Settings → Devices & services**.
+Preferred installation is through HACS using the Red Queen repository. Manual
+installation remains supported by copying `custom_components/wnhf` to
+`/config/custom_components/wnhf` and restarting Home Assistant.
 
 Installation-owned semantic data remains below `/config/wnhf`. Existing manual
 registries are not silently adopted or rewritten.

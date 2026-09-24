@@ -18,6 +18,7 @@ controlled manual → managed adoption, guided repair and guarded canonical phys
 execution are promoted from the qualified RC14 baseline. `garage.stop` remains guarded
 canonical execution.
 
-Stable qualification is in progress. No new feature domain belongs in this phase.
+Functional and HACS qualification are LIVE VERIFIED. The final immutable package is
+qualified only after this stable source freeze.
 
 See `docs/STABLE_1_0_VALIDATION.md` and `docs/RELEASE_NOTES_1.0.0.md`.

@@ -4,6 +4,25 @@ All notable public changes to Red Queen are documented here.
 
 ## [Unreleased]
 
+### 1.0.0 stable — WP-4.7.20.0
+
+#### Stable promotion
+- Promotes the fully qualified RC14 surface to Red Queen `1.0.0`.
+- Keeps the Home Assistant domain `wnhf`.
+- Keeps canonical execution API `1.0`.
+- Keeps canonical real-execution contract `2.3-rc11`.
+- Adds HACS publication metadata and Red Queen brand assets.
+
+#### Qualification
+- Fresh managed installation and generated dashboard: PASS.
+- Exact RC14 → stable upgrade preserving `/config/wnhf`: PASS.
+- Restart persistence: PASS.
+- Recovery/fail-closed behavior: PASS.
+- Config-entry remove/re-add: PASS.
+- Real HACS clean installation: PASS.
+- HACS redownload/reinstall with byte-identical `/config/wnhf`: PASS.
+- Final immutable exact-package qualification remains the last release gate.
+
 ### 1.0.0-rc14 candidate — WP-4.7.20.0
 
 #### Added

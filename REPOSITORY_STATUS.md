@@ -3,10 +3,11 @@
 ## Product
 
 - Name: **Red Queen**
-- Version: `1.0.0-rc14`
-- Status: **FINAL EXACT PACKAGE LIVE VERIFIED**
-- Channel: `release_candidate`
-- Candidate: `rc14`
+- Version: `1.0.0`
+- Status: **STABLE FREEZE — FUNCTIONAL/HACS LIVE VERIFIED**
+- Channel: `stable`
+- Candidate: none
+- Candidate status: `stable`
 
 ## Technical compatibility
 
@@ -31,47 +32,46 @@
 - Home Assistant registries are not mutated by guided repair.
 - `garage.stop` and all physical controls remain behind canonical guarded execution.
 
-## RC14 functional qualification
+## Stable functional qualification
 
-WP14.1, WP14.2 and WP14.3 passed isolated Home Assistant live qualification, including
-preview immutability, blocker detection, stale-source refusal, explicit manual adoption,
-mandatory source backup, restart ownership persistence, guided entity repair and guided
-HA area/floor-link repair.
+PASS:
 
-## RC14 exact-package qualification
-
-Frozen integration source commit:
-`5ec86514f96f88104a3531f669ca3d58b49910cb`
-
-Final immutable candidate:
-
-- Integration files: `180`
-- Archive: `red_queen_1.0.0-rc14_final_candidate.zip`
-- SHA-256: `a30b91ae143dfb089795d623b45fd26483f9dc6bad0852374b6d0f8f1bc1ad98`
-
-PASS results:
-
-- clean integration replacement;
-- Home Assistant startup / HTTP 200;
-- managed registry loaded normally;
-- diagnostics: 23 configured entity references / 23 ready / 0 problems;
-- Migration & Repair: managed source valid, 0 blockers, 0 warnings;
-- generated Red Queen dashboard loaded normally;
+- completely clean Home Assistant installation;
+- managed commissioning and generated dashboard;
+- diagnostics and Migration & Repair;
+- exact RC14 → 1.0.0 upgrade preserving `/config/wnhf`;
 - restart persistence;
-- registry files remained unchanged across restart;
-- no Red Queen traceback or integration error was observed.
+- registry recovery/fail-closed behavior;
+- config-entry remove/re-add preserving semantic data and dashboard storage;
+- clean runtime checks on fresh and upgraded installations.
+
+## HACS qualification
+
+PASS:
+
+- public HACS-addressable repository;
+- root `hacs.json`;
+- local Red Queen brand assets;
+- Static repository checks after HACS activation;
+- Home Assistant hassfest after HACS activation;
+- real HACS clean installation;
+- HACS redownload/reinstall;
+- installed identity remained Red Queen `1.0.0` stable;
+- `/config/wnhf` remained byte-identical through HACS redownload.
+
+During qualification HACS first attempted a short-SHA archive URL and received HTTP
+404, then completed the supported file-by-file fallback. The installed integration was
+complete and correct both times. This is recorded as HACS client behavior, not a Red
+Queen runtime failure.
 
 ## Remaining publication gate
 
-Only root release records changed after the frozen package qualification. The
-integration package remains byte-identical to the qualified ZIP.
+The integration source is ready to freeze. Remaining steps:
 
-Remaining steps are final CI on the root-only release-record commit, fast-forwarding
-`main`, creating tag `v1.0.0-rc14`, and publishing the GitHub prerelease with the exact
-qualified ZIP.
-
-Repository owner: `MasterLuke2020`
-Repository: `MasterLuke2020/red-queen`
-Intended tag: `v1.0.0-rc14`
-
-HACS metadata remains intentionally inactive for the RC14 prerelease line.
+1. commit the stable source freeze;
+2. run Static repository checks and hassfest on the exact freeze commit;
+3. build deterministic `red_queen_1.0.0.zip` from that exact commit;
+4. live-qualify that exact ZIP without changing the frozen integration afterward;
+5. record the final ZIP SHA-256 in root-only release records;
+6. fast-forward `main`, restore `main` as default branch, create annotated tag
+   `v1.0.0`, and publish the non-prerelease GitHub release.

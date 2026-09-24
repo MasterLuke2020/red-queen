@@ -10,7 +10,6 @@
 - [x] Keep canonical execution API `1.0`.
 - [x] Keep canonical real-execution contract `2.3-rc11`.
 - [x] Keep 8 capabilities, 23 semantic actions, 16 real contracts and 68 services.
-- [x] Keep HACS metadata inactive during initial functional qualification.
 
 ## Functional stable qualification
 
@@ -28,22 +27,25 @@
 
 - [x] Activate root `hacs.json`.
 - [x] Add local Red Queen brand icon assets.
-- [ ] Re-run static repository checks after HACS activation.
-- [ ] Re-run Home Assistant hassfest after HACS activation.
-- [ ] Make repository HACS-addressable (public repository + GitHub topics).
-- [ ] Real HACS clean installation.
-- [ ] HACS update/reinstall behavior.
-- [ ] Confirm `/config/wnhf` survives HACS reinstall/update.
+- [x] Re-run static repository checks after HACS activation.
+- [x] Re-run Home Assistant hassfest after HACS activation.
+- [x] Make repository HACS-addressable.
+- [x] Real HACS clean installation.
+- [x] HACS redownload/reinstall behavior.
+- [x] Confirm `/config/wnhf` survives HACS redownload byte-identically.
 
 ## Stable freeze/publication
 
-- [ ] Freeze stable integration source.
-- [ ] Regenerate final `checksums/1.0.0_source.sha256`.
-- [ ] Update all public root release documentation to stable 1.0.0.
+- [ ] Commit stable integration source freeze.
+- [x] Regenerate `checksums/1.0.0_source.sha256` as part of freeze preparation.
+- [x] Update public release documentation to stable 1.0.0 freeze state.
+- [ ] Static repository checks on exact freeze commit.
+- [ ] Home Assistant hassfest on exact freeze commit.
 - [ ] Build immutable `red_queen_1.0.0.zip`.
 - [ ] Exact-package live requalification.
 - [ ] Record final ZIP SHA-256 and qualification.
 - [ ] Fast-forward `main`.
+- [ ] Restore `main` as repository default branch.
 - [ ] Create annotated tag `v1.0.0`.
 - [ ] Publish non-prerelease GitHub release with exact qualified ZIP.
 

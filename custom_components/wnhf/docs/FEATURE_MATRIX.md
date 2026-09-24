@@ -14,8 +14,8 @@
 | Native lights/covers/access/garage/plants | Supported |
 | `garage.stop` | Guarded canonical execution |
 | Generated `/red-queen` dashboard | Supported |
-| Restart persistence | Stable qualification gate |
-| HACS installation | Stable qualification gate |
+| Restart persistence | LIVE VERIFIED |
+| HACS installation/redownload | LIVE VERIFIED |
 | Climate/media/larger Plant Care | Deferred beyond 1.0 |
 
 Canonical execution API remains `1.0`; canonical real-execution contract remains
