@@ -134,7 +134,6 @@ from .const import (
     SIGNAL_MULTI_STEP_PLAN_UPDATED,
     SIGNAL_EXECUTION_CAPABILITIES_UPDATED,
     SIGNAL_MULTI_STEP_SIMULATION_UPDATED,
-    SIGNAL_PLANTS_UPDATED,
     SIGNAL_GENERIC_TRANSACTION_UPDATED,
     SIGNAL_REAL_STEP_UPDATED,
     SIGNAL_SEQUENTIAL_ROOM_UPDATED,
@@ -243,9 +242,9 @@ async def async_register_services(
         return engine.get_object(call.data[ATTR_OBJECT_ID])
 
     async def handle_plants_snapshot(call: ServiceCall) -> dict:
-        result = engine.plants_snapshot()
-        async_dispatcher_send(hass, SIGNAL_PLANTS_UPDATED)
-        return result
+        # Read-only snapshots must not cause all Plant Care entities to refresh.
+        # The PlantsCapabilityProvider dispatches updates after a successful write.
+        return engine.plants_snapshot()
 
     async def handle_all_off(call: ServiceCall) -> dict:
         result = await engine.async_lighting_all_off()
