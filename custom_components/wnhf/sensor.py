@@ -235,7 +235,12 @@ class WNHFPlantCareStatus(WNHFPlantEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         attrs = super().extra_state_attributes
-        attrs.update(self.engine.plant_care_snapshot(self.plant_id).as_dict())
+        snapshot = self.engine.plant_care_snapshot(self.plant_id).as_dict()
+        # A per-poll timestamp would change the entity attributes every time,
+        # even if the plant's actual care status stayed unchanged. Keep the
+        # timestamp in the full Plant Care snapshot service instead.
+        snapshot.pop("generated_at", None)
+        attrs.update(snapshot)
         return attrs
 
 
