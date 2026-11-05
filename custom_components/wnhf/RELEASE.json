@@ -1,9 +1,9 @@
 {
   "product_name": "Red Queen",
-  "version": "1.0.0",
-  "channel": "stable",
-  "phase": "stable",
-  "candidate": null,
+  "version": "1.1.0",
+  "channel": "candidate",
+  "phase": "rc",
+  "candidate": "1.1.0-rc1",
   "technical_domain": "wnhf",
   "development_name": "WNHF",
   "development_baseline_version": "1.40.0",
@@ -11,8 +11,8 @@
   "canonical_execution_service": "wnhf.execution_execute",
   "canonical_execution_api_version": "1.0",
   "canonical_execution_contract": "2.3-rc11",
-  "candidate_status": "stable",
+  "candidate_status": "development",
   "semantic_action_count": 23,
   "canonical_real_action_count": 16,
-  "home_assistant_service_count": 68
+  "home_assistant_service_count": 73
 }
