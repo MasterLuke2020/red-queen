@@ -20,6 +20,26 @@ Upgradefreigabe unangetastet.
 | Backup/Restore nachgewiesen | **Noch nicht** |
 | 1.1.0 installiert | Nein |
 
+## Lesender Backup-Cockpit-Befund vom 05.11.2026, 20:38 CET
+
+Der Betreiber führte `sudo backup-system --summary` erfolgreich aus:
+
+- Server: `weidnerhome-srv2`
+- Tägliches Backup: `active`, Backup-Watchdog: `active`
+- Retention-V3-Timer: `active/enabled`
+- Produktiver Freigabemarker: vorhanden
+- Einmalige Plan-Autorisierung: fehlt; dies ist **keine** Freigabe für einen neuen Retention-Plan
+- Letzter Backup-Dienst: `success`
+- Letzter Retention-Dienst: `success` (01.11.2026, 04:39 CET)
+- USB 1: offline/ausgehängt, ausdrücklich **normaler Sollzustand**
+- Snapshot-Zahlen: nicht live abgefragt, weil das USB-Repository offline bleibt
+
+**Einordnung:** Dies ist ein positiver Dienststatus, aber **noch kein**
+Nachweis des letzten Snapshot-Datums, der tatsächlich abgedeckten
+Home-Assistant-Verzeichnisse oder eines erfolgreichen Restore-Tests.
+Bis dahin bleibt die Produktivfreigabe gesperrt. USB nicht ungefragt
+mounten, kein Restic-Write, kein `forget`/`prune`/`unlock`.
+
 ## Vorhandenes Backup-System bevorzugen
 
 Auf dem Server wurde zuvor ein Restic-basiertes Server-Backup eingerichtet.
