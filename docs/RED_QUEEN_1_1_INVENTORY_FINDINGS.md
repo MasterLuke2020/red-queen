@@ -33,6 +33,7 @@
 - Getrennte Stable-Unique-IDs `wnhf_rgbw_<source>`. Bestehende Toggle-Lichter/IDs bleiben unverändert.
 - `rgbw_dispatch_audit` dokumentiert angenommene Weiterleitungen, nicht physisch bestätigte Farben.
 - Das Live-Farbmodell kann sich erst nach überprüften `supported_color_modes` auf volle RGBW-Unterstützung festlegen; bei fehlenden unterstützten Modi stehen nur entsprechend reduzierte UI-Funktionen bereit.
+- Optionale konfigurierte Lichtszenen können mehrere geprüfte Leuchten nacheinander stellen, werden aber niemals automatisch beim Laden aktiviert; partial dispatch wird sichtbar. Referenzkonfiguration: `configuration/smart_living.example.yaml`.
 
 ### C. Kommunikation
 
@@ -54,6 +55,7 @@ quiet_entity_id: binary_sensor.wnhf_quiet_mode_active
 discover_dali: true
 rgbw_entity_ids: []
 message_route_id: notification.route.house
+scenes: []
 ```
 
 Fehlt die Datei, werden diese konservativen Defaults verwendet. `discover_dali` ist nur Entitäts-Discovery, kein eigenständiger Schaltvorgang. Es werden **keine** Haus-/Urlaubsaktionen automatisch ausgeführt.
