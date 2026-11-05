@@ -82,9 +82,22 @@ logger:
     custom_components.wnhf: info
 YAML
 
+# The stage root directory and generated files are owned by the invoking
+# host user and were created with umask 077. With --cap-drop ALL, container
+# root has no CAP_DAC_OVERRIDE and cannot traverse a 0700 /config owned by
+# another UID. Transfer ownership of ONLY the private staging config to UID
+# 0 (the s6/Home Assistant container user), preserving its restrictive mode.
+# The production /config path is NOT mounted and is never chowned.
+sudo chown -R 0:0 -- "$WORKDIR/config" ||
+  fail "Unable to prepare isolated /config ownership for container root"
+sudo chmod 0700 -- "$WORKDIR/config" ||
+  fail "Unable to restrict isolated /config permissions"
+log "Isolated /config is now readable by stage UID 0; production untouched"
+
 log "Starting isolated HA (network=none, no published ports, memory limited)"
 docker_cmd run --detach --pull never \
   --name "$CONTAINER_NAME" \
+  --user 0:0 \
   --network none \
   --restart no \
   --memory 1152m --cpus 1.5 \
@@ -97,7 +110,7 @@ STAGE_STARTED=1
 log "Checking HA initialization and Red Queen native integration setup"
 for _attempt in $(seq 1 80); do
   if [[ -f "$WORKDIR/config/home-assistant.log" ]] &&
-     grep -Fq "started via config entry" "$WORKDIR/config/home-assistant.log"; then
+     sudo grep -Fq "started via config entry" "$WORKDIR/config/home-assistant.log"; then
     STAGE_OK=1
     break
   fi
