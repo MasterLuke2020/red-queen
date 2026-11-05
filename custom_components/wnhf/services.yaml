@@ -5,7 +5,7 @@ smart_scenes_snapshot:
 
 smart_scene_activate:
   name: Smart Living – Lichtszene aktivieren
-  description: Externe Serviceaufrufe (auch Automationen und Skripte) beachten immer die Home/Away/Vacation- und Ruhemodus-Regeln. Manuelle Bedienung erfolgt über den Red-Queen-Szenenbutton. Die Umschaltung mehrerer Leuchten ist nicht atomar.
+  description: Lichtszenen sind auch bei Button-Aufruf ausschließlich im Hausmodus home und bei sicher inaktivem Ruhemodus erlaubt. Das gilt für Service, Skript und Automation. Einzelne Leuchten bleiben unabhängig davon direkt bedienbar. Mehrere Umschaltungen erfolgen nicht atomar.
   fields:
     scene_id:
       name: Szenen-ID
