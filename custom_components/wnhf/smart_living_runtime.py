@@ -21,7 +21,7 @@ import yaml
 
 from .smart_living_logic import (
     HOUSE_MODES, exposed_modes, permission, resolve_mode,
-    validate_light_request,
+    validate_light_request, parse_scenes,
 )
 from .smart_living_messages import SmartMessageComposer
 
@@ -48,6 +48,7 @@ class SmartLivingRuntime:
         self.audit: deque[dict[str, Any]] = deque(maxlen=100)
         self._target_locks: dict[str, Any] = {}
         self.composer = SmartMessageComposer(hass, self)
+        self.scenes: dict[str, dict[str, Any]] = {}
 
     async def async_setup(self) -> None:
         """Read only settings; persisted mode is saved after explicit user input."""
@@ -60,6 +61,7 @@ class SmartLivingRuntime:
         self.quiet_entity_id = config["quiet_entity_id"]
         self.composer.route_id = config["message_route_id"]
         self._discover_targets(config["rgbw_entity_ids"], config["discover_dali"])
+        self.scenes = config["scenes"]
         _LOGGER.info(
             "Smart Living ready: %s RGBW bindings; auto-away=%s",
             len(self.rgbw_targets), self.auto_away,
@@ -87,6 +89,7 @@ class SmartLivingRuntime:
             "discover_dali": raw.get("discover_dali", True),
             "rgbw_entity_ids": raw.get("rgbw_entity_ids", []),
             "message_route_id": raw.get("message_route_id", "notification.route.house"),
+            "scenes": raw.get("scenes", []),
         }
         if type(config["auto_away"]) is not bool or type(config["discover_dali"]) is not bool:
             raise HomeAssistantError("auto_away/discover_dali must be boolean")
@@ -95,6 +98,10 @@ class SmartLivingRuntime:
             for x in config["rgbw_entity_ids"]
         ):
             raise HomeAssistantError("rgbw_entity_ids must be valid light entity IDs")
+        try:
+            config["scenes"] = parse_scenes(config["scenes"])
+        except ValueError as err:
+            raise HomeAssistantError("Smart Living scenes invalid: " + str(err)) from err
         if not isinstance(config["message_route_id"], str) or not re.fullmatch(
             r"^notification\.route\.[a-z0-9_]+$", config["message_route_id"]
         ):
@@ -169,6 +176,9 @@ class SmartLivingRuntime:
             "dispatch_audit_count": len(self.audit),
             "message_route_id": self.composer.route_id,
             "message_audit_count": len(self.composer.audit),
+            "scenes": [{"id": x["id"], "name": x["name"],
+                        "target_count": len(x["lights"])}
+                       for x in self.scenes.values()],
         }
 
     async def async_set_mode(self, mode: str) -> None:
@@ -230,6 +240,50 @@ class SmartLivingRuntime:
                 raise
             finally:
                 self.audit.append(outcome)
+
+    async def async_activate_scene(
+        self, scene_id: str, *, automated: bool = False,
+    ) -> dict[str, Any]:
+        """Preflight every light before issuing sequential writes.
+
+        Per-light results are returned. Sequential service calls are not atomic.
+        """
+        scene = self.scenes.get(scene_id)
+        if scene is None:
+            raise HomeAssistantError("Unknown configured Smart Living scene")
+        category = "lighting.automatic_scene" if automated else "lighting.manual"
+        allowed, reason = permission(self.mode, quiet=self.quiet, category=category)
+        if not allowed:
+            raise HomeAssistantError(reason)
+
+        plan: list[tuple[str, str, dict[str, Any]]] = []
+        for entity_id, entry in scene["lights"].items():
+            if entity_id not in self.rgbw_targets:
+                raise HomeAssistantError("Scene source not allowlisted: " + entity_id)
+            state = self.hass.states.get(entity_id)
+            if state is None or state.state in {"unknown", "unavailable"}:
+                raise HomeAssistantError("Scene source unavailable: " + entity_id)
+            action = "turn_on" if entry["state"] == "on" else "turn_off"
+            attrs = (
+                validate_light_request(
+                    exposed_modes(state.attributes.get("supported_color_modes")),
+                    entry["attributes"],
+                ) if action == "turn_on" else {}
+            )
+            plan.append((entity_id, action, attrs))
+        results: list[dict[str, Any]] = []
+        for entity_id, action, attrs in plan:
+            try:
+                await self.async_light_dispatch(entity_id, action, attrs)
+            except Exception as err:
+                results.append({"entity_id": entity_id, "status": "failed",
+                                "reason": type(err).__name__})
+                # Do not hide partially applied scene or continue blindly.
+                return {"scene_id": scene_id, "status": "partial",
+                        "results": results, "physically_verified": False}
+            results.append({"entity_id": entity_id, "status": "dispatched"})
+        return {"scene_id": scene_id, "status": "dispatched",
+                "results": results, "physically_verified": False}
 
     def audit_snapshot(self) -> dict[str, Any]:
         return {"entries": list(self.audit), "limit": self.audit.maxlen}
