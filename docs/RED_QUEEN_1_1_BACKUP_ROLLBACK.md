@@ -72,6 +72,30 @@ prüfen. Falls das nicht reicht, benötigt ein gesonderter Restore-Drill
 eine bewusst freigegebene, ausschließlich lesende temporäre
 Repository-Verfügbarkeit. Keine produktiven Daten überschreiben.
 
+## Konkreter Snapshot des Tagesbackups 05.11.2026
+
+Die gezielte reine Journalabfrage hat folgende Meldungen bestätigt:
+
+- Vor Snapshot-Erstellung: `Stoppe Home Assistant...` und `Stoppe DokuWiki...`.
+- Restic hat Snapshot `2bf78693` gespeichert, basierend auf Elternsnapshot `20e88793`.
+- Verarbeitungsumfang: `12146 files`, `2.355 GiB`, Restic-Verarbeitungsdauer `1:57`.
+- Die Sicherungsübersicht nennt `/srv/containers/homeassistant` als Sicherungswurzel.
+- Das Tagesbackup meldet insgesamt `12 snapshots` und `Server Backup erfolgreich abgeschlossen`.
+- Danach folgen `Starte Home Assistant...`, `Starte DokuWiki...` und `PASS: USB 1 wieder offline`.
+
+**Beweisniveau:** Der Backupdienst wurde für den Snapshot kontrolliert angehalten,
+der Snapshot `2bf78693` wurde gespeichert und der Datenträger wurde sicher
+ausgehängt. Ein erfolgreiches `restic ls` bzw. `restic restore` auf diesen
+Snapshot ist **noch nicht** nachgewiesen. Ebenso muss der tatsächliche
+Home-Assistant-Wiederanlauf separat geprüft werden. Die Backupaufnahme
+um 03:33 kann spätere Änderungen vom selben Tag nicht abdecken; vor dem
+Upgrade ist ein zeitnaher neuer konsistenter Sicherungspunkt vorzusehen.
+
+**Nächster Schritt:** Architektur des vorhandenen Backup-Dienstes bzw.
+des Backup-Cockpits nur lesend prüfen, anschließend einen separaten Restore-
+Drill mit ausdrücklicher Mount-/Schreibziel-Freigabe durchführen. Keine
+unautorisierte USB-Mountaktion, kein Schreiben in das bestehende Repository.
+
 ## Vorhandenes Backup-System bevorzugen
 
 Auf dem Server wurde zuvor ein Restic-basiertes Server-Backup eingerichtet.
