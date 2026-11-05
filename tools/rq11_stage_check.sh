@@ -109,6 +109,11 @@ docker_cmd stop --time 15 "$CONTAINER_NAME" >/dev/null 2>&1 || true
 docker_cmd rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 STAGE_STARTED=0
 
+# Only the isolated directory is chowned, after its staging container is gone.
+# Home Assistant may have created root-only files under its private .storage.
+sudo chown -R "$(id -u):$(id -g)" "$WORKDIR/config" ||
+  fail "Unable to read isolated staging output"
+
 # Produce a compact machine-readable report; full logs stay on the server.
 python3 - "$WORKDIR" "$REVISION" "$IMAGE" "$STAGE_OK" <<'PY'
 import json
@@ -172,6 +177,13 @@ PY
 
 log "Original HA remains running; staging container removed."
 log "Review redqueen11_staging_report.json before uploading it."
-if [[ "$STAGE_OK" != "1" ]]; then
-  fail "Stage integration setup did not complete. Report/logs are under $WORKDIR"
+RESULT_STATUS="$(python3 - "$WORKDIR/redqueen11_staging_report.json" <<'PY'
+import json
+import sys
+with open(sys.argv[1], encoding="utf-8") as file:
+    print(json.load(file)["status"])
+PY
+)"
+if [[ "$RESULT_STATUS" != "PASS" ]]; then
+  fail "Isolated smoke incomplete. Share only the redqueen11_staging_report.json report; keep logs local."
 fi
