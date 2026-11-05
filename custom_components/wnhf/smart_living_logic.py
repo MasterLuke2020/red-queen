@@ -28,6 +28,16 @@ def resolve_mode(manual: str, away_signal: str | None, auto_away: bool) -> tuple
     return (manual, "manual_fallback_unknown_sensor")
 
 
+def quiet_restriction(signal: str | None) -> bool:
+    """Fail closed for automatic comfort actions when quiet status is unknown.
+
+    A verified, explicit 'off' is the only state that permits a new Smart
+    Living announcement/automatic scene. Manual direct light control remains
+    independent. This never changes legacy 1.0 routing behavior.
+    """
+    return signal != "off"
+
+
 def permission(
     mode: str, *, quiet: bool, category: str, urgency: str = "info",
     automated: bool = False,
