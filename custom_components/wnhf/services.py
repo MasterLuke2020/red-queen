@@ -24,6 +24,9 @@ from .const import (
     ATTR_QUEUE_TIMEOUT,
     DOMAIN,
     SERVICE_GET_OBJECT,
+    SERVICE_HOUSE_MODE_SET,
+    SERVICE_HOUSE_MODE_SNAPSHOT,
+    SERVICE_RGBW_DISPATCH_AUDIT,
     SERVICE_LIGHTING_ALL_OFF,
     SERVICE_LIGHTING_OBJECT_OFF,
     SERVICE_LIGHTING_ROOM_OFF,
@@ -147,6 +150,7 @@ from .const import (
     MAX_QUEUE_TIMEOUT_SECONDS,
 )
 from .engine import WNHFEngine
+from .smart_living_runtime import DATA_SMART_LIVING
 from .configuration import RegistryConfigurationManager
 from .executions import AccessResultCatalog
 
@@ -169,6 +173,8 @@ def async_unregister_services(hass: HomeAssistant) -> tuple[str, ...]:
 
     return service_names
 
+
+HOUSE_MODE_SCHEMA = vol.Schema({vol.Required("mode"): vol.In(("home", "away", "vacation"))})
 
 ROOM_SCHEMA = vol.Schema({vol.Required(ATTR_ROOM_ID): cv.string})
 LIGHT_SCHEMA = vol.Schema({vol.Required(ATTR_LIGHT_ID): cv.string})
@@ -235,6 +241,17 @@ async def async_register_services(
     hass: HomeAssistant, engine: WNHFEngine
 ) -> None:
     """Register WNHF service actions."""
+
+    async def handle_house_mode_snapshot(call: ServiceCall) -> dict:
+        return hass.data[DOMAIN][DATA_SMART_LIVING].snapshot()
+
+    async def handle_house_mode_set(call: ServiceCall) -> dict:
+        runtime = hass.data[DOMAIN][DATA_SMART_LIVING]
+        await runtime.async_set_mode(call.data["mode"])
+        return runtime.snapshot()
+
+    async def handle_rgbw_dispatch_audit(call: ServiceCall) -> dict:
+        return hass.data[DOMAIN][DATA_SMART_LIVING].audit_snapshot()
 
     async def handle_list_registry(call: ServiceCall) -> dict:
         return engine.list_registry(call.data[ATTR_REGISTRY_TYPE])
@@ -888,6 +905,26 @@ async def async_register_services(
             "warnings": list(engine.registry_warnings),
             "validation": report.as_dict(),
         }
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_HOUSE_MODE_SNAPSHOT,
+        handle_house_mode_snapshot,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_HOUSE_MODE_SET,
+        handle_house_mode_set,
+        schema=HOUSE_MODE_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_RGBW_DISPATCH_AUDIT,
+        handle_rgbw_dispatch_audit,
+        supports_response=SupportsResponse.ONLY,
+    )
 
     hass.services.async_register(
         DOMAIN,
