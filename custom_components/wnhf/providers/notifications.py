@@ -10,7 +10,8 @@ import re
 from typing import Any
 from urllib.parse import urlencode
 
-from ..const import NOTIFICATION_TARGETS_FILE
+from ..const import NOTIFICATION_TARGETS_FILE, DOMAIN
+from ..smart_living_runtime import DATA_SMART_LIVING
 from ..domain.capability import CapabilitySnapshot, CapabilityState
 from ..domain.notification import (
     ANNOUNCEMENT_LEVELS,
@@ -873,6 +874,15 @@ class NotificationCapabilityProvider(WNHFProvider):
                 if state is not None
                 else "unknown"
             )
+            # Historic installation route references sensor.wnhf_house_state,
+            # while stable 1.0 exposes sensor.wnhf_house_status (technical
+            # health, not the resident's home/away/vacation mode).
+            # Only the NEW explicit Smart Living mode may substitute for a
+            # missing/unavailable historic reference.
+            if house_state in {"unknown", "unavailable"}:
+                runtime = self.hass.data.get(DOMAIN, {}).get(DATA_SMART_LIVING)
+                if runtime is not None:
+                    house_state = runtime.mode
         quiet_mode = False
         if route.quiet_mode_entity_id is not None:
             state = self.hass.states.get(route.quiet_mode_entity_id)
