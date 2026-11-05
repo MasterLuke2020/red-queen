@@ -77,6 +77,33 @@ class SmartLivingContractTests(unittest.TestCase):
             find_function(scene_cls, "async_press"),
         ))
 
+    def test_scenes_recheck_state_per_light_during_long_running_batches(self):
+        # Beyond initial preflight, each awaited light dispatch must be
+        # preceded by an updated house/quiet policy check.
+        runtime = load_tree("smart_living_runtime.py")
+        scene = find_function(runtime, "async_activate_scene")
+        loops = [
+            node for node in ast.walk(scene)
+            if isinstance(node, ast.For)
+            and "async_light_dispatch" in called_functions(node)
+        ]
+        self.assertEqual(len(loops), 1)
+        loop = loops[0]
+        self.assertGreaterEqual(
+            sum(1 for x in loop.body if "permission" in called_functions(x)),
+            1,
+            "Each scene dispatch iteration must re-evaluate the policy",
+        )
+        calls = [x for x in ast.walk(loop) if isinstance(x, ast.Call)]
+        policy_calls = [x for x in calls
+                        if isinstance(x.func, ast.Name) and x.func.id == "permission"]
+        dispatch_calls = [x for x in calls
+                          if isinstance(x.func, ast.Attribute)
+                          and x.func.attr == "async_light_dispatch"]
+        self.assertEqual(len(policy_calls), 1)
+        self.assertEqual(len(dispatch_calls), 1)
+        self.assertLess(policy_calls[0].lineno, dispatch_calls[0].lineno)
+
     def test_new_message_route_guard_applies_to_validation_and_execute(self):
         provider = load_tree("providers/notifications.py")
         route = find_function(provider, "_route_plan")
