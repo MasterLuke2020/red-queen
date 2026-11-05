@@ -56,7 +56,9 @@ async def _async_setup_entities(
             )
             if opening.door_opener is not None
         ]
-        + [RedQueenSendMessageButton(hass)],
+        + [RedQueenSendMessageButton(hass)]
+        + ([RedQueenActivateSceneButton(hass)]
+           if hass.data[DOMAIN][DATA_SMART_LIVING].scenes else []),
         update_before_add=False,
     )
 
@@ -322,3 +324,29 @@ class RedQueenSendMessageButton(ButtonEntity):
 
     async def async_press(self) -> None:
         await self.runtime.composer.async_send()
+
+
+class RedQueenActivateSceneButton(ButtonEntity):
+    """Execute the currently selected scene with full preflight."""
+    _attr_should_poll = False
+    _attr_has_entity_name = False
+    _attr_icon = "mdi:palette-swatch"
+    _attr_name = "Red Queen Lichtszene aktivieren"
+    _attr_unique_id = "wnhf_smart_scene_activate"
+    _attr_suggested_object_id = "wnhf_scene_activate"
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        self.runtime = hass.data[DOMAIN][DATA_SMART_LIVING]
+        self._attr_device_info = module_device_info(
+            "smart_living", "Red Queen Smart Living",
+        )
+
+    async def async_press(self) -> None:
+        if self.runtime.selected_scene is None:
+            raise ValueError("No scene selected")
+        result = await self.runtime.async_activate_scene(
+            self.runtime.selected_scene,
+        )
+        if result["status"] != "dispatched":
+            from homeassistant.exceptions import HomeAssistantError
+            raise HomeAssistantError("Scene partly dispatched; check RGBW audit")
