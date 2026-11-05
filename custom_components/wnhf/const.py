@@ -35,6 +35,7 @@ PLATFORMS = (
     "button",
     "lock",
     "select",
+    "text",
 )
 
 # Dispatcher signal emitted after a successful registry reload.
