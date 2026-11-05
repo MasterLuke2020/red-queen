@@ -177,10 +177,9 @@ def async_unregister_services(hass: HomeAssistant) -> tuple[str, ...]:
 
 
 HOUSE_MODE_SCHEMA = vol.Schema({vol.Required("mode"): vol.In(("home", "away", "vacation"))})
-# External HA service calls (scripts, automations and Developer Tools) are
-# ALWAYS treated as automatic comfort actions. Do not let a caller bypass
-# away/vacation/quiet policy using a user-supplied automated=false parameter.
-# The native Red Queen scene button invokes the runtime manually, separately.
+# All batch-scene entry points (service and native button) enforce the
+# comfort-mode policy. Neither external automations nor button.press can
+# bypass away/vacation/quiet restrictions via a caller-provided flag.
 SMART_SCENE_SCHEMA = vol.Schema({
     vol.Required("scene_id"): cv.string,
 })
@@ -269,9 +268,7 @@ async def async_register_services(
 
     async def handle_smart_scene_activate(call: ServiceCall) -> dict:
         runtime = hass.data[DOMAIN][DATA_SMART_LIVING]
-        return await runtime.async_activate_scene(
-            call.data["scene_id"], automated=True,
-        )
+        return await runtime.async_activate_scene(call.data["scene_id"])
 
     async def handle_list_registry(call: ServiceCall) -> dict:
         return engine.list_registry(call.data[ATTR_REGISTRY_TYPE])
