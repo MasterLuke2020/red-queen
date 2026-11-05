@@ -27,6 +27,8 @@ from .const import (
     SERVICE_HOUSE_MODE_SET,
     SERVICE_HOUSE_MODE_SNAPSHOT,
     SERVICE_RGBW_DISPATCH_AUDIT,
+    SERVICE_SMART_SCENES_SNAPSHOT,
+    SERVICE_SMART_SCENE_ACTIVATE,
     SERVICE_LIGHTING_ALL_OFF,
     SERVICE_LIGHTING_OBJECT_OFF,
     SERVICE_LIGHTING_ROOM_OFF,
@@ -175,6 +177,10 @@ def async_unregister_services(hass: HomeAssistant) -> tuple[str, ...]:
 
 
 HOUSE_MODE_SCHEMA = vol.Schema({vol.Required("mode"): vol.In(("home", "away", "vacation"))})
+SMART_SCENE_SCHEMA = vol.Schema({
+    vol.Required("scene_id"): cv.string,
+    vol.Optional("automated", default=False): cv.boolean,
+})
 
 ROOM_SCHEMA = vol.Schema({vol.Required(ATTR_ROOM_ID): cv.string})
 LIGHT_SCHEMA = vol.Schema({vol.Required(ATTR_LIGHT_ID): cv.string})
@@ -252,6 +258,17 @@ async def async_register_services(
 
     async def handle_rgbw_dispatch_audit(call: ServiceCall) -> dict:
         return hass.data[DOMAIN][DATA_SMART_LIVING].audit_snapshot()
+
+    async def handle_smart_scenes_snapshot(call: ServiceCall) -> dict:
+        runtime = hass.data[DOMAIN][DATA_SMART_LIVING]
+        return {"scenes": runtime.snapshot()["scenes"],
+                "selected_scene": runtime.selected_scene}
+
+    async def handle_smart_scene_activate(call: ServiceCall) -> dict:
+        runtime = hass.data[DOMAIN][DATA_SMART_LIVING]
+        return await runtime.async_activate_scene(
+            call.data["scene_id"], automated=call.data["automated"],
+        )
 
     async def handle_list_registry(call: ServiceCall) -> dict:
         return engine.list_registry(call.data[ATTR_REGISTRY_TYPE])
@@ -923,6 +940,19 @@ async def async_register_services(
         DOMAIN,
         SERVICE_RGBW_DISPATCH_AUDIT,
         handle_rgbw_dispatch_audit,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SMART_SCENES_SNAPSHOT,
+        handle_smart_scenes_snapshot,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SMART_SCENE_ACTIVATE,
+        handle_smart_scene_activate,
+        schema=SMART_SCENE_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
 
