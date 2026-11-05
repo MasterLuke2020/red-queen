@@ -60,6 +60,51 @@ def permission(
     return False, "Unrecognized category; default deny for Smart Living"
 
 
+
+def route_voice_decision(
+    *,
+    profile: str,
+    legacy_context_allowed: bool,
+    smart_living_source: bool,
+    mode: str,
+    quiet: bool,
+    priority: str,
+) -> tuple[bool, str | None]:
+    """Resolve a notification route's voice channel without side effects.
+
+    Existing 1.0 notification routes retain their explicit broadcast override
+    for compatibility with previously configured alarm/critical automations.
+    The NEW Smart Living message composer never bypasses residential mode or
+    quiet-hours policy, not even using the broadcast profile.
+    Direct legacy notifications.announce calls are intentionally out of scope.
+    """
+    if profile not in {"standard", "voice", "broadcast"}:
+        return False, "profile"
+    if smart_living_source:
+        urgency = {
+            "debug": "notice",
+            "info": "info",
+            "warning": "warning",
+            "critical": "alarm",
+        }.get(priority)
+        if urgency is None:
+            return False, "unsupported_priority"
+        allowed, reason = permission(
+            mode, quiet=quiet,
+            category="notifications.announce", urgency=urgency,
+        )
+        if not allowed:
+            return False, "smart_living_policy: " + reason
+        if not legacy_context_allowed:
+            return False, "quiet_mode_or_house_state"
+        return True, None
+    if profile == "broadcast":
+        return True, None
+    if not legacy_context_allowed:
+        return False, "quiet_mode_or_house_state"
+    return True, None
+
+
 def validate_light_request(
     source_modes: set[str], data: dict[str, Any],
 ) -> dict[str, Any]:
