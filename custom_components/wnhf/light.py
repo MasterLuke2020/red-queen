@@ -250,15 +250,18 @@ class WNHFSmartRGBWLight(LightEntity):
     @property
     def color_mode(self) -> ColorMode | None:
         source = self._source
-        if source is None:
+        if source is None or not self.available:
             return None
         name = source.attributes.get("color_mode")
         if name in exposed_modes((name,)):
-            try:
-                return ColorMode(name)
-            except ValueError:
-                pass
-        return ColorMode.ONOFF if self.available else None
+            candidate = ColorMode(name)
+            if candidate in self.supported_color_modes:
+                return candidate
+        if self.is_on:
+            # HA requires active color_mode to be among supported modes.
+            # Never claim ONOFF when the source reports RGBW-only support.
+            return sorted(self.supported_color_modes, key=str)[0]
+        return None
 
     @property
     def is_on(self) -> bool:
