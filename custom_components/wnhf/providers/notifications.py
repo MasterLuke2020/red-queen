@@ -871,6 +871,7 @@ class NotificationCapabilityProvider(WNHFProvider):
         self, route: NotificationRoute, *, profile: str,
         priority: str = "info", source: str = "unknown",
     ) -> dict[str, Any]:
+        smart_source = source == "smart_living"
         house_state: str | None = None
         if route.house_state_entity_id is not None:
             state = self.hass.states.get(route.house_state_entity_id)
@@ -879,12 +880,12 @@ class NotificationCapabilityProvider(WNHFProvider):
                 if state is not None
                 else "unknown"
             )
-            # Historic installation route references sensor.wnhf_house_state,
-            # while stable 1.0 exposes sensor.wnhf_house_status (technical
-            # health, not the resident's home/away/vacation mode).
-            # Only the NEW explicit Smart Living mode may substitute for a
-            # missing/unavailable historic reference.
-            if house_state in {"unknown", "unavailable"}:
+            # Stable 1.0 may reference a technical/missing house-state
+            # sensor. Never reinterpret it for existing legacy message
+            # producers; doing so could silently suppress old automations.
+            # Only messages created by the new Smart Living composer may
+            # adopt the new residential operating mode as a fallback.
+            if smart_source and house_state in {"unknown", "unavailable"}:
                 runtime = self.hass.data.get(DOMAIN, {}).get(DATA_SMART_LIVING)
                 if runtime is not None:
                     house_state = runtime.mode
@@ -916,7 +917,6 @@ class NotificationCapabilityProvider(WNHFProvider):
         # Preserve legacy 1.0 broadcast override on existing automation
         # routes. Only the NEW Smart Living composer is guarded here, too,
         # as a second line of protection after the composer itself.
-        smart_source = source == "smart_living"
         voice, suppression_reason = route_voice_decision(
             profile=profile,
             legacy_context_allowed=voice_context_allowed,
