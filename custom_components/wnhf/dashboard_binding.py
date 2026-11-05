@@ -220,6 +220,8 @@ _GLOBAL_ENTITY_CONTRACT: tuple[tuple[str, str, str], ...] = (
     ("message_profile", "select", "wnhf_smart_message_profile"),
     ("message_priority", "select", "wnhf_smart_message_priority"),
     ("message_send", "button", "wnhf_smart_message_send"),
+    ("scene", "select", "wnhf_smart_scene"),
+    ("scene_activate", "button", "wnhf_smart_scene_activate"),
     ("framework_healthy", "binary_sensor", "wnhf_framework_healthy"),
     ("registry_valid", "binary_sensor", "wnhf_registry_valid"),
     ("security_secure", "binary_sensor", "wnhf_security_secure"),
@@ -315,6 +317,9 @@ def resolve_dashboard_bindings(
     globals_: list[DashboardGlobalBinding] = []
     for role, domain, unique_id in _GLOBAL_ENTITY_CONTRACT:
         ref = _resolve(registry, domain=domain, unique_id=unique_id)
+        if role in {"scene", "scene_activate"} and not ref.resolved:
+            # Scene entities are only registered if optional scenes exist.
+            continue
         globals_.append(DashboardGlobalBinding(role=role, entity=ref))
         _issue_if_unresolved(
             issues,
