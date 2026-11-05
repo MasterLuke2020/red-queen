@@ -40,6 +40,38 @@ Home-Assistant-Verzeichnisse oder eines erfolgreichen Restore-Tests.
 Bis dahin bleibt die Produktivfreigabe gesperrt. USB nicht ungefragt
 mounten, kein Restic-Write, kein `forget`/`prune`/`unlock`.
 
+## Erfolgreicher Backup-Dienst vom 05.11.2026
+
+Der Betreiber hat die Ausgaben von `systemctl show` und
+`journalctl -u weidnerhome-server-backup.service -n 60`
+zur Verfügung gestellt. Sie bestätigen:
+
+- `Result=success`, `ExecMainStatus=0`
+- Laufzeit: **05.11.2026 03:33:16 bis 03:35:36 CET**
+- Im protokollierten Backup-Dateibaum enthalten:
+  `/srv/containers/homeassistant` (neben `/srv/containers/dokuwiki` usw.).
+- Ausgabe am Laufende: `12 snapshots`.
+- `Server Backup erfolgreich abgeschlossen`, anschließend
+  `Starte Home Assistant...`, `Starte DokuWiki...`,
+  `Synchronisiere Dateisystem...`.
+- `PASS: USB 1 wieder offline` – erwarteter Schutzbetrieb.
+- Retention ist während des Tagesbackups deaktiviert und erfolgt
+  ausschließlich über die separate Wartung.
+
+**Grenze des Nachweises:** Die 60 letzten Journalzeilen enthalten kein
+eindeutiges Snapshot-ID-/Datum-Mapping und keine Restic-
+`ls`-/Restore-Prüfung des konkreten 05.11-Snapshots. Das
+`12 snapshots`-Ergebnis belegt nur eine im Backup-Lauf
+ausgegebene Anzahl, keine Wiederherstellungsprobe. Die tatsächliche
+Wiederanlaufbereitschaft nach HA-Neustart wurde nicht gesondert
+geprüft. Kein USB-Mount zur bloßen Statusauswertung.
+
+**Nächster sicherer Schritt:** Ohne Mount oder Restic-Write zuerst
+gezielte Journalzeilen des Laufzeitfensters auf das Snapshot-ID-Mapping
+prüfen. Falls das nicht reicht, benötigt ein gesonderter Restore-Drill
+eine bewusst freigegebene, ausschließlich lesende temporäre
+Repository-Verfügbarkeit. Keine produktiven Daten überschreiben.
+
 ## Vorhandenes Backup-System bevorzugen
 
 Auf dem Server wurde zuvor ein Restic-basiertes Server-Backup eingerichtet.
