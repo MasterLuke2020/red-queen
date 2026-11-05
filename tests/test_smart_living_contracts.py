@@ -102,6 +102,28 @@ class SmartLivingContractTests(unittest.TestCase):
             self.assertIn("source", {item.arg for item in call.keywords})
             self.assertIn("priority", {item.arg for item in call.keywords})
 
+    def test_smart_voice_rechecked_before_physical_dispatch(self):
+        provider = load_tree("providers/notifications.py")
+        execute = find_function(provider, "_execute_route")
+        replans = [
+            call for call in ast.walk(execute)
+            if isinstance(call, ast.Call)
+            and isinstance(call.func, ast.Attribute)
+            and call.func.attr == "_route_plan"
+        ]
+        self.assertGreaterEqual(
+            len(replans), 2,
+            "Route must revalidate after async mobile/dashboard work",
+        )
+        source = ast.unparse(execute)
+        self.assertIn("final_voice_plan", source)
+        self.assertIn("house_or_quiet_mode_changed_before_dispatch", source)
+        self.assertLess(
+            source.index("final_voice_plan"),
+            source.index("await self._perform_announcement"),
+            "House/quiet recheck must run before dispatch",
+        )
+
     def test_quiet_sensor_fail_closed_and_no_direct_light_write_on_setup(self):
         runtime = load_tree("smart_living_runtime.py")
         quiet = find_function(runtime, "quiet")
