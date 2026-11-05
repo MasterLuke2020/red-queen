@@ -116,6 +116,28 @@ Es wurde weder eine USB-Partition gemountet noch ein Restic-Kommando
 ausgeführt. Die Produktivfreigabe bleibt bis zum nachweislich getrennten
 Test-Restore und zur Prüfung der exakten 1.0.0-Dateien gesperrt.
 
+## Abgleich USB 1 / USB 2 und Restic-Repository (05.11.2026)
+
+Der Betreiber hat den tatsächlichen systemd-Startbefehl und eine **nur lesende**
+Datenträger-/Skript-Inventur geliefert:
+
+- `weidnerhome-server-backup.service`: `ExecStart=/usr/local/sbin/server-backup`.
+- `lsblk`: `/dev/sdb1`, NTFS, 1,8 TB, aktuell nicht eingehängt.
+- `lsblk`: `/dev/sdc1`, NTFS, 1,8 TB, aktuell unter `/srv/storage/network_drive_2` eingehängt.
+- Sicherungsskript Zeile 17: `REPOSITORY="$DRIVE1/backups/server-restic"`.
+- Das Skript mountet bedarfsweise `$DRIVE1`, prüft die Quelle über `findmnt` und hängt das Laufwerk später wieder aus.
+- Das Backupjournal hat zuvor `/dev/sdb1` als ausgehängten Datenträger genannt und `snapshot 2bf78693 saved` bestätigt.
+
+Die Kombination spricht stark dafür, dass `/dev/sdb1` das USB-1-Laufwerk
+ist. **Noch zu prüfen:** Der konkrete `DRIVE1`-Wert im Skript, die zugehörige
+`/etc/fstab`-UUID/PARTUUID sowie der tatsächliche Repository-Root. Geräte-
+Namen wie `/dev/sdb1` können beim Neustart wechseln; **nicht** als dauerhafte
+Wiederherstellungskennung verwenden.
+
+Bis zur ausdrücklichen Freigabe: **kein Mount, kein Restic-Write, keine
+Retention- oder Restore-Aktion**. Die nächste Abfrage zeigt ausschließlich
+Drive-Variable und fstab-/Blockgeräte-Kennung.
+
 ## Vorhandenes Backup-System bevorzugen
 
 Auf dem Server wurde zuvor ein Restic-basiertes Server-Backup eingerichtet.
