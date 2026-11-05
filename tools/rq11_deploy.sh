@@ -37,14 +37,23 @@ with open(sys.argv[1],encoding="utf-8") as f:
 PY
 }
 recover_interrupted() {
-  say "Stelle Originalversion aus lokalem Rueckweg wieder her."
-  if [[ "$NEW_MOVED" == 1 && -d "$TARGET" ]]; then
-    sudo mv -- "$TARGET" "$BACKUP/wnhf-interrupted" || true
+  say "Unterbrechung beim Wechsel: sichere zuerst die zuvor aktive Integration."
+  if [[ "$MODE" == "install" ]]; then
+    if [[ "$NEW_MOVED" == 1 && -d "$TARGET" ]]; then
+      sudo mv -- "$TARGET" "$BACKUP/wnhf-interrupted" || true
+    fi
+    if [[ "$OLD_MOVED" == 1 && -d "$BACKUP/wnhf-1.0.0" && ! -e "$TARGET" ]]; then
+      sudo mv -- "$BACKUP/wnhf-1.0.0" "$TARGET" || true
+    fi
+  else
+    # During rollback a failed rename must restore the *currently installed*
+    # 1.1.0 rather than booting Home Assistant with no custom component.
+    if [[ "$NEW_MOVED" == 1 && ! -e "$TARGET" &&
+          -d "$BACKUP/wnhf-1.1.0-after-rollback" ]]; then
+      sudo mv -- "$BACKUP/wnhf-1.1.0-after-rollback" "$TARGET" || true
+    fi
   fi
-  if [[ "$OLD_MOVED" == 1 && -d "$BACKUP/wnhf-1.0.0" && ! -e "$TARGET" ]]; then
-    sudo mv -- "$BACKUP/wnhf-1.0.0" "$TARGET" || true
-  fi
-  if [[ "$STOPPED" == 1 ]]; then
+  if [[ "$STOPPED" == 1 && -d "$TARGET" ]]; then
     sudo docker start "$CONTAINER" >/dev/null || true
   fi
 }
