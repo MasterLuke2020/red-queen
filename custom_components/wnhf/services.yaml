@@ -5,20 +5,13 @@ smart_scenes_snapshot:
 
 smart_scene_activate:
   name: Smart Living – Lichtszene aktivieren
-  description: Prüft erst alle Ziele und delegiert dann sequenziell. Bei Teilfehlern kann ein Teil der Szene bereits aktiv sein.
+  description: Externe Serviceaufrufe (auch Automationen und Skripte) beachten immer die Home/Away/Vacation- und Ruhemodus-Regeln. Manuelle Bedienung erfolgt über den Red-Queen-Szenenbutton. Die Umschaltung mehrerer Leuchten ist nicht atomar.
   fields:
     scene_id:
       name: Szenen-ID
       required: true
       selector:
         text:
-    automated:
-      name: Automatischer Aufruf
-      description: true prüft zusätzliche Komfortregeln für automatische Szenen.
-      required: false
-      default: false
-      selector:
-        boolean:
 
 
 house_mode_snapshot:
