@@ -106,6 +106,7 @@ class DashboardBindings:
     openings: tuple[DashboardOpeningBinding, ...]
     plants: tuple[DashboardPlantBinding, ...]
     issues: tuple[DashboardBindingIssue, ...]
+    smart_lights: tuple[DashboardEntityRef, ...] = ()
 
     @property
     def complete(self) -> bool:
@@ -118,6 +119,7 @@ class DashboardBindings:
         refs: list[DashboardEntityRef] = [
             item.entity for item in self.globals
         ]
+        refs.extend(self.smart_lights)
         refs.extend(item.light for item in self.lights)
         for item in self.covers:
             refs.append(item.cover)
@@ -213,6 +215,7 @@ def _plant_water_unique_id(object_id: str) -> str:
 
 _GLOBAL_ENTITY_CONTRACT: tuple[tuple[str, str, str], ...] = (
     ("house_ready", "binary_sensor", "wnhf_house_ready"),
+    ("house_mode", "select", "wnhf_smart_living_house_mode"),
     ("framework_healthy", "binary_sensor", "wnhf_framework_healthy"),
     ("registry_valid", "binary_sensor", "wnhf_registry_valid"),
     ("security_secure", "binary_sensor", "wnhf_security_secure"),
@@ -474,6 +477,20 @@ def resolve_dashboard_bindings(
                 ),
             )
 
+    # Native Red Queen RGBW proxy entities only, not hardware/provider lights.
+    smart_lights = tuple(
+        DashboardEntityRef(
+            domain="light",
+            unique_id=entry.unique_id,
+            entity_id=entry.entity_id,
+        )
+        for entry in sorted(registry.entities.values(), key=lambda item: item.entity_id)
+        if entry.domain == "light"
+        and entry.platform == DOMAIN
+        and entry.unique_id.startswith("wnhf_rgbw_")
+        and entry.disabled_by is None
+    )
+
     return DashboardBindings(
         contract_version=DASHBOARD_BINDING_CONTRACT_VERSION,
         globals=tuple(globals_),
@@ -482,4 +499,5 @@ def resolve_dashboard_bindings(
         openings=tuple(openings),
         plants=tuple(plants),
         issues=tuple(issues),
+        smart_lights=smart_lights,
     )
