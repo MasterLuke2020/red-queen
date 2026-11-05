@@ -38,6 +38,10 @@ PY
 }
 recover_interrupted() {
   say "Unterbrechung beim Wechsel: sichere zuerst die zuvor aktive Integration."
+  # Do not move integration files beneath a potentially already running HA.
+  if running; then
+    sudo docker stop --time 45 "$CONTAINER" >/dev/null || true
+  fi
   if [[ "$MODE" == "install" ]]; then
     if [[ "$NEW_MOVED" == 1 && -d "$TARGET" ]]; then
       sudo mv -- "$TARGET" "$BACKUP/wnhf-interrupted" || true
@@ -74,7 +78,10 @@ check_host() {
     command -v "$tool" >/dev/null || fail "Fehlendes Programm: $tool"
   done
   sudo -v
-  running || fail "Produktiver Container laeuft nicht."
+  # Rollback MUST also work if a broken candidate prevents HA from starting.
+  if [[ "$MODE" == "install" ]]; then
+    running || fail "Produktiver Container laeuft nicht."
+  fi
   mount="$(sudo docker inspect -f '{{range .Mounts}}{{if eq .Destination "/config"}}{{.Source}}{{end}}{{end}}' "$CONTAINER")"
   [[ "$mount" == "$CONFIG" ]] || fail "Unerwarteter Docker-/config-Mount: $mount"
   sudo test -f "$TARGET/manifest.json" || fail "Installierte Red Queen nicht gefunden."
@@ -179,9 +186,11 @@ rollback() {
     fail "Gesicherte Dateien sind nicht Version 1.0.0."
   STAGE="$CONFIG/custom_components/.rq11-rollback-$(date +%s)-$$"
   sudo cp -a -- "$BACKUP/wnhf-1.0.0" "$STAGE"
-  say "Originaldateien 1.0.0 bereitgestellt; stoppe HA."
-  sudo docker stop --time 45 "$CONTAINER" >/dev/null ||
-    fail "Home Assistant konnte nicht gestoppt werden."
+  say "Originaldateien 1.0.0 bereitgestellt; stoppe HA falls aktiv."
+  if running; then
+    sudo docker stop --time 45 "$CONTAINER" >/dev/null ||
+      fail "Home Assistant konnte nicht gestoppt werden."
+  fi
   STOPPED=1
   sudo mv -- "$TARGET" "$BACKUP/wnhf-1.1.0-after-rollback"
   NEW_MOVED=1
