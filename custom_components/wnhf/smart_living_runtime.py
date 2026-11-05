@@ -286,6 +286,22 @@ class SmartLivingRuntime:
             plan.append((entity_id, action, attrs))
         results: list[dict[str, Any]] = []
         for entity_id, action, attrs in plan:
+            # A batch may span multiple awaited HA service calls. Re-check
+            # resident mode and quiet state before EACH further dispatch so
+            # switching to away/quiet cannot start another light command.
+            still_allowed, stop_reason = permission(
+                self.mode, quiet=self.quiet,
+                category="lighting.automatic_scene",
+            )
+            if not still_allowed:
+                results.append({
+                    "entity_id": entity_id, "status": "suppressed",
+                    "reason": stop_reason,
+                })
+                return {
+                    "scene_id": scene_id, "status": "partial",
+                    "results": results, "physically_verified": False,
+                }
             try:
                 await self.async_light_dispatch(entity_id, action, attrs)
             except Exception as err:
