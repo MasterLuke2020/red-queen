@@ -1048,6 +1048,27 @@ class NotificationCapabilityProvider(WNHFProvider):
                             "dispatched_at": dispatched_at,
                         }
                     )
+        # Mobile/dashboard delivery can await other services. A resident may
+        # switch to away mode or quiet hours while those awaits execute.
+        # Re-check ONLY new Smart Living voice delivery immediately before
+        # crossing the real Sonos/TTS announcement boundary.
+        if source == "smart_living" and plan["voice"]:
+            final_voice_plan = self._route_plan(
+                route, profile=profile, priority=priority, source=source,
+            )
+            if not final_voice_plan["voice"]:
+                plan["voice"] = False
+                plan["voice_context"] = final_voice_plan["voice_context"]
+                plan["selected_channels"] = [
+                    channel for channel in plan["selected_channels"]
+                    if channel != "voice"
+                ]
+                channel_results.append({
+                    "channel": "voice",
+                    "target_id": route.announcement_target_id,
+                    "status": "suppressed",
+                    "reason": "house_or_quiet_mode_changed_before_dispatch",
+                })
         if plan["voice"]:
             target_id = route.announcement_target_id
             if target_id is None:
