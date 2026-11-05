@@ -589,3 +589,6 @@ DISABLED_REGISTRY_OBJECTS_ARE_WARNINGS = False
 SERVICE_HOUSE_MODE_SNAPSHOT = "house_mode_snapshot"
 SERVICE_HOUSE_MODE_SET = "house_mode_set"
 SERVICE_RGBW_DISPATCH_AUDIT = "rgbw_dispatch_audit"
+
+SERVICE_SMART_SCENES_SNAPSHOT = "smart_scenes_snapshot"
+SERVICE_SMART_SCENE_ACTIVATE = "smart_scene_activate"
