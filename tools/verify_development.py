@@ -69,6 +69,20 @@ for filename in required:
     if not (ROOT / "custom_components" / "wnhf" / filename).is_file():
         fail("Missing Smart Living module: " + filename)
 
+# Smart Living must reuse the already-tested native asyncua DALI sources.
+# Prevent reintroduction of duplicate wnhf_* RGBW proxy entities in HA.
+light_source = (ROOT / "custom_components" / "wnhf" / "light.py").read_text(encoding="utf-8")
+light_tree = ast.parse(light_source)
+if any(
+    isinstance(node, ast.ClassDef) and node.name == "WNHFSmartRGBWLight"
+    for node in light_tree.body
+):
+    fail("Do not register duplicate Smart Living light proxy entities")
+dashboard_bindings = (ROOT / "custom_components" / "wnhf" / "dashboard_binding.py").read_text(encoding="utf-8")
+for marker in ("allowed_sources", "entry.entity_id in allowed_sources", 'entry.platform != DOMAIN'):
+    if marker not in dashboard_bindings:
+        fail("Dashboard DALI source allowlist check missing: " + marker)
+
 result = subprocess.run(
     ["git", "diff", "--check", "HEAD^", "HEAD"],
     cwd=ROOT, capture_output=True, text=True, check=False,
