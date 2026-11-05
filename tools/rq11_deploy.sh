@@ -43,21 +43,25 @@ recover_interrupted() {
     sudo docker stop --time 45 "$CONTAINER" >/dev/null || true
   fi
   if [[ "$MODE" == "install" ]]; then
-    if [[ "$NEW_MOVED" == 1 && -d "$TARGET" ]]; then
+    if [[ "$NEW_MOVED" == 1 ]] && sudo test -d "$TARGET"; then
       sudo mv -- "$TARGET" "$BACKUP/wnhf-interrupted" || true
     fi
-    if [[ "$OLD_MOVED" == 1 && -d "$BACKUP/wnhf-1.0.0" && ! -e "$TARGET" ]]; then
+    # BACKUP has mode 0700 and is owned by root: all existence
+    # checks inside it MUST run with sudo.
+    if [[ "$OLD_MOVED" == 1 ]] &&
+       sudo test -d "$BACKUP/wnhf-1.0.0" &&
+       ! sudo test -e "$TARGET"; then
       sudo mv -- "$BACKUP/wnhf-1.0.0" "$TARGET" || true
     fi
   else
-    # During rollback a failed rename must restore the *currently installed*
-    # 1.1.0 rather than booting Home Assistant with no custom component.
-    if [[ "$NEW_MOVED" == 1 && ! -e "$TARGET" &&
-          -d "$BACKUP/wnhf-1.1.0-after-rollback" ]]; then
+    # A failed rollback must preserve the previously installed 1.1.0.
+    if [[ "$NEW_MOVED" == 1 ]] &&
+       ! sudo test -e "$TARGET" &&
+       sudo test -d "$BACKUP/wnhf-1.1.0-after-rollback"; then
       sudo mv -- "$BACKUP/wnhf-1.1.0-after-rollback" "$TARGET" || true
     fi
   fi
-  if [[ "$STOPPED" == 1 && -d "$TARGET" ]]; then
+  if [[ "$STOPPED" == 1 ]] && sudo test -d "$TARGET"; then
     sudo docker start "$CONTAINER" >/dev/null || true
   fi
 }
