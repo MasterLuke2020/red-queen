@@ -1263,6 +1263,18 @@ def _render_smart_living(bindings: DashboardBindings) -> dict[str, Any]:
         message_cards = [{"type": "markdown", "content": (
             "Nachrichten-Zentrale noch nicht registriert."
         )}]
+    scene_cards = [
+        _entity_tile(entity_id, name=label, icon=icon)
+        for role, label, icon in (
+            ("scene", "Lichtszene", "mdi:palette-swatch"),
+            ("scene_activate", "Lichtszene aktivieren", "mdi:play-circle-outline"),
+        )
+        if (entity_id := bindings.global_entity_id(role)) is not None
+    ]
+    if not scene_cards:
+        scene_cards = [{"type": "markdown", "content": (
+            "Lichtszenen können optional in smart_living.yaml definiert werden."
+        )}]
     return {
         "type": "sections",
         "title": "Smart Living",
@@ -1281,6 +1293,8 @@ def _render_smart_living(bindings: DashboardBindings) -> dict[str, Any]:
                      cards=mode_cards, column_span=4),
             _section(heading="RGBW / DALI", icon="mdi:palette",
                      cards=rgbw_cards, column_span=4),
+            _section(heading="Lichtszenen", icon="mdi:palette-swatch",
+                     cards=scene_cards, column_span=4),
             _section(heading="Mitteilungen", icon="mdi:bullhorn-outline",
                      cards=message_cards, column_span=4),
         ],
