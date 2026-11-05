@@ -111,3 +111,52 @@ def exposed_modes(raw: Any) -> set[str]:
     if not isinstance(raw, (list, tuple, set)):
         return set()
     return {str(mode) for mode in raw if str(mode) in SAFE_COLOR_MODES}
+
+
+def parse_scenes(raw: Any) -> dict[str, dict[str, Any]]:
+    """Parse optional deterministic light scenes; no hardware or HA side effects.
+
+    Every target is checked against the runtime's explicit allowlist at apply.
+    """
+    if raw is None:
+        return {}
+    if not isinstance(raw, list):
+        raise ValueError("scenes must be a list")
+    import re
+
+    result: dict[str, dict[str, Any]] = {}
+    for item in raw:
+        if not isinstance(item, dict):
+            raise ValueError("scene must be a mapping")
+        scene_id = item.get("id")
+        name = item.get("name")
+        lights = item.get("lights")
+        if not isinstance(scene_id, str) or not re.fullmatch(
+            r"[a-z][a-z0-9_]{0,63}", scene_id
+        ):
+            raise ValueError("scene id must be lowercase alphanumeric/underscore")
+        if scene_id in result:
+            raise ValueError("duplicate scene ID")
+        if not isinstance(name, str) or not name.strip() or len(name) > 80:
+            raise ValueError("scene name must contain 1..80 characters")
+        if not isinstance(lights, dict) or not lights:
+            raise ValueError("scene requires a mapping of source light targets")
+        targets: dict[str, dict[str, Any]] = {}
+        for entity_id, settings in lights.items():
+            if not isinstance(entity_id, str) or not re.fullmatch(
+                r"light\.[a-z0-9_]+", entity_id
+            ):
+                raise ValueError("scene target must be a light entity ID")
+            if not isinstance(settings, dict):
+                raise ValueError("scene target attributes must be a mapping")
+            state = settings.get("state", "on")
+            if state not in ("on", "off"):
+                raise ValueError("scene target state must be on/off")
+            attrs = {k: v for k, v in settings.items() if k != "state"}
+            if state == "off" and attrs:
+                raise ValueError("off scene target may not contain color/brightness")
+            if set(attrs) - RGBW_INPUT_KEYS:
+                raise ValueError("scene has unsupported light attribute")
+            targets[entity_id] = {"state": state, "attributes": attrs}
+        result[scene_id] = {"id": scene_id, "name": name.strip(), "lights": targets}
+    return result
