@@ -1249,6 +1249,20 @@ def _render_smart_living(bindings: DashboardBindings) -> dict[str, Any]:
             "type": "markdown",
             "content": "Keine nativen Red-Queen-RGBW-Leuchten registriert.",
         }]
+    message_cards = [
+        _entity_tile(entity_id, name=label, icon=icon)
+        for role, label, icon in (
+            ("message_text", "Nachricht", "mdi:message-text-outline"),
+            ("message_profile", "Kanal", "mdi:bullhorn-outline"),
+            ("message_priority", "Priorität", "mdi:alert-circle-outline"),
+            ("message_send", "Nachricht senden", "mdi:send-outline"),
+        )
+        if (entity_id := bindings.global_entity_id(role)) is not None
+    ]
+    if not message_cards:
+        message_cards = [{"type": "markdown", "content": (
+            "Nachrichten-Zentrale noch nicht registriert."
+        )}]
     return {
         "type": "sections",
         "title": "Smart Living",
@@ -1268,12 +1282,7 @@ def _render_smart_living(bindings: DashboardBindings) -> dict[str, Any]:
             _section(heading="RGBW / DALI", icon="mdi:palette",
                      cards=rgbw_cards, column_span=4),
             _section(heading="Mitteilungen", icon="mdi:bullhorn-outline",
-                     cards=[{"type": "markdown", "content": (
-                         "Durchsagen und Push-Benachrichtigungen werden "
-                         "über die bestehenden kanonischen Red-Queen-Aktionen "
-                         "`notifications.send`, `notifications.announce` "
-                         "und `notifications.route` ausgeführt."
-                     )}], column_span=4),
+                     cards=message_cards, column_span=4),
         ],
     }
 
