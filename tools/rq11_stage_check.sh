@@ -167,6 +167,15 @@ required = {
 actual = {x.get("unique_id"): x.get("entity_id") for x in entities
           if isinstance(x, dict) and x.get("platform") == "wnhf"}
 check = {key: actual.get(uid) for key, uid in required.items()}
+# Since existing asyncua DALI sources are reused directly, no new Red Queen
+# wnhf_rgbw_* entity may be registered in the stage (or product).
+duplicate_proxies = sorted(
+    entity.get("entity_id") for entity in entities
+    if isinstance(entity, dict)
+    and entity.get("platform") == "wnhf"
+    and str(entity.get("unique_id", "")).startswith("wnhf_rgbw_")
+    and isinstance(entity.get("entity_id"), str)
+)
 pass_setup = setup_flag == "1"
 report = {
     "schema": "rq11.isolated_smoke.v1",
@@ -178,7 +187,11 @@ report = {
     "stage_entry_setup_observed": pass_setup,
     "new_native_entity_ids": check,
     "new_native_entities_resolved": all(check.values()),
-    "status": "PASS" if pass_setup and all(check.values()) else "INCOMPLETE",
+    "duplicate_rgbw_proxy_entities": duplicate_proxies,
+    "status": (
+        "PASS" if pass_setup and all(check.values()) and not duplicate_proxies
+        else "INCOMPLETE"
+    ),
     "warnings": warnings,
     "limitations": [
         "No access to WAGO, Sonos, actual RGBW states or external services",
@@ -194,6 +207,7 @@ print("[RQ11] Status: " + report["status"])
 print("[RQ11] Entity registration:")
 for key, value in check.items():
     print("[RQ11]   " + key + ": " + (value or "NOT FOUND"))
+print("[RQ11] Duplicate RGBW proxy entities: " + str(len(duplicate_proxies)))
 if not pass_setup:
     print("[RQ11] Red Queen setup marker missing – local stage log: " +
           str(root / "config/home-assistant.log"))
