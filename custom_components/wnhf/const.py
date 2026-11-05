@@ -34,6 +34,7 @@ PLATFORMS = (
     "light",
     "button",
     "lock",
+    "select",
 )
 
 # Dispatcher signal emitted after a successful registry reload.
@@ -582,3 +583,8 @@ ENTITY_LOGGING_PRODUCTION_CLEANUP_VERSION = "1.0-stage4.7.7.2"
 SECURITY_MESSAGE_STATE_CONTRACT_VERSION = "2.0-short-state"
 OPENINGS_MESSAGE_STATE_CONTRACT_VERSION = "2.0-short-state"
 DISABLED_REGISTRY_OBJECTS_ARE_WARNINGS = False
+
+# Smart Living 1.1 (optional, separate from technical HouseState)
+SERVICE_HOUSE_MODE_SNAPSHOT = "house_mode_snapshot"
+SERVICE_HOUSE_MODE_SET = "house_mode_set"
+SERVICE_RGBW_DISPATCH_AUDIT = "rgbw_dispatch_audit"
