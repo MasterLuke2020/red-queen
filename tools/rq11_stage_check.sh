@@ -37,6 +37,17 @@ IMAGE="$(docker_cmd inspect -f '{{.Config.Image}}' "$PRODUCTION_CONTAINER")"
 docker_cmd image inspect "$IMAGE" >/dev/null ||
   fail "Home Assistant image unavailable locally: $IMAGE"
 
+MEMORY_AVAILABLE_KIB="$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)"
+[[ "$MEMORY_AVAILABLE_KIB" =~ ^[0-9]+$ ]] ||
+  fail "Cannot establish available host memory"
+(( MEMORY_AVAILABLE_KIB >= 1800000 )) ||
+  fail "Insufficient free RAM for isolated staging; production remains untouched"
+TMP_AVAILABLE_KIB="$(df -Pk /tmp | awk 'END {print $4}')"
+[[ "$TMP_AVAILABLE_KIB" =~ ^[0-9]+$ ]] ||
+  fail "Cannot establish staging disk space"
+(( TMP_AVAILABLE_KIB >= 1048576 )) ||
+  fail "Insufficient /tmp disk space for isolated staging"
+
 WORKDIR="$(mktemp -d "/tmp/redqueen11-stage.XXXXXXXX")"
 mkdir -p "$WORKDIR/config/custom_components" "$WORKDIR/config/wnhf/house/registry"
 log "Isolated files under $WORKDIR"
@@ -175,8 +186,11 @@ if not pass_setup:
           str(root / "config/home-assistant.log"))
 PY
 
+# Always make the compact result available at a predictable user-owned path.
+cp "$WORKDIR/redqueen11_staging_report.json" "$HOME/redqueen11_staging_report.json"
+chmod 600 "$HOME/redqueen11_staging_report.json"
 log "Original HA remains running; staging container removed."
-log "Review redqueen11_staging_report.json before uploading it."
+log "Upload only: $HOME/redqueen11_staging_report.json"
 RESULT_STATUS="$(python3 - "$WORKDIR/redqueen11_staging_report.json" <<'PY'
 import json
 import sys
@@ -187,3 +201,4 @@ PY
 if [[ "$RESULT_STATUS" != "PASS" ]]; then
   fail "Isolated smoke incomplete. Share only the redqueen11_staging_report.json report; keep logs local."
 fi
+log "Isolated stage succeeded. Logs/config kept locally at $WORKDIR for review."
