@@ -86,5 +86,37 @@ class SmartLivingLogicTests(unittest.TestCase):
         self.assertEqual(logic.exposed_modes("rgbw"), set())
 
 
+    def test_scene_parse_and_reject_unsafe_configuration(self):
+        scenes = logic.parse_scenes([{
+            "id": "abend",
+            "name": "Abend",
+            "lights": {
+                "light.dali_test_rgbw": {
+                    "state": "on", "brightness": 170,
+                    "rgbw_color": [0, 10, 12, 150],
+                },
+                "light.dali_off_rgbw": {"state": "off"},
+            },
+        }])
+        self.assertEqual(list(scenes), ["abend"])
+        self.assertEqual(len(scenes["abend"]["lights"]), 2)
+        for invalid in (
+            "not-a-list",
+            [{"id": "INVALID-ID", "name": "Bad", "lights": {
+                "light.dali_a_rgbw": {"brightness": 20},
+            }}],
+            [{"id": "bad", "name": "Bad", "lights": {
+                "switch.unsafe": {"brightness": 20},
+            }}],
+            [{"id": "bad", "name": "Bad", "lights": {
+                "light.dali_a_rgbw": {"state": "off", "brightness": 20},
+            }}],
+            [{"id": "bad", "name": "Bad", "lights": {
+                "light.dali_a_rgbw": {"entity_id": "light.other"},
+            }}],
+        ):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                logic.parse_scenes(invalid)
+
 if __name__ == "__main__":
     unittest.main()
