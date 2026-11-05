@@ -29,6 +29,12 @@ class SmartLivingLogicTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             logic.resolve_mode("holiday_unknown", "off", True)
 
+    def test_quiet_restriction_fails_closed_on_missing_signal(self):
+        self.assertFalse(logic.quiet_restriction("off"))
+        for signal in (None, "on", "unknown", "unavailable", ""):
+            with self.subTest(signal=signal):
+                self.assertTrue(logic.quiet_restriction(signal))
+
     def test_permission_rules_preserve_resident_control(self):
         self.assertTrue(logic.permission("vacation", quiet=True,
                                         category="lighting.manual")[0])
