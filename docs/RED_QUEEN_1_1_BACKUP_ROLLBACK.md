@@ -138,6 +138,38 @@ Bis zur ausdrücklichen Freigabe: **kein Mount, kein Restic-Write, keine
 Retention- oder Restore-Aktion**. Die nächste Abfrage zeigt ausschließlich
 Drive-Variable und fstab-/Blockgeräte-Kennung.
 
+## Verifizierte Datenträger- und Restic-Zuordnung (05.11.2026)
+
+Die erneute rein lesende Abfrage liefert nun eine **eindeutige** Zuordnung:
+
+| Funktion | Physische Partition (aktuell) | NTFS-UUID | fstab-Mountpoint |
+| --- | --- | --- | --- |
+| USB 1, Restic-Backup | `/dev/sdb1` | `7C6E9291389E1C40` | `/srv/storage/network_drive_1` |
+| USB 2, separates Laufwerk | `/dev/sdc1` | `1E0AC0906A09203E` | `/srv/storage/network_drive_2` |
+
+Das produktive Script `/usr/local/sbin/server-backup` setzt
+`DRIVE1="/srv/storage/network_drive_1"` und
+`REPOSITORY="$DRIVE1/backups/server-restic"`.
+Der **konkrete Repository-Pfad** ist somit
+`/srv/storage/network_drive_1/backups/server-restic`.
+
+Die UUID-gestützte Zuordnung steht in `fstab`, jeweils mit
+Dateisystemtyp `ntfs-3g`. Die wechselbaren Namen `/dev/sdb1` und
+`/dev/sdc1` dienen **nicht** als dauerhafte Mount-Identifikation.
+
+**Stand:** USB 1 ist ausgehängt und bleibt es bis zu ausdrücklicher
+Freigabe. Für die nächste Phase einen ausschließlich lesenden Mount
+der richtigen UUID mit `ro` und ohne automatisches Restic-Locking
+vorsehen. Vorher die Art der Passwortübergabe **nur hinsichtlich der
+existierenden Dateipfade, nicht des Geheimnisinhalts** prüfen.
+Snapshot `2bf78693` und das HA-1.0.0-Inventar mittels
+`restic --no-lock snapshots`/`ls` kontrollieren. Danach optional
+**gezielt** die Red-Queen-1.0.0-Dateien in ein externes temporäres
+Testverzeichnis zurückspielen, die Hashes prüfen und USB 1 wieder
+aushängen. Niemals direkt über das produktive `/config` restaurieren;
+niemals `forget`, `prune`, `unlock`, `repair` oder
+Repository-Writes für diesen Drill durchführen.
+
 ## Vorhandenes Backup-System bevorzugen
 
 Auf dem Server wurde zuvor ein Restic-basiertes Server-Backup eingerichtet.
