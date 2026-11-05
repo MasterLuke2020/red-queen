@@ -50,8 +50,22 @@ manifest = json.loads(
 )
 if manifest.get("domain") != "wnhf":
     fail("Technical domain must remain wnhf")
-if manifest.get("version") != "1.0.0":
-    fail("Development branch must not masquerade as promoted 1.1.0")
+if manifest.get("version") != "1.1.0":
+    fail("1.1 RC manifest version must be 1.1.0")
+release = json.loads(
+    (ROOT / "custom_components" / "wnhf" / "RELEASE.json").read_text(encoding="utf-8")
+)
+if release.get("version") != manifest.get("version"):
+    fail("Manifest and release metadata versions must match")
+if (release.get("channel"), release.get("phase"), release.get("candidate_status")) != (
+    "candidate", "rc", "development",
+):
+    fail("1.1.0 remains a development release candidate, not a stable release")
+if release.get("home_assistant_service_count") != 73:
+    fail("1.1.0 RC requires 73 exposed Home Assistant services")
+runtime_constants = (ROOT / "custom_components" / "wnhf" / "const.py").read_text(encoding="utf-8")
+if 'VERSION = "1.1.0"' not in runtime_constants:
+    fail("Runtime and manifest versions must match")
 platform_constants = (ROOT / "custom_components" / "wnhf" / "const.py").read_text(encoding="utf-8")
 for marker in ('"light"', '"select"', '"text"', '"button"'):
     if marker not in platform_constants:
