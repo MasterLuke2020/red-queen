@@ -245,17 +245,22 @@ class SmartLivingRuntime:
                 self.audit.append(outcome)
 
     async def async_activate_scene(
-        self, scene_id: str, *, automated: bool = False,
+        self, scene_id: str,
     ) -> dict[str, Any]:
         """Preflight every light before issuing sequential writes.
 
-        Per-light results are returned. Sequential service calls are not atomic.
+        Batch scenes are always comfort automations regardless of which
+        Home Assistant caller presses a button. Neither button.press nor a
+        service caller may bypass away/vacation/quiet-time policy. Individual
+        resident light control remains independent and available in HA.
+        Sequential service calls are not atomic.
         """
         scene = self.scenes.get(scene_id)
         if scene is None:
             raise HomeAssistantError("Unknown configured Smart Living scene")
-        category = "lighting.automatic_scene" if automated else "lighting.manual"
-        allowed, reason = permission(self.mode, quiet=self.quiet, category=category)
+        allowed, reason = permission(
+            self.mode, quiet=self.quiet, category="lighting.automatic_scene",
+        )
         if not allowed:
             raise HomeAssistantError(reason)
 
