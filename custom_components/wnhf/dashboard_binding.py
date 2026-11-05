@@ -216,6 +216,10 @@ def _plant_water_unique_id(object_id: str) -> str:
 _GLOBAL_ENTITY_CONTRACT: tuple[tuple[str, str, str], ...] = (
     ("house_ready", "binary_sensor", "wnhf_house_ready"),
     ("house_mode", "select", "wnhf_smart_living_house_mode"),
+    ("message_text", "text", "wnhf_smart_message_text"),
+    ("message_profile", "select", "wnhf_smart_message_profile"),
+    ("message_priority", "select", "wnhf_smart_message_priority"),
+    ("message_send", "button", "wnhf_smart_message_send"),
     ("framework_healthy", "binary_sensor", "wnhf_framework_healthy"),
     ("registry_valid", "binary_sensor", "wnhf_registry_valid"),
     ("security_secure", "binary_sensor", "wnhf_security_secure"),
