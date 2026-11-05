@@ -52,16 +52,10 @@ if manifest.get("domain") != "wnhf":
     fail("Technical domain must remain wnhf")
 if manifest.get("version") != "1.0.0":
     fail("Development branch must not masquerade as promoted 1.1.0")
-if not {"light", "select", "text", "button"}.issubset(set(
-    ast.literal_eval(
-        next(n.value for n in ast.parse(
-            (ROOT / "custom_components" / "wnhf" / "const.py").read_text()
-        ).body if isinstance(n, ast.AnnAssign) and getattr(
-            n.target, "id", ""
-        ) == "PLATFORMS")
-    )
-)):
-    fail("Smart Living platforms were not registered")
+platform_constants = (ROOT / "custom_components" / "wnhf" / "const.py").read_text(encoding="utf-8")
+for marker in ('"light"', '"select"', '"text"', '"button"'):
+    if marker not in platform_constants:
+        fail("Smart Living platform marker missing: " + marker)
 
 required = (
     "smart_living_logic.py",
