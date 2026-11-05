@@ -13,6 +13,14 @@
 - Bestehende Red-Queen-1.0 Benachrichtigungsautomationen (auch bisherige explizite broadcast-/Alarm-Ausnahmen) bleiben unverändert. Das ist eine Kompatibilitätsentscheidung; keine Behauptung eines globalen Durchsagen-Schutzes für alle HA-Service-Aufrufer.
 - Neue Hausmodi sind zunächst manuell, auto_away ist standardmäßig false.
 
+## Release-Kandidat 1.1.0-rc1 (noch kein Stable Release)
+
+- Im Entwicklungsbranch sind Runtime, Manifest und RELEASE.json nun als Version 1.1.0 ausgewiesen, RELEASE.json ausdrücklich channel=candidate/phase=rc/candidate_status=development.
+- Automatische GitHub-Prüfungen: Static Checks, hassfest und Unit-/Routing-Regressionen.
+- Ein weiterer Workflow erzeugt deterministische ZIP-Pakete ausschließlich aus custom_components/wnhf; er baut zweimal, vergleicht die Bytes und prüft die SHA-256-Prüfsumme.
+- GitHub Actions stellt das Paket befristet als CI-Artefakt bereit – **kein GitHub-Release und keine produktive Installation**.
+- GitHub CI startet Home Assistant 2026.9.2 zusätzlich mit einer synthetischen, vollständig leeren Registry und ohne Netzwerk; dies ersetzt nicht den zuvor erfolgreichen Staging-Test mit dem echten Gebäudeinventar.
+- Vor Produktivinstallation nach finaler Validierung ein belastbares Backup, die exakt archivierte Version 1.0.0 und ein geprüfter Rückweg.
 ## Bereits belegte Abnahme
 
 - Isolierter HA-Starttest des Entwicklungscommits db37a04: PASS; fünf native Smart-Living-Entitäten angelegt, keine Fehler im kompakten Bericht.
