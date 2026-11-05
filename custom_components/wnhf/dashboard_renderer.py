@@ -1247,7 +1247,7 @@ def _render_smart_living(bindings: DashboardBindings) -> dict[str, Any]:
     if not rgbw_cards:
         rgbw_cards = [{
             "type": "markdown",
-            "content": "Keine nativen Red-Queen-RGBW-Leuchten registriert.",
+            "content": "Keine freigegebenen DALI-RGBW-Quellleuchten im Entity-Register gefunden.",
         }]
     message_cards = [
         _entity_tile(entity_id, name=label, icon=icon)
