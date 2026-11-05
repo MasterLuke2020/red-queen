@@ -23,6 +23,7 @@ from .smart_living_logic import (
     HOUSE_MODES, exposed_modes, permission, resolve_mode,
     validate_light_request,
 )
+from .smart_living_messages import SmartMessageComposer
 
 _LOGGER = logging.getLogger(__name__)
 SIGNAL_SMART_LIVING_UPDATED = "wnhf_smart_living_updated"
@@ -46,6 +47,7 @@ class SmartLivingRuntime:
         self.rgbw_targets: dict[str, str] = {}
         self.audit: deque[dict[str, Any]] = deque(maxlen=100)
         self._target_locks: dict[str, Any] = {}
+        self.composer = SmartMessageComposer(hass, self)
 
     async def async_setup(self) -> None:
         """Read only settings; persisted mode is saved after explicit user input."""
@@ -56,6 +58,7 @@ class SmartLivingRuntime:
         self.auto_away = config["auto_away"]
         self.away_entity_id = config["away_entity_id"]
         self.quiet_entity_id = config["quiet_entity_id"]
+        self.composer.route_id = config["message_route_id"]
         self._discover_targets(config["rgbw_entity_ids"], config["discover_dali"])
         _LOGGER.info(
             "Smart Living ready: %s RGBW bindings; auto-away=%s",
@@ -83,6 +86,7 @@ class SmartLivingRuntime:
             ),
             "discover_dali": raw.get("discover_dali", True),
             "rgbw_entity_ids": raw.get("rgbw_entity_ids", []),
+            "message_route_id": raw.get("message_route_id", "notification.route.house"),
         }
         if type(config["auto_away"]) is not bool or type(config["discover_dali"]) is not bool:
             raise HomeAssistantError("auto_away/discover_dali must be boolean")
@@ -91,6 +95,10 @@ class SmartLivingRuntime:
             for x in config["rgbw_entity_ids"]
         ):
             raise HomeAssistantError("rgbw_entity_ids must be valid light entity IDs")
+        if not isinstance(config["message_route_id"], str) or not re.fullmatch(
+            r"^notification\.route\.[a-z0-9_]+$", config["message_route_id"]
+        ):
+            raise HomeAssistantError("message_route_id must be a semantic route ID")
         for key in ("away_entity_id", "quiet_entity_id"):
             value = config[key]
             if not isinstance(value, str) or not re.fullmatch(
@@ -159,6 +167,8 @@ class SmartLivingRuntime:
                 for key, name in self.rgbw_targets.items()
             ],
             "dispatch_audit_count": len(self.audit),
+            "message_route_id": self.composer.route_id,
+            "message_audit_count": len(self.composer.audit),
         }
 
     async def async_set_mode(self, mode: str) -> None:
