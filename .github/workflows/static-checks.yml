@@ -27,3 +27,7 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_*.py'
       - name: Validate isolated staging script syntax
         run: bash -n tools/rq11_stage_check.sh
+      - name: Validate production deployment and rollback script syntax
+        run: |
+          bash -n tools/rq11_deploy.sh
+          bash tools/rq11_deploy.sh --help
