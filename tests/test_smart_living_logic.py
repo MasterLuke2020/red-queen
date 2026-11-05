@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+from enum import StrEnum
 from pathlib import Path
 import unittest
 
@@ -84,6 +85,16 @@ class SmartLivingLogicTests(unittest.TestCase):
         self.assertEqual(logic.exposed_modes(["rgbw", "bad", "onoff"]),
                          {"rgbw", "onoff"})
         self.assertEqual(logic.exposed_modes("rgbw"), set())
+        # HA reports ColorMode values as StrEnum; the template renders their
+        # repr (e.g. <ColorMode.RGBW: 'rgbw'>), even if the light is off.
+        class ColorMode(StrEnum):
+            RGBW = "rgbw"
+        self.assertEqual(logic.exposed_modes([ColorMode.RGBW]), {"rgbw"})
+        self.assertEqual(logic.validate_light_request(
+            logic.exposed_modes([ColorMode.RGBW]),
+            {"rgbw_color": [20, 40, 80, 120], "brightness": 80},
+        ), {"rgbw_color": (20, 40, 80, 120), "brightness": 80})
+
 
 
     def test_scene_parse_and_reject_unsafe_configuration(self):
