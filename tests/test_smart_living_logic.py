@@ -54,6 +54,82 @@ class SmartLivingLogicTests(unittest.TestCase):
         self.assertFalse(logic.permission("home", quiet=False,
                                           category="access.unlock")[0])
 
+    def test_smart_route_voice_never_bypasses_house_or_quiet_mode(self):
+        decide = logic.route_voice_decision
+        for profile in ("voice", "broadcast", "standard"):
+            for mode in ("away", "vacation"):
+                for priority in ("info", "warning", "critical"):
+                    allowed, reason = decide(
+                        profile=profile, legacy_context_allowed=True,
+                        smart_living_source=True, mode=mode,
+                        quiet=False, priority=priority,
+                    )
+                    with self.subTest(profile=profile, mode=mode,
+                                      priority=priority):
+                        self.assertFalse(allowed)
+                        self.assertIn("smart_living_policy", reason)
+            for priority in ("info", "warning", "critical"):
+                allowed, reason = decide(
+                    profile=profile, legacy_context_allowed=True,
+                    smart_living_source=True, mode="home",
+                    quiet=True, priority=priority,
+                )
+                with self.subTest(profile=profile, priority=priority):
+                    self.assertFalse(allowed)
+                    self.assertIn("smart_living_policy", reason)
+            self.assertEqual(
+                decide(profile=profile, legacy_context_allowed=True,
+                       smart_living_source=True, mode="home", quiet=False,
+                       priority="info"), (True, None),
+            )
+            self.assertEqual(
+                decide(profile=profile, legacy_context_allowed=False,
+                       smart_living_source=True, mode="home", quiet=False,
+                       priority="info"),
+                (False, "quiet_mode_or_house_state"),
+            )
+        for profile in ("silent", "mobile"):
+            self.assertEqual(
+                decide(profile=profile, legacy_context_allowed=True,
+                       smart_living_source=True, mode="home", quiet=False,
+                       priority="info"),
+                (False, "profile"),
+            )
+        self.assertEqual(
+            decide(profile="broadcast", legacy_context_allowed=True,
+                   smart_living_source=True, mode="unknown", quiet=False,
+                   priority="info")[0], False,
+        )
+        self.assertEqual(
+            decide(profile="voice", legacy_context_allowed=True,
+                   smart_living_source=True, mode="home", quiet=False,
+                   priority="unknown"),
+            (False, "unsupported_priority"),
+        )
+
+    def test_legacy_route_broadcast_behaviour_remains_unchanged(self):
+        decide = logic.route_voice_decision
+        # Previously configured alarms may rely on broadcast overriding
+        # quiet mode. New Smart Living messages do NOT inherit this override.
+        self.assertEqual(
+            decide(profile="broadcast", legacy_context_allowed=False,
+                   smart_living_source=False, mode="vacation",
+                   quiet=True, priority="critical"),
+            (True, None),
+        )
+        self.assertEqual(
+            decide(profile="voice", legacy_context_allowed=False,
+                   smart_living_source=False, mode="vacation",
+                   quiet=True, priority="critical"),
+            (False, "quiet_mode_or_house_state"),
+        )
+        self.assertEqual(
+            decide(profile="standard", legacy_context_allowed=True,
+                   smart_living_source=False, mode="unknown",
+                   quiet=True, priority="info"),
+            (True, None),
+        )
+
     def test_rgbw_values_and_modes(self):
         self.assertEqual(
             logic.validate_light_request({"rgbw"}, {
