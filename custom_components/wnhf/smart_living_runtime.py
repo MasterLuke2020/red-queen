@@ -49,6 +49,7 @@ class SmartLivingRuntime:
         self._target_locks: dict[str, Any] = {}
         self.composer = SmartMessageComposer(hass, self)
         self.scenes: dict[str, dict[str, Any]] = {}
+        self.selected_scene: str | None = None
 
     async def async_setup(self) -> None:
         """Read only settings; persisted mode is saved after explicit user input."""
@@ -62,6 +63,7 @@ class SmartLivingRuntime:
         self.composer.route_id = config["message_route_id"]
         self._discover_targets(config["rgbw_entity_ids"], config["discover_dali"])
         self.scenes = config["scenes"]
+        self.selected_scene = next(iter(self.scenes), None)
         _LOGGER.info(
             "Smart Living ready: %s RGBW bindings; auto-away=%s",
             len(self.rgbw_targets), self.auto_away,
@@ -176,6 +178,7 @@ class SmartLivingRuntime:
             "dispatch_audit_count": len(self.audit),
             "message_route_id": self.composer.route_id,
             "message_audit_count": len(self.composer.audit),
+            "selected_scene": self.selected_scene,
             "scenes": [{"id": x["id"], "name": x["name"],
                         "target_count": len(x["lights"])}
                        for x in self.scenes.values()],
