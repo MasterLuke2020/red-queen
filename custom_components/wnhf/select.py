@@ -77,7 +77,8 @@ async def async_setup_entry(
         RedQueenHouseModeSelect(hass),
         RedQueenMessageSelect(hass, kind="profile"),
         RedQueenMessageSelect(hass, kind="priority"),
-    ])
+    ] + ([RedQueenSceneSelect(hass)]
+         if hass.data[DOMAIN][DATA_SMART_LIVING].scenes else []))
 
 
 class RedQueenMessageSelect(SelectEntity):
@@ -123,3 +124,31 @@ class RedQueenMessageSelect(SelectEntity):
             self.composer.set_profile(option)
         else:
             self.composer.set_priority(option)
+
+
+class RedQueenSceneSelect(SelectEntity):
+    """Configured manually selectable Smart Living scene."""
+    _attr_should_poll = False
+    _attr_has_entity_name = False
+    _attr_name = "Red Queen Lichtszene"
+    _attr_icon = "mdi:palette-swatch"
+    _attr_unique_id = "wnhf_smart_scene"
+    _attr_suggested_object_id = "wnhf_scene"
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        self.hass = hass
+        self.runtime = hass.data[DOMAIN][DATA_SMART_LIVING]
+        self._attr_options = list(self.runtime.scenes)
+        self._attr_device_info = module_device_info(
+            "smart_living", "Red Queen Smart Living",
+        )
+
+    @property
+    def current_option(self) -> str | None:
+        return self.runtime.selected_scene
+
+    async def async_select_option(self, option: str) -> None:
+        if option not in self.runtime.scenes:
+            raise ValueError("Unknown scene")
+        self.runtime.selected_scene = option
+        self.async_write_ha_state()
