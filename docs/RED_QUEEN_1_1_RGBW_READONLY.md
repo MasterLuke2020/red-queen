@@ -42,6 +42,37 @@ RED QUEEN 1.1 RGBW QUELL-STATUS (NUR LESEN)
 {% endfor %}
 ~~~
 
+## Live-Ablesung nach isoliertem PASS
+
+Alle 13 per Template geprüften Quellen light.dali_*_rgbw lieferten denselben Status:
+
+- Zustand: off
+- supported_color_modes: [ColorMode.RGBW]
+- color_mode: None
+- brightness: None
+- rgbw_color: None
+- rgb_color: None
+
+Die 13 Quellen sind damit auf HA-Ebene als RGBW-fähig ausgewiesen.
+Der ausgeschaltete Zustand erklärt fehlende aktive Farb-/Helligkeitswerte;
+die erfolgreiche physische Farb- und Helligkeitsausgabe ist noch nicht belegt.
+
+Ein Unit-Test sichert die Auswertung von HA-ColorMode.RGBW als StrEnum ab.
+
+## Kontrollierter Praxistest mit genau einer Leuchte
+
+Nur wenn es vor Ort gefahrlos und erwünscht ist:
+
+1. In bestehendem Home Assistant light.dali_eg_buro_rgbw manuell auf rund 30 Prozent einschalten.
+2. Über den nativen HA-Farbpicker eine gut erkennbare Farbe einstellen.
+3. Physisch kontrollieren, ob sich Farbe und Helligkeit wie erwartet ändern.
+4. Die read-only HA-Vorlage für diese Quelle im Zustand on erneut auslesen.
+5. Den ursprünglichen Ausgangszustand (hier: off) wiederherstellen.
+
+Keine Installation von Red Queen 1.1 im Produktivsystem;
+kein automatischer Multi-Leuchten-Test und keine WAGO-Änderung.
+Das bisherige Netzwerk-isolierte Staging kann keine physische Wirkung prüfen.
+
 ## Interpretation
 
 - `supported_color_modes`: maßgeblich für die Freigabe der tatsächlichen Farbbefehle.
