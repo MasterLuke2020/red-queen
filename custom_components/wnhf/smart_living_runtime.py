@@ -21,7 +21,7 @@ import yaml
 
 from .smart_living_logic import (
     HOUSE_MODES, exposed_modes, permission, resolve_mode,
-    validate_light_request, parse_scenes,
+    quiet_restriction, validate_light_request, parse_scenes,
 )
 from .smart_living_messages import SmartMessageComposer
 
@@ -147,7 +147,7 @@ class SmartLivingRuntime:
     @property
     def quiet(self) -> bool:
         state = self.hass.states.get(self.quiet_entity_id)
-        return state is not None and state.state == "on"
+        return quiet_restriction(state.state if state is not None else None)
 
     def snapshot(self) -> dict[str, Any]:
         state = self.hass.states.get(self.away_entity_id)
@@ -162,6 +162,11 @@ class SmartLivingRuntime:
             "mode_source": source,
             "manual_mode": self.manual_mode,
             "quiet": self.quiet,
+            "quiet_input_state": (
+                self.hass.states.get(self.quiet_entity_id).state
+                if self.hass.states.get(self.quiet_entity_id) is not None
+                else "missing"
+            ),
             "automatic_away_enabled": self.auto_away,
             "away_input_state": state.state if state is not None else "missing",
             "permissions": {
