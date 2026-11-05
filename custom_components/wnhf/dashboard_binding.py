@@ -4,9 +4,11 @@ The dashboard model is intentionally platform-neutral.  This module is the
 single bridge from stable Red Queen semantic object IDs to the *current* Home
 Assistant entity IDs registered for the native Red Queen entities.
 
-Bindings are resolved exclusively through Home Assistant's Entity Registry and
-stable Red Queen ``unique_id`` values.  The implementation never scans runtime
-states and never binds provider entities such as PLC/OPC-UA/MQTT entities.
+Existing Red Queen semantics are resolved through the Home Assistant Entity
+Registry and stable Red Queen ``unique_id`` values. Smart Living RGBW is the
+explicit exception: already validated/allowlisted DALI-OPC-UA light entities
+are reused directly. No duplicate RGBW proxy entities are created and
+registry resolution does not scan runtime state or invoke a device.
 """
 
 from __future__ import annotations
@@ -486,7 +488,11 @@ def resolve_dashboard_bindings(
                 ),
             )
 
-    # Native Red Queen RGBW proxy entities only, not hardware/provider lights.
+    # User-confirmed working DALI RGBW sources already exist in HA as
+    # asyncua light entities. Bind ONLY sources from the Smart Living runtime
+    # allowlist instead of creating duplicate HA lights.
+    runtime = hass.data.get(DOMAIN, {}).get("smart_living")
+    allowed_sources = set(runtime.rgbw_targets) if runtime is not None else set()
     smart_lights = tuple(
         DashboardEntityRef(
             domain="light",
@@ -494,9 +500,9 @@ def resolve_dashboard_bindings(
             entity_id=entry.entity_id,
         )
         for entry in sorted(registry.entities.values(), key=lambda item: item.entity_id)
-        if entry.domain == "light"
-        and entry.platform == DOMAIN
-        and entry.unique_id.startswith("wnhf_rgbw_")
+        if entry.entity_id in allowed_sources
+        and entry.domain == "light"
+        and entry.platform != DOMAIN
         and entry.disabled_by is None
     )
 
