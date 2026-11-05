@@ -1,0 +1,45 @@
+name: Red Queen 1.1.0 RC package (not production)
+
+on:
+  push:
+    branches:
+      - feature/1.1.0-smart-living
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-rc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact source commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install static verifier dependency
+        run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
+      - name: Verify branch source and invariants
+        run: |
+          python tools/verify_development.py
+          python -m unittest discover -s tests -p 'test_*.py'
+      - name: Build identical candidate packages twice
+        run: |
+          python tools/build_1_1_rc.py --out-dir dist
+          python tools/build_1_1_rc.py --out-dir /tmp/redqueen-rc-second-build
+          cmp dist/red_queen_1.1.0-rc1.zip /tmp/redqueen-rc-second-build/red_queen_1.1.0-rc1.zip
+          (cd dist && sha256sum -c red_queen_1.1.0-rc1.zip.sha256)
+      - name: Publish downloadable candidate build (NOT a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: red-queen-1.1.0-rc1-${{ github.sha }}
+          path: |
+            dist/red_queen_1.1.0-rc1.zip
+            dist/red_queen_1.1.0-rc1.zip.sha256
+            dist/red_queen_1.1.0-rc1.json
+          if-no-files-found: error
+          retention-days: 14
