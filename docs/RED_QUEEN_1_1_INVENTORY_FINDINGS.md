@@ -33,16 +33,16 @@
 - Es werden bewusst **keine** neuen `wnhf_rgbw_*`-Unique-IDs und keine doppelten Licht-Entitäten erzeugt. Alle bestehenden Licht- und Toggle-Entity-IDs bleiben unverändert.
 - `rgbw_dispatch_audit` dokumentiert nur die über Red Queen ausgelösten Szenen-/Service-Weiterleitungen, nicht direkte Bedienung der Quellleuchte aus Home Assistant und keine physisch bestätigten Farben.
 - Die 13 Quellleuchten melden alle `ColorMode.RGBW` und sind nach Betreiberangabe physisch getestet. Die Smart-Living-Kacheln zeigen die nativen HA-Farb-/Helligkeitsfunktionen der vorhandenen Quellleuchten.
-- Optionale konfigurierte Lichtszenen können mehrere geprüfte Leuchten nacheinander stellen, werden aber niemals automatisch beim Laden aktiviert; partial dispatch wird sichtbar. Referenzkonfiguration: `configuration/smart_living.example.yaml`.
+- Optionale konfigurierte Lichtszenen können mehrere geprüfte Leuchten nacheinander stellen, werden aber niemals automatisch beim Laden aktiviert; partial dispatch wird sichtbar. **Alle** Szenenaufrufe, einschließlich `button.press` und `wnhf.smart_scene_activate`, sind nur im bestätigten Modus `home` bei verifiziert inaktivem Ruhemodus erlaubt. Einzelne vorhandene DALI-Leuchten bleiben manuell unabhängig davon steuerbar. Referenzkonfiguration: `configuration/smart_living.example.yaml`.
 
 ### C. Kommunikation
 
 - Bestehende `notifications.route` wird verwendet; keine neue parallele Sonos-TTS-Implementierung.
 - Native `text`/2×`select`/`button`-Entitäten für die Nachrichteneingabe, Kanal (`mobile`, `voice`, `broadcast`), Priorität (`info`, `warning`, `critical`) und Versand.
-- Neue manuelle UI-Durchsagen werden bei `away`, `vacation` und aktivem Ruhemodus unterbunden. Mobile Nachrichten bleiben möglich.
+- Neue Smart-Living-Durchsagen (`source=smart_living`) werden bei `away`, `vacation` sowie aktivem **oder nicht verifizierbarem** Ruhemodus blockiert – auch beim Profil `broadcast`. Mobile Nachrichten bleiben möglich. Eine zweite Prüfung findet im kanonischen `notifications.route`-Provider statt.
 - Doppeleingaben desselben Textes innerhalb von 10 Sekunden werden abgewiesen. Andere externe Meldungserzeuger sind davon bisher **nicht** erfasst.
 - Der Text bleibt im Composer während der laufenden HA-Sitzung; Home-Assistant-Recorder/History können Entitätszustände dennoch speichern. Für vertrauliche Inhalte muss die `text`-Entität im Recorder ausgeschlossen werden.
-- Die bisherige Notification-Konfiguration bleibt unverändert; nur die Interpretation einer fehlenden alten Modus-Referenz verwendet den neuen Laufzeitmodus.
+- Bestehende 1.0-Notification-Automationen und deren absichtlicher Legacy-`broadcast`-Override bleiben unverändert (insbesondere Alarmwege). Direkte Legacy-Aufrufe von `notifications.announce` liegen außerhalb der neuen Smart-Living-Komfortsperre. Für eine globale Durchsagen-Sperre wäre eine gesonderte, bewusst freizugebende Migration nötig.
 
 ## Optionale Installationseinstellungen (noch nicht in Produktion verwenden)
 
@@ -60,15 +60,37 @@ scenes: []
 
 Fehlt die Datei, werden diese konservativen Defaults verwendet. `discover_dali` ist nur Entitäts-Discovery, kein eigenständiger Schaltvorgang. Es werden **keine** Haus-/Urlaubsaktionen automatisch ausgeführt.
 
-## Abnahmehindernisse vor stable 1.1.0
+## Qualifikationsstand und verbleibende Freigabeschritte
 
-1. **HA-Staging-Test:** alle neuen nativen Plattformen und Konfigurator-Neustart gegen die konkrete HA-Version laden; MQTT/OPC-UA-Hardware bleibt zunächst unangetastet.
-2. **Farbmodus-Messung:** einen repräsentativen DALI-HA-RGBW-Kanal samt Weiß- und Helligkeitsfeedback kontrolliert prüfen.
-3. **Ausführungsarchitektur:** RGBW-Adapter in die kanonischen Capabilities/Execution-Contracts integrieren oder ausdrücklich einen formal freigegebenen, gleichwertigen Guarded-Adaptervertrag einführen.
-4. **House policies:** bestehende Aktionspfade `execution_execute` nicht stillschweigend auf neues Mode-Enforce umstellen; erforderliche Policy-Fall-Closed-Tests ergänzen.
-5. **Durchsagen:** Router-Broadcast-Overrides und andere externe Aufrufer zusätzlich auf Hausmodus/Quiet-Hours-Policy prüfen; keine stillen Ruhemodus-Umgehungen.
-6. **Szenen/Gruppen:** gegen neue native Red-Queen-Entitäten definieren; noch nicht umgesetzt.
-7. **Release-Prozess:** 1.1.0-Versionen, Checksumkatalog, Kompatibilitäts-/Migrationstests, HACS-Staging und Rollback durchführen.
-8. Der alte 1.0.0 Source-Checksum-Validator bleibt unverändert; ein separater Entwicklungsvalidator ersetzt *nicht* die Release-Qualifikation.
+**Bestätigt:** Der Netzwerk-isolierte HA-Starttest (Commit `db37a04`) war
+`PASS`; fünf neue Hausmodus-/Nachrichten-Entitäten wurden registriert.
+Alle 13 DALI-RGBW-Quellen melden `ColorMode.RGBW` und wurden laut
+Anlagenbetreiber bereits physisch getestet.
 
-**Produktionsfreigabe: NO-GO.** Der Entwicklungsbranch ist ausdrücklich nicht als stabile Installation bestimmt.
+**Neu umgesetzt:** Keine doppelten HA-RGBW-Proxies; direkte Dashboard-
+Bindung an die vorhandenen `asyncua`-Quellen. Separate Smart-Living-
+Durchsagen-Sperre in Nachrichten-Composer und Kanonischem Router mit
+bewahrter Legacy-Alarmkompatibilität. Sämtliche Batch-Szenen haben eine
+nicht über HA-Service oder Button umgehbare Komfortsperre. Bei fehlender
+Ruhemodus-Rückmeldung wird für neue Komfortaktionen konservativ gesperrt.
+Automatische Unit-, Quellcode-Invarianten- und hassfest-Checks laufen im
+Entwicklungsbranch.
+
+**Noch offen:**
+1. Isolierten HA-Staging-Smoke **auf dem neuesten Entwicklungscommit**
+   nach den Codeänderungen erneut ausführen (früherer PASS ist kein neuer PASS).
+2. Kanonische RGBW-Szenenadapter-Architektur final qualifizieren;
+   der bestehende HA-Lichtservice ist die bewährte physische Bedienebene.
+3. Sichere Text-/Benachrichtigungs-Routentests mit geeigneten Mocks,
+   anschließend gezielte Sonos-Testdurchsage nach Freigabe.
+4. Konfigurierte Szenen im Staging erst mit passenden Quellen virtuell prüfen.
+5. Fertiges 1.1.0-Manifest, Versions-/Checksum-Katalog, HACS-
+   Kompatibilität, Backups und Rollback qualifizieren.
+6. Nach abgeschlossener Freigabe **einen kontrollierten** Produktiv-Rollout,
+   mit anschließendem End-to-End-Praxistest durchführen.
+
+Der unveränderte Stable-1.0.0-Source-Checksum-Validator bleibt gültig;
+die Branch-Checks ersetzen ausdrücklich keine Release-Qualifikation.
+
+**Produktionsfreigabe aktuell: NO-GO.** Noch keinen Entwicklungsstand
+über die laufende Red Queen 1.0.0 kopieren.
