@@ -1,9 +1,9 @@
 # Red Queen 1.1.0 – Smart Living Edition
 ## Technisches Pflichtenheft und gebündelter Entwicklungsplan
 
-**Status:** Entwicklungsplanung – kein freigegebener Release  
-**Ausgangsbasis:** Red Queen 1.0.0, GitHub main, Commit 66d51ba90ca608bf94eb3f6740200379c040e450  
-**Entwicklungszweig:** feature/1.1.0-smart-living  
+**Status:** Entwicklungsplanung – kein freigegebener Release
+**Ausgangsbasis:** Red Queen 1.0.0, GitHub main, Commit 66d51ba90ca608bf94eb3f6740200379c040e450
+**Entwicklungszweig:** feature/1.1.0-smart-living
 **Grundsatz:** Bestehende Produktion und main bleiben bis zur nachgewiesenen Freigabe unverändert.
 
 ## 1. Ziel und Abgrenzung
