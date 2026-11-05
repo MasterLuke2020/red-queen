@@ -549,6 +549,14 @@ def _render_overview(
         )
 
     secondary_navigation: list[dict[str, Any]] = []
+    secondary_navigation.append(
+        _navigation_button(
+            name="Smart Living",
+            path="smart-living",
+            dashboard_url_path=dashboard_url_path,
+            icon="mdi:palette-outline",
+        )
+    )
     if model.plants_path:
         secondary_navigation.append(
             _navigation_button(
@@ -1221,6 +1229,55 @@ def _render_system(
         ],
     }
 
+def _render_smart_living(bindings: DashboardBindings) -> dict[str, Any]:
+    """Lightweight native UI: user-renamed entity IDs resolved via registry."""
+    mode = bindings.global_entity_id("house_mode")
+    mode_cards = (
+        [_entity_tile(mode, name="Hausmodus", icon="mdi:home-switch")]
+        if mode else [{
+            "type": "markdown",
+            "content": "Der Red-Queen-Hausmodus ist noch nicht verfügbar.",
+        }]
+    )
+    rgbw_cards = [
+        _entity_tile(ref.entity_id, name=None, icon="mdi:palette")
+        for ref in bindings.smart_lights
+        if ref.entity_id is not None
+    ]
+    if not rgbw_cards:
+        rgbw_cards = [{
+            "type": "markdown",
+            "content": "Keine nativen Red-Queen-RGBW-Leuchten registriert.",
+        }]
+    return {
+        "type": "sections",
+        "title": "Smart Living",
+        "path": "smart-living",
+        "icon": "mdi:palette-outline",
+        "max_columns": 4,
+        "header": {
+            "card": {
+                "type": "markdown",
+                "text_only": True,
+                "content": "# Smart Living\n**Hausmodi & RGBW-Beleuchtung**",
+            }
+        },
+        "sections": [
+            _section(heading="Hausmodus", icon="mdi:home-switch",
+                     cards=mode_cards, column_span=4),
+            _section(heading="RGBW / DALI", icon="mdi:palette",
+                     cards=rgbw_cards, column_span=4),
+            _section(heading="Mitteilungen", icon="mdi:bullhorn-outline",
+                     cards=[{"type": "markdown", "content": (
+                         "Durchsagen und Push-Benachrichtigungen werden "
+                         "über die bestehenden kanonischen Red-Queen-Aktionen "
+                         "`notifications.send`, `notifications.announce` "
+                         "und `notifications.route` ausgeführt."
+                     )}], column_span=4),
+        ],
+    }
+
+
 def _canonical_sha256(config: dict[str, Any]) -> str:
     encoded = json.dumps(
         config,
@@ -1271,6 +1328,7 @@ def render_dashboard(
     if model.plants_path:
         views.append(_render_plants(model, bindings))
 
+    views.append(_render_smart_living(bindings))
     views.append(_render_system(model, bindings))
 
     config: dict[str, Any] = {
