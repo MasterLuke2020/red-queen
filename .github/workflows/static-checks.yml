@@ -25,3 +25,5 @@ jobs:
         run: python tools/verify_development.py
       - name: Unit test 1.1.0 inventory
         run: python -m unittest discover -s tests -p 'test_*.py'
+      - name: Validate isolated staging script syntax
+        run: bash -n tools/rq11_stage_check.sh
