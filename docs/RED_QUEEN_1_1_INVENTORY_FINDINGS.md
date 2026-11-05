@@ -13,7 +13,7 @@
 - Keine eigenen Kontextregeln in `contexts/rules`; vorhandene Policies/Decisions beziehen sich derzeit auf Licht-Ausschaltaktionen
 - Keine Inventurwarnungen
 
-**Wichtig:** Die Inventur enthält keine aktuellen Farbwerte, `supported_color_modes` oder gesicherten Hardware-Bewegungs-/Farbnachweis. Die RGBW-Adapter verwenden deshalb live vorhandene HA-Farbmodusattribute und behaupten nach Service-Dispatch ausdrücklich keinen physisch verifizierten Endzustand.
+**Zusätzliche Abnahme:** Isolierter HA-Staging-Start und Registrierung von 5 neuen Hausmodus-/Nachrichtenentitäten erfolgreich (`PASS`). Danach wurden alle 13 produktiven DALI-Quellleuchten in HA mit `supported_color_modes=[ColorMode.RGBW]` gelesen. Der Anlagenbetreiber hat ausdrücklich bestätigt, dass sämtliche 13 RGBW-Leuchten bereits real auf Farbe und Helligkeit getestet wurden und direkt verwendet werden sollen. Es gibt daher keine erneuten Einzel-Hardwaretests als Voraussetzung.
 
 ## Umgesetzter Funktionskern im Entwicklungsbranch
 
@@ -28,11 +28,11 @@
 
 ### B. DALI / RGBW
 
-- Es werden bei Integration-Setup ausschließlich registrierte, aktivierte `asyncua`-Entitäten mit Muster `light.dali_*_rgbw` als neue native Red-Queen-RGBW-Lichter angeboten. Alternativ explizites Allowlisting in `/config/wnhf/smart_living.yaml`.
-- Quelle und physisches Treiberverhalten bleiben bei HA/OPC-UA; Red Queen delegiert nur validierte RGBW-/Helligkeitsbefehle. Dies ist derzeit eine **eigene HA-Adapter-Dispatch-Schicht**, noch kein neuer kanonischer `lighting.set_rgbw`-Ausführungsvertrag.
-- Getrennte Stable-Unique-IDs `wnhf_rgbw_<source>`. Bestehende Toggle-Lichter/IDs bleiben unverändert.
-- `rgbw_dispatch_audit` dokumentiert angenommene Weiterleitungen, nicht physisch bestätigte Farben.
-- Das Live-Farbmodell kann sich erst nach überprüften `supported_color_modes` auf volle RGBW-Unterstützung festlegen; bei fehlenden unterstützten Modi stehen nur entsprechend reduzierte UI-Funktionen bereit.
+- Die bereits vorhandenen, real getesteten `asyncua`-Entitäten `light.dali_*_rgbw` werden **direkt und ohne zusätzliche Home-Assistant-RGBW-Proxy-Entitäten** im Smart-Living-Dashboard eingebunden. Die Laufzeit-Discovery erlaubt nur aktivierte registrierte Quellleuchten, alternativ explizites Allowlisting in `/config/wnhf/smart_living.yaml`.
+- Quelle und physisches Treiberverhalten bleiben bei HA/OPC-UA. Direkte Dashboard-Bedienung nutzt den vorhandenen HA-Lichtservice. Optionale Red-Queen-Szenen delegieren validierte RGBW-/Helligkeitsbefehle an denselben HA-Lichtservice. Es gibt noch keinen neuen kanonischen `lighting.set_rgbw`-Ausführungsvertrag.
+- Es werden bewusst **keine** neuen `wnhf_rgbw_*`-Unique-IDs und keine doppelten Licht-Entitäten erzeugt. Alle bestehenden Licht- und Toggle-Entity-IDs bleiben unverändert.
+- `rgbw_dispatch_audit` dokumentiert nur die über Red Queen ausgelösten Szenen-/Service-Weiterleitungen, nicht direkte Bedienung der Quellleuchte aus Home Assistant und keine physisch bestätigten Farben.
+- Die 13 Quellleuchten melden alle `ColorMode.RGBW` und sind nach Betreiberangabe physisch getestet. Die Smart-Living-Kacheln zeigen die nativen HA-Farb-/Helligkeitsfunktionen der vorhandenen Quellleuchten.
 - Optionale konfigurierte Lichtszenen können mehrere geprüfte Leuchten nacheinander stellen, werden aber niemals automatisch beim Laden aktiviert; partial dispatch wird sichtbar. Referenzkonfiguration: `configuration/smart_living.example.yaml`.
 
 ### C. Kommunikation
