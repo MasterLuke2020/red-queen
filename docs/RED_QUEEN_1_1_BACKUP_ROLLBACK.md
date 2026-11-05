@@ -96,6 +96,26 @@ des Backup-Cockpits nur lesend prüfen, anschließend einen separaten Restore-
 Drill mit ausdrücklicher Mount-/Schreibziel-Freigabe durchführen. Keine
 unautorisierte USB-Mountaktion, kein Schreiben in das bestehende Repository.
 
+## Wiederherstellungsunterlagen und Mountstatus (05.11.2026, Abend)
+
+Die reine Bestandsabfrage des Betreibers hat ergeben:
+
+- `findmnt --mountpoint /srv/storage/network_drive_1`: kein Dateisystem an **diesem geprüften Pfad** eingehängt.
+- Unter `/srv/admin/server-docs/recovery/server-restic-maintenance/` sind unter anderem `WATCHDOG-RECOVERY.txt`, `RETENTION-V3-RECOVERY.txt`, `MAINT-TIMER-RECOVERY.txt` und `ALARM-RECOVERY.txt` auffindbar.
+- Ein spezifisch benanntes Home-Assistant-Restic-Restore-Handbuch wurde mit der begrenzten Dateinamenssuche noch nicht gefunden.
+- **Wichtig:** Der im vorigen Diagnosebefehl geprüfte Mountpoint ist nicht durch einen Abgleich mit `/usr/local/sbin/server-backup` verifiziert. Keine Behauptung, dass dies der echte USB-1-Mountpoint ist.
+
+Vor einem Restore zunächst **nur lesend** die physische Datenträgerzuordnung
+(`lsblk`, `findmnt -S /dev/sdb1`) und die tatsächlich konfigurierte
+Mount-/Repository-Verwendung im Produktiv-Sicherungsskript ermitteln.
+Da Journal-Meldungen `/dev/sdb1` nennen, ist dieser Name nur eine
+**Momentaufnahme** und kein dauerhaftes Identifikationsmerkmal; für die
+spätere Recovery bevorzugt UUID/PARTUUID prüfen.
+
+Es wurde weder eine USB-Partition gemountet noch ein Restic-Kommando
+ausgeführt. Die Produktivfreigabe bleibt bis zum nachweislich getrennten
+Test-Restore und zur Prüfung der exakten 1.0.0-Dateien gesperrt.
+
 ## Vorhandenes Backup-System bevorzugen
 
 Auf dem Server wurde zuvor ein Restic-basiertes Server-Backup eingerichtet.
