@@ -31,3 +31,5 @@ jobs:
         run: |
           bash -n tools/rq11_deploy.sh
           bash tools/rq11_deploy.sh --help
+          bash -n tools/rq11_all_off_patch.sh
+          bash tools/rq11_all_off_patch.sh --help
