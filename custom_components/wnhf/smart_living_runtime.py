@@ -249,6 +249,60 @@ class SmartLivingRuntime:
             finally:
                 self.audit.append(outcome)
 
+    async def async_all_rgbw_off(self) -> dict[str, Any]:
+        """Turn off native Smart Living RGBW lights for the whole-house off action.
+
+        Unlike comfort scenes, manual all-off is intentionally allowed in every
+        house/quiet mode. Restrict writes to already-approved source entities
+        and leave the existing Red Queen semantic light workflow untouched.
+        An accepted HA service call is not a physical completion guarantee.
+        """
+        outcomes: list[dict[str, str]] = []
+        for entity_id in tuple(self.rgbw_targets):
+            state = self.hass.states.get(entity_id)
+            if state is None or state.state in {"unknown", "unavailable"}:
+                outcomes.append({"entity_id": entity_id, "status": "unavailable"})
+                continue
+            if state.state == "off":
+                outcomes.append({"entity_id": entity_id, "status": "already_off"})
+                continue
+            if state.state != "on":
+                outcomes.append({"entity_id": entity_id, "status": "skipped_unknown_state"})
+                continue
+            try:
+                await self.async_light_dispatch(entity_id, "turn_off", {})
+                outcomes.append({
+                    "entity_id": entity_id,
+                    "status": "accepted_dispatch_not_verified",
+                })
+            except Exception as err:
+                _LOGGER.warning(
+                    "Smart Living all-off: %s failed for %s",
+                    type(err).__name__, entity_id,
+                )
+                outcomes.append({
+                    "entity_id": entity_id,
+                    "status": "failed",
+                    "reason": type(err).__name__,
+                })
+                # Continue with the other lights; do not leave them all on
+                # because one particular native DALI source is unavailable.
+        failed = sum(
+            entry["status"] in {"failed", "unavailable", "skipped_unknown_state"}
+            for entry in outcomes
+        )
+        return {
+            "target_count": len(outcomes),
+            "dispatched_count": sum(
+                item["status"] == "accepted_dispatch_not_verified"
+                for item in outcomes
+            ),
+            "failed_count": failed,
+            "status": "partial" if failed else "dispatched",
+            "results": outcomes,
+            "physically_verified": False,
+        }
+
     async def async_activate_scene(
         self, scene_id: str,
     ) -> dict[str, Any]:
