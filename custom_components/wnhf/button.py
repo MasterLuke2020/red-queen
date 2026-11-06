@@ -9,7 +9,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 
 from .const import DATA_ENGINE, DOMAIN, VERSION
-from .device import room_device_info
+from .device import room_device_info, module_device_info
+from .smart_living_runtime import DATA_SMART_LIVING
 from .domain.cover import Cover
 from .domain.opening import Opening
 from .engine import WNHFEngine
@@ -54,7 +55,10 @@ async def _async_setup_entities(
                 key=lambda item: (item.room_id, item.name, item.object_id),
             )
             if opening.door_opener is not None
-        ],
+        ]
+        + [RedQueenSendMessageButton(hass)]
+        + ([RedQueenActivateSceneButton(hass)]
+           if hass.data[DOMAIN][DATA_SMART_LIVING].scenes else []),
         update_before_add=False,
     )
 
@@ -300,3 +304,49 @@ class WNHFDoorReleaseButton(ButtonEntity):
             "physical_opening_claimed": False,
             "framework_version": VERSION,
         }
+
+
+class RedQueenSendMessageButton(ButtonEntity):
+    """Manual dispatch through the existing canonical notification route."""
+    _attr_should_poll = False
+    _attr_has_entity_name = False
+    _attr_icon = "mdi:send-outline"
+    _attr_name = "Red Queen Nachricht senden"
+    _attr_unique_id = "wnhf_smart_message_send"
+    _attr_suggested_object_id = "wnhf_message_send"
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        self.hass = hass
+        self.runtime = hass.data[DOMAIN][DATA_SMART_LIVING]
+        self._attr_device_info = module_device_info(
+            "smart_living", "Red Queen Smart Living",
+        )
+
+    async def async_press(self) -> None:
+        await self.runtime.composer.async_send()
+
+
+class RedQueenActivateSceneButton(ButtonEntity):
+    """Execute the currently selected scene with full preflight."""
+    _attr_should_poll = False
+    _attr_has_entity_name = False
+    _attr_icon = "mdi:palette-swatch"
+    _attr_name = "Red Queen Lichtszene aktivieren"
+    _attr_unique_id = "wnhf_smart_scene_activate"
+    _attr_suggested_object_id = "wnhf_scene_activate"
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        self.runtime = hass.data[DOMAIN][DATA_SMART_LIVING]
+        self._attr_device_info = module_device_info(
+            "smart_living", "Red Queen Smart Living",
+        )
+
+    async def async_press(self) -> None:
+        if self.runtime.selected_scene is None:
+            raise ValueError("No scene selected")
+        result = await self.runtime.async_activate_scene(
+            self.runtime.selected_scene,
+        )
+        if result["status"] != "dispatched":
+            from homeassistant.exceptions import HomeAssistantError
+            raise HomeAssistantError("Scene partly dispatched; check RGBW audit")

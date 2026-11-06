@@ -1,0 +1,31 @@
+# Example only – NOT automatically deployed into production.
+# Optional path after qualified install: /config/wnhf/smart_living.yaml
+auto_away: false
+away_entity_id: binary_sensor.datawebstateabwesenheit
+quiet_entity_id: binary_sensor.wnhf_quiet_mode_active
+discover_dali: true
+rgbw_entity_ids: []
+message_route_id: notification.route.house
+
+# These examples use real entity IDs found in the 2026-11-05 inventory.
+# Their color modes/white-channel support still require runtime verification.
+# No scene is applied automatically.
+scenes:
+  - id: wohnzimmer_abend
+    name: Wohnzimmer – Abend
+    lights:
+      light.dali_og_wohnzimmer_rgbw:
+        state: "on"
+        rgbw_color: [8, 3, 0, 130]
+        brightness: 130
+      light.dali_og_galerie_unten_rgbw:
+        state: "on"
+        rgbw_color: [5, 0, 8, 100]
+        brightness: 110
+  - id: buero_arbeit
+    name: Büro – Arbeiten
+    lights:
+      light.dali_eg_buro_rgbw:
+        state: "on"
+        rgbw_color: [0, 0, 0, 230]
+        brightness: 220

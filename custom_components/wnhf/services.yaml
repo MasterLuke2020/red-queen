@@ -1,3 +1,48 @@
+smart_scenes_snapshot:
+  name: Smart Living – Lichtszenen auflisten
+  description: Zeigt konfigurierte Smart-Living-Szenen und die jeweils betroffenen Leuchten an.
+  fields: {}
+
+smart_scene_activate:
+  name: Smart Living – Lichtszene aktivieren
+  description: Lichtszenen sind auch bei Button-Aufruf ausschließlich im Hausmodus home und bei sicher inaktivem Ruhemodus erlaubt. Das gilt für Service, Skript und Automation. Einzelne Leuchten bleiben unabhängig davon direkt bedienbar. Mehrere Umschaltungen erfolgen nicht atomar.
+  fields:
+    scene_id:
+      name: Szenen-ID
+      required: true
+      selector:
+        text:
+
+
+house_mode_snapshot:
+  name: Smart Living – Hausmodus anzeigen
+  description: Gibt Betriebsmodus, Quelle, Ruhemodus, Berechtigungen und RGBW-Zielbindungen zurück.
+  fields: {}
+
+house_mode_set:
+  name: Smart Living – Hausmodus setzen
+  description: Speichert einen manuellen Hausmodus. Automatische Abwesenheit bleibt deaktiviert, sofern nicht ausdrücklich konfiguriert.
+  fields:
+    mode:
+      name: Betriebsmodus
+      description: home, away oder vacation
+      required: true
+      selector:
+        select:
+          options:
+            - label: Zuhause
+              value: home
+            - label: Abwesend
+              value: away
+            - label: Urlaub
+              value: vacation
+
+rgbw_dispatch_audit:
+  name: Smart Living – RGBW Dispatch-Audit
+  description: Zeigt die letzten angenommenen oder abgewiesenen Befehlsweitergaben an die vorhandenen HA-Lichtentitäten. Kein Nachweis des physikalischen Farbzustands.
+  fields: {}
+
+
 lighting_all_off:
   name: Lighting – All off
   description: Switches off every controllable Red Queen light currently reporting on.

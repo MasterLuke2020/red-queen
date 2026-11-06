@@ -33,6 +33,9 @@ async def _async_setup_entities(
     engine: WNHFEngine = hass.data[DOMAIN][DATA_ENGINE]
     house = engine._require_house()
 
+    # DALI RGBW is already exposed as tested asyncua light entities.
+    # Reuse those source entity IDs in Smart Living instead of registering
+    # duplicate proxy light entities in Home Assistant.
     async_add_entities(
         [
             WNHFLightEntity(hass, engine, light)

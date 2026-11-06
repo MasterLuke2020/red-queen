@@ -33,6 +33,7 @@ from .const import (
     SIGNAL_EXECUTION_AUDIT_UPDATED,
 )
 from .engine import WNHFEngine
+from .smart_living_runtime import SmartLivingRuntime, DATA_SMART_LIVING
 from .domain.house import House
 from .registry import WNHFRegistryError
 from .services import async_register_services, async_unregister_services
@@ -111,6 +112,10 @@ async def async_setup_entry(
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][DATA_ENGINE] = engine
     hass.data[DOMAIN]["config_entry_id"] = entry.entry_id
+
+    smart_living = SmartLivingRuntime(hass)
+    await smart_living.async_setup()
+    hass.data[DOMAIN][DATA_SMART_LIVING] = smart_living
 
     await async_register_services(hass, engine)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

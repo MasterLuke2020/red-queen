@@ -10,7 +10,9 @@ import re
 from typing import Any
 from urllib.parse import urlencode
 
-from ..const import NOTIFICATION_TARGETS_FILE
+from ..const import NOTIFICATION_TARGETS_FILE, DOMAIN
+from ..smart_living_runtime import DATA_SMART_LIVING
+from ..smart_living_logic import route_voice_decision
 from ..domain.capability import CapabilitySnapshot, CapabilityState
 from ..domain.notification import (
     ANNOUNCEMENT_LEVELS,
@@ -205,9 +207,12 @@ class NotificationCapabilityProvider(WNHFProvider):
         }
 
     def _technical_route(
-        self, route: NotificationRoute, *, profile: str, priority: str
+        self, route: NotificationRoute, *, profile: str, priority: str,
+        source: str = "unknown",
     ) -> dict[str, Any]:
-        plan = self._route_plan(route, profile=profile)
+        plan = self._route_plan(
+            route, profile=profile, priority=priority, source=source,
+        )
         return {
             "capability_id": "notifications",
             "action_id": self._ACTION_ROUTE,
@@ -532,7 +537,7 @@ class NotificationCapabilityProvider(WNHFProvider):
                 errors=(f"Unknown semantic notification route: {object_id}.",),
             )
         technical = self._technical_route(
-            route, profile=profile, priority=priority
+            route, profile=profile, priority=priority, source=source,
         )
         if not route.enabled:
             return ProviderExecutionValidationResult(
@@ -863,8 +868,10 @@ class NotificationCapabilityProvider(WNHFProvider):
         }
 
     def _route_plan(
-        self, route: NotificationRoute, *, profile: str
+        self, route: NotificationRoute, *, profile: str,
+        priority: str = "info", source: str = "unknown",
     ) -> dict[str, Any]:
+        smart_source = source == "smart_living"
         house_state: str | None = None
         if route.house_state_entity_id is not None:
             state = self.hass.states.get(route.house_state_entity_id)
@@ -873,6 +880,15 @@ class NotificationCapabilityProvider(WNHFProvider):
                 if state is not None
                 else "unknown"
             )
+            # Stable 1.0 may reference a technical/missing house-state
+            # sensor. Never reinterpret it for existing legacy message
+            # producers; doing so could silently suppress old automations.
+            # Only messages created by the new Smart Living composer may
+            # adopt the new residential operating mode as a fallback.
+            if smart_source and house_state in {"unknown", "unavailable"}:
+                runtime = self.hass.data.get(DOMAIN, {}).get(DATA_SMART_LIVING)
+                if runtime is not None:
+                    house_state = runtime.mode
         quiet_mode = False
         if route.quiet_mode_entity_id is not None:
             state = self.hass.states.get(route.quiet_mode_entity_id)
@@ -897,17 +913,18 @@ class NotificationCapabilityProvider(WNHFProvider):
             "mobile",
             "broadcast",
         }
-        if profile == "broadcast":
-            voice = True
-            suppression_reason = None
-        elif profile in {"standard", "voice"}:
-            voice = voice_context_allowed
-            suppression_reason = (
-                None if voice else "quiet_mode_or_house_state"
-            )
-        else:
-            voice = False
-            suppression_reason = "profile"
+        runtime = self.hass.data.get(DOMAIN, {}).get(DATA_SMART_LIVING)
+        # Preserve legacy 1.0 broadcast override on existing automation
+        # routes. Only the NEW Smart Living composer is guarded here, too,
+        # as a second line of protection after the composer itself.
+        voice, suppression_reason = route_voice_decision(
+            profile=profile,
+            legacy_context_allowed=voice_context_allowed,
+            smart_living_source=smart_source,
+            mode=runtime.mode if runtime is not None else "unknown",
+            quiet=(runtime.quiet if runtime is not None else True) or quiet_mode,
+            priority=priority,
+        )
 
         selected_channels = []
         if route.log_enabled:
@@ -929,7 +946,8 @@ class NotificationCapabilityProvider(WNHFProvider):
                 "house_state": house_state,
                 "allowed": voice_context_allowed,
                 "suppression_reason": suppression_reason,
-                "broadcast_override": profile == "broadcast",
+                "broadcast_override": profile == "broadcast" and not smart_source,
+                "smart_living_guard_applied": smart_source,
             },
         }
 
@@ -956,7 +974,9 @@ class NotificationCapabilityProvider(WNHFProvider):
         profile = str(parameters.get("profile", "standard"))
         source = str(parameters.get("source", "unknown")).strip()
         category = str(parameters.get("category", "general")).strip().lower()
-        plan = self._route_plan(route, profile=profile)
+        plan = self._route_plan(
+            route, profile=profile, priority=priority, source=source,
+        )
         channel_results: list[dict[str, Any]] = []
 
         if plan["log"]:
@@ -1028,6 +1048,27 @@ class NotificationCapabilityProvider(WNHFProvider):
                             "dispatched_at": dispatched_at,
                         }
                     )
+        # Mobile/dashboard delivery can await other services. A resident may
+        # switch to away mode or quiet hours while those awaits execute.
+        # Re-check ONLY new Smart Living voice delivery immediately before
+        # crossing the real Sonos/TTS announcement boundary.
+        if source == "smart_living" and plan["voice"]:
+            final_voice_plan = self._route_plan(
+                route, profile=profile, priority=priority, source=source,
+            )
+            if not final_voice_plan["voice"]:
+                plan["voice"] = False
+                plan["voice_context"] = final_voice_plan["voice_context"]
+                plan["selected_channels"] = [
+                    channel for channel in plan["selected_channels"]
+                    if channel != "voice"
+                ]
+                channel_results.append({
+                    "channel": "voice",
+                    "target_id": route.announcement_target_id,
+                    "status": "suppressed",
+                    "reason": "house_or_quiet_mode_changed_before_dispatch",
+                })
         if plan["voice"]:
             target_id = route.announcement_target_id
             if target_id is None:

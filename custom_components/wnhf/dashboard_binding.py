@@ -4,9 +4,11 @@ The dashboard model is intentionally platform-neutral.  This module is the
 single bridge from stable Red Queen semantic object IDs to the *current* Home
 Assistant entity IDs registered for the native Red Queen entities.
 
-Bindings are resolved exclusively through Home Assistant's Entity Registry and
-stable Red Queen ``unique_id`` values.  The implementation never scans runtime
-states and never binds provider entities such as PLC/OPC-UA/MQTT entities.
+Existing Red Queen semantics are resolved through the Home Assistant Entity
+Registry and stable Red Queen ``unique_id`` values. Smart Living RGBW is the
+explicit exception: already validated/allowlisted DALI-OPC-UA light entities
+are reused directly. No duplicate RGBW proxy entities are created and
+registry resolution does not scan runtime state or invoke a device.
 """
 
 from __future__ import annotations
@@ -106,6 +108,7 @@ class DashboardBindings:
     openings: tuple[DashboardOpeningBinding, ...]
     plants: tuple[DashboardPlantBinding, ...]
     issues: tuple[DashboardBindingIssue, ...]
+    smart_lights: tuple[DashboardEntityRef, ...] = ()
 
     @property
     def complete(self) -> bool:
@@ -118,6 +121,7 @@ class DashboardBindings:
         refs: list[DashboardEntityRef] = [
             item.entity for item in self.globals
         ]
+        refs.extend(self.smart_lights)
         refs.extend(item.light for item in self.lights)
         for item in self.covers:
             refs.append(item.cover)
@@ -213,6 +217,13 @@ def _plant_water_unique_id(object_id: str) -> str:
 
 _GLOBAL_ENTITY_CONTRACT: tuple[tuple[str, str, str], ...] = (
     ("house_ready", "binary_sensor", "wnhf_house_ready"),
+    ("house_mode", "select", "wnhf_smart_living_house_mode"),
+    ("message_text", "text", "wnhf_smart_message_text"),
+    ("message_profile", "select", "wnhf_smart_message_profile"),
+    ("message_priority", "select", "wnhf_smart_message_priority"),
+    ("message_send", "button", "wnhf_smart_message_send"),
+    ("scene", "select", "wnhf_smart_scene"),
+    ("scene_activate", "button", "wnhf_smart_scene_activate"),
     ("framework_healthy", "binary_sensor", "wnhf_framework_healthy"),
     ("registry_valid", "binary_sensor", "wnhf_registry_valid"),
     ("security_secure", "binary_sensor", "wnhf_security_secure"),
@@ -308,6 +319,9 @@ def resolve_dashboard_bindings(
     globals_: list[DashboardGlobalBinding] = []
     for role, domain, unique_id in _GLOBAL_ENTITY_CONTRACT:
         ref = _resolve(registry, domain=domain, unique_id=unique_id)
+        if role in {"scene", "scene_activate"} and not ref.resolved:
+            # Scene entities are only registered if optional scenes exist.
+            continue
         globals_.append(DashboardGlobalBinding(role=role, entity=ref))
         _issue_if_unresolved(
             issues,
@@ -474,6 +488,24 @@ def resolve_dashboard_bindings(
                 ),
             )
 
+    # User-confirmed working DALI RGBW sources already exist in HA as
+    # asyncua light entities. Bind ONLY sources from the Smart Living runtime
+    # allowlist instead of creating duplicate HA lights.
+    runtime = hass.data.get(DOMAIN, {}).get("smart_living")
+    allowed_sources = set(runtime.rgbw_targets) if runtime is not None else set()
+    smart_lights = tuple(
+        DashboardEntityRef(
+            domain="light",
+            unique_id=entry.unique_id,
+            entity_id=entry.entity_id,
+        )
+        for entry in sorted(registry.entities.values(), key=lambda item: item.entity_id)
+        if entry.entity_id in allowed_sources
+        and entry.domain == "light"
+        and entry.platform != DOMAIN
+        and entry.disabled_by is None
+    )
+
     return DashboardBindings(
         contract_version=DASHBOARD_BINDING_CONTRACT_VERSION,
         globals=tuple(globals_),
@@ -482,4 +514,5 @@ def resolve_dashboard_bindings(
         openings=tuple(openings),
         plants=tuple(plants),
         issues=tuple(issues),
+        smart_lights=smart_lights,
     )

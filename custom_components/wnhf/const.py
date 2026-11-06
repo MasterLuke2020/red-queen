@@ -7,7 +7,7 @@ PRODUCT_NAME = "Red Queen"
 DEVELOPMENT_NAME = "WNHF"
 DEVELOPMENT_BASELINE_VERSION = "1.40.0"
 RELEASE_BASELINE = "WP-4.7.20.0"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 DATA_ENGINE = "engine"
 
@@ -34,6 +34,8 @@ PLATFORMS = (
     "light",
     "button",
     "lock",
+    "select",
+    "text",
 )
 
 # Dispatcher signal emitted after a successful registry reload.
@@ -582,3 +584,11 @@ ENTITY_LOGGING_PRODUCTION_CLEANUP_VERSION = "1.0-stage4.7.7.2"
 SECURITY_MESSAGE_STATE_CONTRACT_VERSION = "2.0-short-state"
 OPENINGS_MESSAGE_STATE_CONTRACT_VERSION = "2.0-short-state"
 DISABLED_REGISTRY_OBJECTS_ARE_WARNINGS = False
+
+# Smart Living 1.1 (optional, separate from technical HouseState)
+SERVICE_HOUSE_MODE_SNAPSHOT = "house_mode_snapshot"
+SERVICE_HOUSE_MODE_SET = "house_mode_set"
+SERVICE_RGBW_DISPATCH_AUDIT = "rgbw_dispatch_audit"
+
+SERVICE_SMART_SCENES_SNAPSHOT = "smart_scenes_snapshot"
+SERVICE_SMART_SCENE_ACTIVATE = "smart_scene_activate"
