@@ -292,12 +292,21 @@ def _overview_status_cards(
             )
         )
 
-    if model.features.lights:
-        light_entities = [
-            item.light.entity_id
-            for item in bindings.lights
-            if item.light.entity_id
-        ]
+    if model.features.lights or bindings.smart_lights:
+        # Include native asyncua DALI RGBW lights in the overall light counter
+        # without creating WNHF proxy light entities or duplicate counts.
+        light_entities = list(dict.fromkeys([
+            *(
+                item.light.entity_id
+                for item in bindings.lights
+                if item.light.entity_id
+            ),
+            *(
+                item.entity_id
+                for item in bindings.smart_lights
+                if item.entity_id
+            ),
+        ]))
         cards.append(
             _semantic_markdown_card(
                 title="Licht",
@@ -465,7 +474,7 @@ def _overview_action_cards(
 ) -> list[dict[str, Any]]:
     cards: list[dict[str, Any]] = []
 
-    if model.features.lights:
+    if model.features.lights or bindings.smart_lights:
         cards.append(
             _action_button(
                 name="Licht komplett aus",
