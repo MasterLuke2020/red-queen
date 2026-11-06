@@ -282,7 +282,14 @@ async def async_register_services(
         return result
 
     async def handle_all_off(call: ServiceCall) -> dict:
+        # Preserve the original semantic Red Queen / WAGO lighting workflow.
         result = await engine.async_lighting_all_off()
+        # Smart Living DALI entities are native asyncua lights, not semantic
+        # WNHF Light objects. Include them in the SAME existing all-off service
+        # so the dashboard and other callers switch off all configured lights.
+        runtime = hass.data.get(DOMAIN, {}).get(DATA_SMART_LIVING)
+        if runtime is not None:
+            result["smart_living_rgbw"] = await runtime.async_all_rgbw_off()
         async_dispatcher_send(hass, SIGNAL_PERFORMANCE_UPDATED)
         return result
 
