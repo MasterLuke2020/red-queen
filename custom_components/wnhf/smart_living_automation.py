@@ -91,7 +91,7 @@ class SmartLightingScheduler:
                 else:
 
                     @callback
-                    def on_sun(_id: str = rule_id) -> None:
+                    def on_sun(_when: datetime, _id: str = rule_id) -> None:
                         self._queue(_id)
 
                     helper = (
