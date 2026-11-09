@@ -97,6 +97,7 @@ def parse_automation_rules(
 
 def automation_permission(
     rule: dict[str, Any], mode: str, quiet: bool,
+    *, quiet_state: str | None = None,
 ) -> tuple[bool, str]:
     """Keep legacy/manual scene guards intact; scheduled off is always safe.
 
@@ -110,6 +111,11 @@ def automation_permission(
         return True, "targeted_off_allowed"
     if mode not in rule["allowed_modes"]:
         return False, "house_mode_not_allowed"
-    if quiet and not rule["allow_quiet"]:
-        return False, "quiet_mode_not_allowed"
+    if quiet:
+        if not rule["allow_quiet"]:
+            return False, "quiet_mode_not_allowed"
+        # Unknown/unavailable quiet sensor must never silently grant an ON,
+        # even when night-time use was explicitly opted in.
+        if quiet_state != "on":
+            return False, "quiet_sensor_unavailable"
     return True, "scheduled_on_allowed"
