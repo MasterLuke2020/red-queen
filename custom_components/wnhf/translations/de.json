@@ -520,7 +520,8 @@
           "smart_scene_rename": "Szene umbenennen",
           "smart_scene_target": "Leuchte hinzufügen / bearbeiten",
           "smart_scene_target_remove": "Leuchte entfernen",
-          "smart_scene_delete": "Szene löschen"
+          "smart_scene_delete": "Szene löschen",
+          "smart_scene_target_pick": "Vorhandene Szenen-Leuchte auswählen"
         }
       },
       "smart_scene_rename": {
@@ -628,6 +629,26 @@
         "data": {
           "confirm": "Löschung ausdrücklich bestätigen"
         }
+      },
+      "smart_scene_target_pick": {
+        "title": "Szenen-Leuchte auswählen",
+        "data": {
+          "entity_id": "Leuchte"
+        }
+      },
+      "smart_scene_target_edit": {
+        "title": "Leuchte und Farbwerte bearbeiten",
+        "description": "Vorhandene Werte werden vorausgefüllt. Speichern führt keinen Schaltbefehl aus.",
+        "data": {
+          "entity_id": "Leuchte",
+          "state": "Zustand",
+          "brightness": "Helligkeit 0–255",
+          "color_mode": "Farbsteuerung",
+          "red": "Rot 0–255",
+          "green": "Grün 0–255",
+          "blue": "Blau 0–255",
+          "white": "Weiß 0–255"
+        }
       }
     },
     "error": {
@@ -664,7 +685,8 @@
       "smart_lighting_save_failed": "Speichern/Validierung fehlgeschlagen. Keine Lichtbefehle ausgelöst.",
       "smart_lighting_invalid_mode": "Mindestens einen Hausmodus auswählen.",
       "smart_lighting_confirm_required": "Bestätigung erforderlich.",
-      "smart_lighting_target_missing": "Leuchte nicht in dieser Szene vorhanden."
+      "smart_lighting_target_missing": "Leuchte nicht in dieser Szene vorhanden.",
+      "smart_lighting_target_exists": "Die Leuchte ist bereits enthalten. Verwende „Vorhandene Szenen-Leuchte auswählen“ zum Bearbeiten."
     },
     "abort": {
       "commissioning_state_lost": "Der Einrichtungsentwurf ist verloren gegangen. Starte erneut.",
