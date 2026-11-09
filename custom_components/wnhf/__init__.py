@@ -121,6 +121,9 @@ async def async_setup_entry(
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await async_setup_dashboard_adapter(hass)
     await async_setup_dashboard_generation_service(hass)
+    # Arm event listeners only after integration/platform setup; never replay
+    # ON events during HA startup. Rules are disabled by default.
+    smart_living.async_start_automations()
 
     _LOGGER.info(
         "Red Queen %s started via config entry | Rooms: %s | Lights: %s | "
@@ -214,6 +217,9 @@ async def async_unload_entry(
     if unload_ok:
         domain_data = hass.data.get(DOMAIN, {})
         engine = domain_data.get(DATA_ENGINE)
+        runtime = domain_data.get(DATA_SMART_LIVING)
+        if runtime is not None:
+            runtime.async_stop_automations()
 
         cancel_startup_validation = domain_data.pop(
             _DATA_STARTUP_VALIDATION_CANCEL,
