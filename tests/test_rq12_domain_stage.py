@@ -109,6 +109,19 @@ class StageTests(unittest.TestCase):
             tool.stage(self.source, self.target, self.new_package)
         self.assertFalse(self.target.exists())
 
+    def test_preserves_hidden_backup_yaml_unchanged(self):
+        archive = self.source / ".historical_ha_backup/20261103/configuration.yaml"
+        archive.parent.mkdir(parents=True)
+        archive.write_text(
+            "wnhf: {}\n"
+            "script:\n  - service: wnhf.smart_scene_activate\n",
+            encoding="utf-8",
+        )
+        backup_contents = archive.read_bytes()
+        tool.stage(self.source, self.target, self.new_package)
+        copied = self.target / ".historical_ha_backup/20261103/configuration.yaml"
+        self.assertEqual(copied.read_bytes(), backup_contents)
+
     def test_no_blind_substitution_of_entity_ids(self):
         source = "service: wnhf.lighting_all_off\nentity_id: light.wnhf_hof\n"
         rewritten, root_count, svc_count = tool.rewrite_yaml_source(source)

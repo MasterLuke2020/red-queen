@@ -73,6 +73,38 @@ def _yaml_counts(text: str, *, root: bool) -> Counter[str]:
     return counts
 
 
+# Only safe structural context is emitted. Never print full YAML lines, Jinja
+# expressions, credentials, phone numbers, full service payloads, or comments.
+YAML_KEY = re.compile(r"^\s*(?:-\s*)?([a-zA-Z_][a-zA-Z_0-9-]{0,63})\s*:")
+
+
+def _unclassified_yaml_locations(text: str, relative: str) -> list[dict[str, Any]]:
+    """Pinpoint dotted references without exposing any surrounding values."""
+    rows: list[dict[str, Any]] = []
+    for number, line in enumerate(text.splitlines(), 1):
+        mentions = list(DOTTED_DOMAIN.finditer(line))
+        if not mentions:
+            continue
+        exact_service = SERVICE_LINE.fullmatch(line) is not None
+        template_service = TEMPLATE_LINE.fullmatch(line) is not None
+        if exact_service or template_service:
+            continue
+        key = YAML_KEY.match(line)
+        classification = (
+            "comment" if line.lstrip().startswith("#")
+            else "yaml_value_or_expression"
+        )
+        for match in mentions:
+            rows.append({
+                "file": relative,
+                "line": number,
+                "yaml_key": key.group(1) if key else None,
+                "reference": match.group(0),
+                "classification": classification,
+            })
+    return rows
+
+
 def _json_counts(obj: Any) -> Counter[str]:
     counts: Counter[str] = Counter()
 
@@ -126,6 +158,7 @@ def audit(config: Path) -> dict[str, Any]:
         raise ReferenceAuditError("Home Assistant configuration directory not found")
     summaries: list[dict[str, Any]] = []
     totals: Counter[str] = Counter()
+    unresolved_locations: list[dict[str, Any]] = []
     for path in _candidate_files(root):
         relative = path.relative_to(root).as_posix()
         if path.name.startswith("lovelace") and path.parent == root / ".storage":
@@ -138,8 +171,12 @@ def audit(config: Path) -> dict[str, Any]:
             counts = _json_counts(parsed)
             kind = "lovelace"
         else:
+            yaml_text = _read_source(path)
             counts = _yaml_counts(
-                _read_source(path), root=(relative == "configuration.yaml")
+                yaml_text, root=(relative == "configuration.yaml")
+            )
+            unresolved_locations.extend(
+                _unclassified_yaml_locations(yaml_text, relative)
             )
             kind = "yaml"
         if any(counts.values()):
@@ -164,6 +201,8 @@ def audit(config: Path) -> dict[str, Any]:
         "files_examined": len(_candidate_files(root)),
         "totals": dict(totals),
         "manual_review_required": unresolved > 0,
+        "unclassified_locations": unresolved_locations[:80],
+        "unclassified_locations_truncated": len(unresolved_locations) > 80,
         "legacy_store_keys": old_stores,
         "new_store_keys": new_stores,
         "legacy_data_directory_exists": (root / "wnhf").is_dir(),
@@ -181,12 +220,25 @@ def audit(config: Path) -> dict[str, Any]:
 def main() -> int:
     p = argparse.ArgumentParser(description="Read-only domain reference inventory")
     p.add_argument("--config", required=True, type=Path)
+    p.add_argument("--unclassified-only", action="store_true",
+                   help="Print only redacted locations of unresolved wnhf.* references")
     args = p.parse_args()
     try:
         result = audit(args.config)
     except (ReferenceAuditError, OSError) as err:
         print("REFUSED: " + str(err), file=sys.stderr)
         return 2
+    if args.unclassified_only:
+        result = {
+            "mode": result["mode"],
+            "manual_review_required": result["manual_review_required"],
+            "unclassified_total": result["totals"].get(
+                "unclassified_dotted_mentions", 0
+            ),
+            "locations": result["unclassified_locations"],
+            "truncated": result["unclassified_locations_truncated"],
+            "note": "No YAML values, Jinja expressions, tokens or credentials printed",
+        }
     print(json.dumps(result, indent=2, ensure_ascii=False, sort_keys=True))
     return 0
 

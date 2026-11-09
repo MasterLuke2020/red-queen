@@ -174,7 +174,12 @@ def _eligible_yaml(root: Path) -> list[Path]:
         if path.suffix.lower() not in YAML_EXTENSIONS or not path.is_file():
             continue
         rel = path.relative_to(root)
-        if rel.parts[0] in EXCLUDE_TOP or ".storage" in rel.parts:
+        # Keep backup snapshots intact in the staged copy; they are not
+        # active HA YAML and must never be silently rewritten.
+        if (rel.parts[0] in EXCLUDE_TOP or ".storage" in rel.parts
+                or any(part.startswith(".") for part in rel.parts)):
+            continue
+
             continue
         paths.append(path)
     return sorted(paths)

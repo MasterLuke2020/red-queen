@@ -79,6 +79,33 @@ class DomainReferenceAuditTests(unittest.TestCase):
         self.assertEqual(report["legacy_store_keys"], ["wnhf.smart_living"])
         self.assertNotIn("NEVER_ECHO", json.dumps(report))
 
+    def test_unclassified_details_redact_secret_values(self):
+        file = self.root / "packages/wnhf/notify.yaml"
+        file.parent.mkdir(parents=True)
+        file.write_text(
+            "entry:\n"
+            "  action: wnhf.valid_service\n"
+            "  expression: '{{ wnhf.route_house(SECRET_VALUE_123) }}'\n"
+            "  message: SECRET_DO_NOT_LOG\n"
+            "  # wnhf.disabled_legacy\n",
+            encoding="utf-8",
+        )
+        result = tool.audit(self.root)
+        self.assertTrue(result["manual_review_required"])
+        rows = result["unclassified_locations"]
+        self.assertEqual(len(rows), 2)
+        self.assertEqual([r["line"] for r in rows], [3, 5])
+        self.assertEqual(
+            [r["reference"] for r in rows],
+            ["wnhf.route_house", "wnhf.disabled_legacy"],
+        )
+        self.assertEqual(rows[0]["yaml_key"], "expression")
+        self.assertEqual(rows[1]["classification"], "comment")
+        serialized = json.dumps(result)
+        self.assertNotIn("SECRET_VALUE_123", serialized)
+        self.assertNotIn("SECRET_DO_NOT_LOG", serialized)
+        self.assertNotIn("{{", serialized)
+
     def test_fails_closed_for_unparseable_lovelace(self):
         (self.root / ".storage/lovelace.lovelace").write_text("{bad json")
         with self.assertRaises(tool.ReferenceAuditError):
