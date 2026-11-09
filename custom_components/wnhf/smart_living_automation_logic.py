@@ -11,6 +11,7 @@ from typing import Any
 _ID = re.compile(r"[a-z][a-z0-9_]{0,63}\Z")
 _HHMM = re.compile(r"(?P<h>[01][0-9]|2[0-3]):(?P<m>[0-5][0-9])\Z")
 _MODES = frozenset({"home", "away", "vacation"})
+_TRIGGER_ENTITY = re.compile(r"(?:binary_sensor|input_boolean)\\.[a-z0-9_]+\\Z")
 _ALLOWED_KEYS = frozenset({
     "id", "name", "enabled", "scene_id", "action", "trigger",
     "allowed_modes", "allow_quiet",
@@ -74,6 +75,18 @@ def parse_automation_rules(
                 raise ValueError("sun offset_minutes must be integer -120..120")
             normalized = {
                 "type": "sun", "event": event, "offset_minutes": offset,
+            }
+        elif kind == "state":
+            if set(trigger) != {"type", "entity_id", "to"}:
+                raise ValueError("state trigger requires type, entity_id, to")
+            entity_id = trigger["entity_id"]
+            target = trigger["to"]
+            if not isinstance(entity_id, str) or not _TRIGGER_ENTITY.fullmatch(entity_id):
+                raise ValueError("state trigger only supports binary_sensor/input_boolean")
+            if not isinstance(target, str) or target not in {"on", "off"}:
+                raise ValueError("state trigger target must be on/off")
+            normalized = {
+                "type": "state", "entity_id": entity_id, "to": target,
             }
         else:
             raise ValueError("unsupported trigger type")
