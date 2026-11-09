@@ -69,6 +69,18 @@ class SmartLivingRuntime:
         self.scenes = config["scenes"]
         self.selected_scene = next(iter(self.scenes), None)
         self.automation_rules = config["automations"]
+        # Reject bad bindings BEFORE registering services, platforms, or
+        # scheduled listeners; disabled templates need not resolve yet.
+        for rule in self.automation_rules.values():
+            if not rule["enabled"]:
+                continue
+            scene_sources = set(self.scenes[rule["scene_id"]]["lights"])
+            missing = scene_sources - set(self.rgbw_targets)
+            if missing:
+                raise HomeAssistantError(
+                    "Enabled Smart Lighting rule has unavailable bindings: "
+                    + ", ".join(sorted(missing))
+                )
         _LOGGER.info(
             "Smart Living ready: %s RGBW bindings; auto-away=%s",
             len(self.rgbw_targets), self.auto_away,
