@@ -136,9 +136,9 @@ class SmartLightingOptionsMixin:
             mode = "rgbw" if "rgbw_color" in attributes else (
                 "rgb" if "rgb_color" in attributes else "brightness"
             )
-            channels = attributes.get("rgbw_color") or (
-                attributes.get("rgb_color", [0, 0, 0]) + [0]
-            )
+            channels = list(attributes.get("rgbw_color") or (
+                list(attributes.get("rgb_color") or [0, 0, 0]) + [0]
+            ))
             defaults = {
                 "state": attributes.get("state", "on"),
                 "brightness": attributes.get("brightness", 200),
@@ -150,7 +150,10 @@ class SmartLightingOptionsMixin:
             step_id=step_id,
             data_schema=vol.Schema({
                 vol.Required("entity_id", default=default_light):
-                    _select(_entity_options(sources)),
+                    _select(
+                        _entity_options(sources) if existing is None else
+                        _entity_options({default_light: sources[default_light]})
+                    ),
                 vol.Required("state", default=defaults["state"]):
                     _fixed_options(["on", "off"]),
                 vol.Required("brightness", default=defaults["brightness"]):
@@ -237,7 +240,8 @@ class SmartLightingOptionsMixin:
             step_id="smart_scene_actions",
             menu_options=[
                 "smart_scene_rename", "smart_scene_target",
-                "smart_scene_target_remove", "smart_scene_delete",
+                "smart_scene_target_pick", "smart_scene_target_remove",
+                "smart_scene_delete",
             ],
             description_placeholders={
                 "name": scene["name"],
@@ -273,6 +277,11 @@ class SmartLightingOptionsMixin:
         scene = self._sl_scene(doc)
         if scene is None:
             return self.async_abort(reason="smart_lighting_state_lost")
+        if user_input is not None and user_input["entity_id"] in scene["lights"]:
+            return self._scene_form(
+                step_id="smart_scene_target",
+                errors={"entity_id": "smart_lighting_target_exists"},
+            )
         if user_input is not None:
             scene["lights"][user_input["entity_id"]] = (
                 _scene_light_settings(user_input)
@@ -285,6 +294,47 @@ class SmartLightingOptionsMixin:
                     errors={"base": "smart_lighting_save_failed"},
                 )
         return self._scene_form(step_id="smart_scene_target")
+
+    async def async_step_smart_scene_target_pick(self, user_input=None):
+        doc = self._sl_document()
+        scene = self._sl_scene(doc)
+        if scene is None:
+            return self.async_abort(reason="smart_lighting_state_lost")
+        if user_input is not None:
+            self._sl_target_id = user_input["entity_id"]
+            return await self.async_step_smart_scene_target_edit()
+        return self.async_show_form(
+            step_id="smart_scene_target_pick",
+            data_schema=vol.Schema({
+                vol.Required("entity_id"):
+                    _fixed_options(list(scene["lights"])),
+            }),
+        )
+
+    async def async_step_smart_scene_target_edit(self, user_input=None):
+        doc = self._sl_document()
+        scene = self._sl_scene(doc)
+        entity_id = getattr(self, "_sl_target_id", None)
+        if scene is None or entity_id not in scene["lights"]:
+            return self.async_abort(reason="smart_lighting_state_lost")
+        existing = {
+            "entity_id": entity_id, "settings": scene["lights"][entity_id],
+        }
+        errors = {}
+        if user_input is not None:
+            if user_input["entity_id"] != entity_id:
+                errors["entity_id"] = "smart_lighting_target_missing"
+            else:
+                scene["lights"][entity_id] = _scene_light_settings(user_input)
+                try:
+                    return await self._sl_commit(doc)
+                except (ValueError, OSError):
+                    errors["base"] = "smart_lighting_save_failed"
+        return self._scene_form(
+            step_id="smart_scene_target_edit",
+            existing=existing,
+            errors=errors,
+        )
 
     async def async_step_smart_scene_target_remove(self, user_input=None):
         doc = self._sl_document()
