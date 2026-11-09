@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Branch-only checks while the immutable stable 1.0.0 verifier is preserved.
 
-Full 1.1 release qualification will replace this development gate before merge.
+This verifies 1.2.0-rc1 metadata; it is NOT a production-release qualification.
 """
 from __future__ import annotations
 
@@ -50,21 +50,27 @@ manifest = json.loads(
 )
 if manifest.get("domain") != "red_queen":
     fail("Technical domain must be red_queen")
-if manifest.get("version") != "1.1.0":
-    fail("1.1 RC manifest version must be 1.1.0")
+if manifest.get("version") != "1.2.0-rc1":
+    fail("1.2 RC manifest version must be 1.2.0-rc1")
 release = json.loads(
     (ROOT / "custom_components" / "red_queen" / "RELEASE.json").read_text(encoding="utf-8")
 )
 if release.get("version") != manifest.get("version"):
     fail("Manifest and release metadata versions must match")
+if release.get("candidate") != manifest.get("version"):
+    fail("Candidate label must match manifest prerelease version")
+if release.get("technical_domain") != manifest.get("domain"):
+    fail("Release technical domain must match manifest")
+if release.get("canonical_execution_service") != "red_queen.execution_execute":
+    fail("Canonical execution service must use the new domain")
 if (release.get("channel"), release.get("phase"), release.get("candidate_status")) != (
     "candidate", "rc", "development",
 ):
-    fail("1.1.0 remains a development release candidate, not a stable release")
+    fail("1.2.0-rc1 must remain a development release candidate")
 if release.get("home_assistant_service_count") != 73:
-    fail("1.1.0 RC requires 73 exposed Home Assistant services")
+    fail("Red Queen RC requires 73 exposed Home Assistant services")
 runtime_constants = (ROOT / "custom_components" / "red_queen" / "const.py").read_text(encoding="utf-8")
-if 'VERSION = "1.1.0"' not in runtime_constants:
+if 'VERSION = "1.2.0-rc1"' not in runtime_constants:
     fail("Runtime and manifest versions must match")
 platform_constants = (ROOT / "custom_components" / "red_queen" / "const.py").read_text(encoding="utf-8")
 for marker in ('"light"', '"select"', '"text"', '"button"'):
@@ -105,10 +111,10 @@ if result.returncode != 0:
     fail("Git whitespace: " + result.stdout + result.stderr)
 
 if ERRORS:
-    print("Red Queen 1.1 development verification FAILED")
+    print("Red Queen 1.2 RC development verification FAILED")
     for error in ERRORS:
         print("- " + error)
     sys.exit(1)
 
-print("Red Queen 1.1 development verification PASS")
+print("Red Queen 1.2 RC development verification PASS")
 print("NOTE: This is NOT a stable-release qualification")
