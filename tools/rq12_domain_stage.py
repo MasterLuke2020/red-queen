@@ -70,7 +70,10 @@ def _write_json(path: Path, obj: dict[str, Any]) -> None:
                     encoding="utf-8")
 
 
-def rewrite_yaml_source(text: str, *, configuration_root: bool = False) -> tuple[str, int, int]:
+def rewrite_yaml_source(
+    text: str, *, configuration_root: bool = False,
+    allowed_services: set[str] | None = None,
+) -> tuple[str, int, int]:
     """Preserve YAML formatting and entity IDs; touch only unambiguous service keys."""
     configs = 0
     if configuration_root:
@@ -83,6 +86,9 @@ def rewrite_yaml_source(text: str, *, configuration_root: bool = False) -> tuple
 
     count = [0]
     def replace(match: re.Match[str]) -> str:
+        name = match.group("service").split(".", 1)[1]
+        if allowed_services is not None and name not in allowed_services:
+            raise StageError("Unknown legacy service call: " + name)
         count[0] += 1
         return (match.group("lead") + match.group("quote") +
                 "red_queen." + match.group("service").split(".", 1)[1] +
@@ -95,7 +101,9 @@ def rewrite_yaml_source(text: str, *, configuration_root: bool = False) -> tuple
     return text, configs, count[0]
 
 
-def rewrite_lovelace_json(obj: dict[str, Any]) -> tuple[dict[str, Any], int]:
+def rewrite_lovelace_json(
+    obj: dict[str, Any], *, allowed_services: set[str] | None = None,
+) -> tuple[dict[str, Any], int]:
     """Rewrite only action/service property values, never dashboard entity IDs."""
     count = [0]
     def visit(value: Any) -> Any:
@@ -108,6 +116,8 @@ def rewrite_lovelace_json(obj: dict[str, Any]) -> tuple[dict[str, Any], int]:
             if key in {"service", "action", "perform_action"} and isinstance(item, str):
                 match = SERVICE_NAME.fullmatch(item)
                 if match:
+                    if allowed_services is not None and match.group(1) not in allowed_services:
+                        raise StageError("Unknown Lovelace legacy service call: " + match.group(1))
                     new[key] = "red_queen." + match.group(1)
                     count[0] += 1
                     continue
@@ -171,6 +181,17 @@ def stage(source: Path, target: Path, package: Path) -> dict[str, Any]:
         raise StageError("Target parent directory must already exist")
     _all_regular(src)
     _all_regular(pkg)
+    # Only migrate service calls that the new integration actually exposes.
+    # Service descriptions are top-level YAML mappings in services.yaml.
+    services_file = pkg / "services.yaml"
+    if not services_file.is_file():
+        raise StageError("Red Queen services.yaml missing")
+    allowed_services = set(re.findall(
+        r"(?m)^([a-z][a-z0-9_]*):\s*(?:\n|$)",
+        services_file.read_text(encoding="utf-8"),
+    ))
+    if not allowed_services:
+        raise StageError("No registered services found in new package")
     originals = {name: _json_doc(src / ".storage" / name) for name in CORE}
     transformed, counts = plan_registry_transform(*(originals[name] for name in CORE))
     if counts["already_migrated"]:
@@ -195,7 +216,8 @@ def stage(source: Path, target: Path, package: Path) -> dict[str, Any]:
             text = path.read_text(encoding="utf-8")
             updated, domain_count, calls = rewrite_yaml_source(
                 text, configuration_root=(path.relative_to(temporary).as_posix()
-                                          == "configuration.yaml")
+                                          == "configuration.yaml"),
+                allowed_services=allowed_services
             )
             stats["yaml_root_renames"] += domain_count
             stats["yaml_service_calls"] += calls
@@ -205,7 +227,8 @@ def stage(source: Path, target: Path, package: Path) -> dict[str, Any]:
             if not path.is_file():
                 continue
             old_doc = _json_doc(path)
-            new_doc, count = rewrite_lovelace_json(old_doc)
+            new_doc, count = rewrite_lovelace_json(
+                old_doc, allowed_services=allowed_services)
             if count:
                 _write_json(path, new_doc)
             stats["lovelace_service_calls"] += count
