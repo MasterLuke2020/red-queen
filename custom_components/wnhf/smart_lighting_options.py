@@ -52,9 +52,15 @@ def _rule_options(rules: list[dict[str, Any]]) -> list[dict[str, str]]:
     ]
 
 
-def _scene_light_settings(data: dict[str, Any]) -> dict[str, Any]:
+def _scene_light_settings(
+    data: dict[str, Any], *, semantic: bool = False,
+) -> dict[str, Any]:
     if data["state"] == "off":
         return {"state": "off"}
+    if semantic:
+        # The canonical PLC light adapter supports only ON and OFF.
+        # Ignore graphical RGB/brightness fields, never pass them to PLC.
+        return {"state": "on"}
     settings = {"state": "on", "brightness": int(data["brightness"])}
     mode = data["color_mode"]
     if mode == "rgbw":
@@ -98,7 +104,7 @@ class SmartLightingOptionsMixin:
         runtime = self._sl_runtime()
         await runtime.editor.async_save(
             document["scenes"], document["automations"],
-            set(runtime.rgbw_targets),
+            set(runtime.scene_targets),
         )
         # Reuse OptionsFlowWithReload: this closes the dialogue and triggers
         # a managed integration reload, not a Home Assistant restart.
@@ -122,7 +128,7 @@ class SmartLightingOptionsMixin:
 
     def _scene_form(self, *, step_id: str, existing: dict | None = None,
                     errors: dict | None = None):
-        sources = self._sl_runtime().rgbw_targets
+        sources = self._sl_runtime().scene_targets
         if not sources:
             return self.async_abort(reason="smart_lighting_no_sources")
         if existing is None:
@@ -200,7 +206,11 @@ class SmartLightingOptionsMixin:
             doc["scenes"].append({
                 **self._sl_scene_new,
                 "lights": {
-                    user_input["entity_id"]: _scene_light_settings(user_input)
+                    user_input["entity_id"]: _scene_light_settings(
+                        user_input, semantic=(
+                            user_input["entity_id"] in self._sl_runtime().semantic_targets
+                        ),
+                    )
                 },
             })
             try:
@@ -284,7 +294,11 @@ class SmartLightingOptionsMixin:
             )
         if user_input is not None:
             scene["lights"][user_input["entity_id"]] = (
-                _scene_light_settings(user_input)
+                _scene_light_settings(
+                    user_input, semantic=(
+                        user_input["entity_id"] in self._sl_runtime().semantic_targets
+                    ),
+                )
             )
             try:
                 return await self._sl_commit(doc)
@@ -325,7 +339,10 @@ class SmartLightingOptionsMixin:
             if user_input["entity_id"] != entity_id:
                 errors["entity_id"] = "smart_lighting_target_missing"
             else:
-                scene["lights"][entity_id] = _scene_light_settings(user_input)
+                scene["lights"][entity_id] = _scene_light_settings(
+                    user_input,
+                    semantic=entity_id in self._sl_runtime().semantic_targets,
+                )
                 try:
                     return await self._sl_commit(doc)
                 except (ValueError, OSError):
