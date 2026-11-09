@@ -25,6 +25,7 @@ cp -a "$ROOT/custom_components/wnhf" "$WORKDIR/config/custom_components/wnhf"
 # Execute native Configurator step definitions against the real HA selector APIs.
 cp "$ROOT/tools/rq12_ci_editor_flow.py" "$WORKDIR/config/rq12_ci_editor_flow.py"
 cp "$ROOT/tools/rq12_ci_scheduler_flow.py" "$WORKDIR/config/rq12_ci_scheduler_flow.py"
+cp "$ROOT/tools/rq12_ci_semantic_lights.py" "$WORKDIR/config/rq12_ci_semantic_lights.py"
 cat > "$WORKDIR/config/configuration.yaml" <<'YAML'
 homeassistant:
   name: Red Queen CI Smoke
@@ -91,6 +92,9 @@ docker exec -e PYTHONPATH=/config "$NAME" \
 echo "Exercising synthetic Red Queen sunset/time/state events and safety policies"
 docker exec -e PYTHONPATH=/config "$NAME" \
   python3 /config/rq12_ci_scheduler_flow.py
+echo "Checking canonical Red Queen on/off source mapping and dispatch"
+docker exec -e PYTHONPATH=/config "$NAME" \
+  python3 /config/rq12_ci_semantic_lights.py
 sleep 8
 docker stop -t 20 "$NAME" >/dev/null
 docker rm "$NAME" >/dev/null
