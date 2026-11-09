@@ -31,6 +31,7 @@ from .configuration_diagnostics import (
     async_diagnose_configured_entities,
 )
 from .const import DOMAIN, PRODUCT_NAME, REGISTRY_ROOT
+from .smart_lighting_options import SmartLightingOptionsMixin
 from .dashboard_service import (
     DashboardGenerationError,
     dashboard_generation_service,
@@ -667,7 +668,7 @@ class WNHFConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
 
-class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
+class WNHFOptionsFlow(SmartLightingOptionsMixin, config_entries.OptionsFlowWithReload):
     """Inspect, extend and safely maintain configurator-managed registries."""
 
     def __init__(self) -> None:
@@ -715,6 +716,7 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
                     "diagnostics",
                     "migration_repair",
                     "dashboard",
+                    "smart_lighting",
                 ],
                 description_placeholders=self._init_placeholders(snapshot),
             )
@@ -731,6 +733,7 @@ class WNHFOptionsFlow(config_entries.OptionsFlowWithReload):
                 "add_plant",
                 "manage",
                 "dashboard",
+                "smart_lighting",
             ],
             description_placeholders=self._init_placeholders(snapshot),
         )
