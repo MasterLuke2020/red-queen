@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Red Queen 1.1.0 candidate: GitHub CI-only isolated Home Assistant smoke.
+# Red Queen 1.2.0-rc1 candidate: GitHub CI-only isolated Home Assistant smoke.
 # Completely synthetic empty registries; no PLC, Sonos, tokens or production data.
 set -Eeuo pipefail
 umask 077
@@ -63,12 +63,12 @@ STAGE_STARTED=1
 STARTED=0
 for _attempt in $(seq 1 100); do
   LOGS="$(docker logs "$NAME" 2>&1 || true)"
-  if grep -Fq 'Red Queen 1.1.0 started via config entry' <<< "$LOGS"; then
+  if grep -Fq 'Red Queen 1.2.0-rc1 started via config entry' <<< "$LOGS"; then
     STARTED=1
     break
   fi
   if [[ -f "$WORKDIR/config/home-assistant.log" ]] &&
-     sudo grep -Fq 'Red Queen 1.1.0 started via config entry' \
+     sudo grep -Fq 'Red Queen 1.2.0-rc1 started via config entry' \
        "$WORKDIR/config/home-assistant.log"; then
     STARTED=1
     break
@@ -109,7 +109,7 @@ config = Path(sys.argv[1])
 manifest = json.loads(
     (config / "custom_components/red_queen/manifest.json").read_text(encoding="utf-8")
 )
-assert manifest["version"] == "1.1.0", manifest["version"]
+assert manifest["version"] == "1.2.0-rc1", manifest["version"]
 registry_path = config / ".storage/core.entity_registry"
 assert registry_path.is_file(), "CI entity registry was not persisted"
 registered = json.loads(registry_path.read_text(encoding="utf-8"))
@@ -133,7 +133,7 @@ dupes = [
 ]
 assert not missing, f"Missing Smart Living entities: {missing}"
 assert not dupes, f"Duplicate native RGBW entities: {dupes}"
-print("PASS: isolated synthetic HA 2026.9.2 started RC 1.1.0")
+print("PASS: isolated synthetic HA 2026.9.2 started RC 1.2.0-rc1")
 print("PASS: all 5 Smart Living entities were registered")
 print("PASS: zero duplicate RGBW proxies")
 print("PASS: no network, live data or hardware available")
