@@ -1,5 +1,15 @@
 # Red Queen
 
+> **Current development candidate:** `1.2.0-rc1` (not released; GitHub draft PR #6).
+> **Technical domain in 1.2:** `red_queen`.
+> **Existing 1.1 installations:** `wnhf`; migration requires an offline
+> HA registry/service-reference transform and tested rollback.
+> **Current candidate status:** synthetic tests and an earlier pinned
+> site-derived offline migration rehearsal; **no production approval**.
+>
+> Release notes: [1.2 RC](docs/RELEASE_NOTES_1.2.0-rc1.md) ·
+> [cutover/rollback gates](docs/RED_QUEEN_1_2_CUTOVER_CHECKLIST.md).
+
 **Red Queen** is a semantic home framework for Home Assistant. It models the house as
 semantic objects and state, resolves native/canonical controls, and exposes a stable
 Home Assistant surface for commissioning, operation and diagnostics.
