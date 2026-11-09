@@ -46,7 +46,7 @@ class ReferenceGateTests(unittest.TestCase):
         )
         dump(self.src / "custom_components/wnhf/manifest.json", {"domain": "wnhf"})
         dump(self.src / ".storage/core.config_entries", {"data": {
-            "entries": [{"domain": "wnhf", "entry_id": "old", "data": {"secret": "hidden"}}],
+            "entries": [{"domain": "wnhf", "entry_id": "old", "data": {"secret": "PRIVATE_TEST_TOKEN_392"}}],
         }})
         dump(self.src / ".storage/core.entity_registry", {"data": {
             "entities": [{"platform": "wnhf", "config_entry_id": "old",
@@ -95,7 +95,7 @@ class ReferenceGateTests(unittest.TestCase):
         self.assertEqual(report["active_legacy_reference_blockers"], {})
         self.assertEqual(report["preserved_active_entity_reference_mentions"], 2)
         self.assertEqual(report["historical_hidden_backup_references"]["literal_service_calls"], 1)
-        self.assertNotIn("hidden", json.dumps(report))
+        self.assertNotIn("PRIVATE_TEST_TOKEN_392", json.dumps(report))
         self.assertNotIn("not shown", json.dumps(report))
         self.assertFalse(report["release_approved"])
 
