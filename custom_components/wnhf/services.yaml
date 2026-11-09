@@ -1,3 +1,8 @@
+smart_automations_snapshot:
+  name: Smart Lighting – Automatikregeln und Ausführungen
+  description: Listet aktivierte und deaktivierte Zeit-/Sonnenregeln samt den letzten Ausführungsversuchen auf. Keine physische Verifikation; schaltet selbst keine Leuchten.
+  fields: {}
+
 smart_scenes_snapshot:
   name: Smart Living – Lichtszenen auflisten
   description: Zeigt konfigurierte Smart-Living-Szenen und die jeweils betroffenen Leuchten an.
