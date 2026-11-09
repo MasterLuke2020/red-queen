@@ -48,7 +48,8 @@
           "dashboard": "Dashboard",
           "manage": "Manage objects",
           "diagnostics": "Diagnostics",
-          "migration_repair": "Migration & Repair"
+          "migration_repair": "Migration & Repair",
+          "smart_lighting": "Smart Lighting – Scenes & automation"
         }
       },
       "status": {
@@ -468,6 +469,165 @@
           "area_id": "Home Assistant area",
           "confirm": "Apply this area/floor link"
         }
+      },
+      "smart_lighting": {
+        "title": "Smart Lighting",
+        "description": "Edit scenes and event/time rules inside Red Queen. Saving does not switch on any lights.",
+        "menu_options": {
+          "smart_scenes": "Manage lighting scenes",
+          "smart_rules": "Manage automation rules"
+        }
+      },
+      "smart_scenes": {
+        "title": "Lighting scenes",
+        "description": "{count} scenes configured. Edits are stored separately; your existing YAML stays untouched.",
+        "menu_options": {
+          "smart_scene_add": "New scene",
+          "smart_scene_pick": "Edit existing scene"
+        }
+      },
+      "smart_scene_add": {
+        "title": "New lighting scene",
+        "data": {
+          "name": "Name",
+          "id": "Technical ID (optional)"
+        }
+      },
+      "smart_scene_first_light": {
+        "title": "First scene light",
+        "description": "Choose a light and its brightness/color. No commands are sent while editing.",
+        "data": {
+          "entity_id": "Light",
+          "state": "State",
+          "brightness": "Brightness 0–255",
+          "color_mode": "Color control",
+          "red": "Red 0–255",
+          "green": "Green 0–255",
+          "blue": "Blue 0–255",
+          "white": "White 0–255"
+        }
+      },
+      "smart_scene_pick": {
+        "title": "Choose scene",
+        "data": {
+          "scene_id": "Scene"
+        }
+      },
+      "smart_scene_actions": {
+        "title": "Scene: {name}",
+        "description": "Current number of lights: {target_count}.",
+        "menu_options": {
+          "smart_scene_rename": "Rename scene",
+          "smart_scene_target": "Add / edit light",
+          "smart_scene_target_remove": "Remove light",
+          "smart_scene_delete": "Delete scene"
+        }
+      },
+      "smart_scene_rename": {
+        "title": "Rename scene",
+        "data": {
+          "name": "New name"
+        }
+      },
+      "smart_scene_target": {
+        "title": "Add or edit scene light",
+        "description": "The selected light is added or its settings are replaced; no lights are switched.",
+        "data": {
+          "entity_id": "Light",
+          "state": "State",
+          "brightness": "Brightness 0–255",
+          "color_mode": "Color control",
+          "red": "Red 0–255",
+          "green": "Green 0–255",
+          "blue": "Blue 0–255",
+          "white": "White 0–255"
+        }
+      },
+      "smart_scene_target_remove": {
+        "title": "Remove scene light",
+        "data": {
+          "entity_id": "Light",
+          "confirm": "Confirm change"
+        }
+      },
+      "smart_scene_delete": {
+        "title": "Delete scene {name}",
+        "description": "Only the Red Queen scene definition will be removed.",
+        "data": {
+          "confirm": "Confirm deletion"
+        }
+      },
+      "smart_rules": {
+        "title": "Automation rules",
+        "description": "{count} rules configured. New rules are disabled by default.",
+        "menu_options": {
+          "smart_rule_add": "New automation rule",
+          "smart_rule_pick": "Edit existing rule"
+        }
+      },
+      "smart_rule_add": {
+        "title": "New automation rule",
+        "description": "Choose scene, action and permissions, then configure the trigger.",
+        "data": {
+          "name": "Rule name",
+          "scene_id": "Lighting scene",
+          "action": "Action (on/off)",
+          "trigger_kind": "Trigger",
+          "allowed_modes": "Allowed house modes",
+          "allow_quiet": "Allow automatic on during quiet hours",
+          "enabled": "Enable this rule now"
+        }
+      },
+      "smart_rule_pick": {
+        "title": "Choose automation rule",
+        "data": {
+          "rule_id": "Rule"
+        }
+      },
+      "smart_rule_actions": {
+        "title": "Rule: {name}",
+        "description": "Status: {status}.",
+        "menu_options": {
+          "smart_rule_edit": "Edit rule",
+          "smart_rule_toggle": "Enable / disable rule",
+          "smart_rule_delete": "Delete rule"
+        }
+      },
+      "smart_rule_edit": {
+        "title": "Edit automation rule",
+        "data": {
+          "name": "Name",
+          "scene_id": "Scene",
+          "action": "Action",
+          "trigger_kind": "Trigger",
+          "allowed_modes": "Allowed house modes",
+          "allow_quiet": "Quiet-hours exception",
+          "enabled": "Enabled"
+        }
+      },
+      "smart_rule_trigger": {
+        "title": "Configure trigger",
+        "description": "Times use Home Assistant's local timezone. No immediate light action.",
+        "data": {
+          "at": "Local time",
+          "offset_minutes": "Minutes before (-) / after (+) sun event",
+          "entity_id": "Trigger entity",
+          "to": "Target state"
+        }
+      },
+      "smart_rule_toggle": {
+        "title": "Rule {name}",
+        "description": "Set rule to {next}? No lights will be switched now.",
+        "data": {
+          "confirm": "Confirm change"
+        }
+      },
+      "smart_rule_delete": {
+        "title": "Delete rule {name}",
+        "description": "The rule and its scheduled listeners will be removed.",
+        "data": {
+          "confirm": "Confirm deletion"
+        }
       }
     },
     "error": {
@@ -498,7 +658,13 @@
       "repair_replacement_missing": "The selected replacement entity does not exist.",
       "repair_replacement_disabled": "The selected replacement entity is disabled in Home Assistant.",
       "repair_source_changed": "The registry changed since the repair preview. Nothing was repaired.",
-      "repair_apply_failed": "The repair could not be applied safely."
+      "repair_apply_failed": "The repair could not be applied safely.",
+      "smart_lighting_invalid_name": "Name required (up to 80 characters).",
+      "smart_lighting_duplicate_id": "ID already in use or invalid.",
+      "smart_lighting_save_failed": "Unable to validate/save. No light commands sent.",
+      "smart_lighting_invalid_mode": "Select at least one house mode.",
+      "smart_lighting_confirm_required": "Explicit confirmation required.",
+      "smart_lighting_target_missing": "Light is not part of this scene."
     },
     "abort": {
       "commissioning_state_lost": "The commissioning draft was lost. Start again.",
@@ -517,7 +683,13 @@
       "migration_source_changed": "The registry changed since preview. Nothing was adopted.",
       "repair_not_available": "There is currently no guided repair case.",
       "repair_source_changed": "The registry or finding changed. Start the repair again.",
-      "repair_not_supported": "This finding cannot be safely repaired by the guided flow."
+      "repair_not_supported": "This finding cannot be safely repaired by the guided flow.",
+      "smart_lighting_no_sources": "No approved Smart Living light sources available.",
+      "smart_lighting_no_scenes": "No lighting scenes configured yet.",
+      "smart_lighting_no_rules": "No automation rules configured yet.",
+      "smart_lighting_state_lost": "Editing session expired; restart the flow.",
+      "smart_lighting_last_target": "Cannot remove the last light. Delete the entire scene instead.",
+      "smart_lighting_scene_in_use": "This scene is referenced by automation rules. Remove those rules first."
     }
   },
   "exceptions": {
