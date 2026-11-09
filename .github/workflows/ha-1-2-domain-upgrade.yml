@@ -1,0 +1,27 @@
+name: Red Queen 1.2 synthetic domain-upgrade regression
+
+on:
+  push:
+    branches:
+      - feature/1.2.0-domain-identity-migration
+  pull_request:
+    paths:
+      - "custom_components/red_queen/**"
+      - "tools/rq12_domain_registry_transform.py"
+      - "tools/rq12_ci_domain_upgrade_smoke.sh"
+      - ".github/workflows/ha-1-2-domain-upgrade.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade-previous-installation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate synthetic-only shell script
+        run: bash -n tools/rq12_ci_domain_upgrade_smoke.sh
+      - name: Exercise old-domain boot, offline transform, and new-domain boot
+        run: bash tools/rq12_ci_domain_upgrade_smoke.sh
