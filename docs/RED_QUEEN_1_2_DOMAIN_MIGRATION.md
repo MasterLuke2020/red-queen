@@ -208,8 +208,12 @@ separate, privileged, HA-stopped, guarded maintenance procedure.
 - [x] Operator confirmed Straße Up/Down physical entity:
   `light.hof_vorplatz_red_queen_strasse_up_down`; legacy duplicate
   `light.wnhf_strasse_up_down` is unavailable (2026-11-09)
-- [ ] Full sanitized-house staging with old dashboards, scripts, integrations,
-  reboot, hardware-negative tests and restore verification
+- [x] First real-house offline Restic staging: 245 entities, 36 devices,
+  3,709 files, preserved legacy Stores and exact rollback-copy hashes
+  (2026-11-09; NO HA boot or actual device tests)
+- [ ] Read-only active-reference gate for existing real-house stage
+- [ ] Hardware/network-isolated real-house HA boot, dashboard/script checks,
+  hardware-negative tests and complete disaster-recovery acceptance
 - [ ] Version \`1.2.0\`, immutable release artifact, HACS qualification and
   documented maintenance-window production acceptance
 
@@ -311,3 +315,16 @@ site-style preflight rather than a bespoke shortcut. See
 \`docs/RED_QUEEN_1_2_SITE_STAGING.md\` for requirements and commands.
 This check **does not** start a stage containing real house credentials,
 prove a live disaster recovery, merge anything, or release v1.2.0.
+
+
+## Phase 1f: first real-house offline migration passed
+
+Operator-supplied results from 2026-11-09: 245 entities, 36 devices,
+3,709 files; the existing Dashboard and Smart Living Stores were preserved;
+restored source unchanged and independent rollback copy byte-identical.
+No HA instance was started with real credentials.
+
+The newly added read-only site reference gate checks only the already
+restored and staged directories, rejects remaining **active** old-domain
+service/root/logger references, and distinguishes intentionally preserved
+historical backup YAML. Real HA boot and production cutover remain blocked.

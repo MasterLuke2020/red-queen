@@ -171,3 +171,34 @@ retained for operator inspection rather than silently deleted.
 An offline PASS means **file-migration and copy integrity**, not a
 real HA hardware boot, firmware behavior or productive recovery proof.
 Do not connect the resulting test config to the house network.
+
+## First site-derived offline rehearsal — PASS (2026-11-09)
+
+The operator successfully ran the exact date-pinned Restic-to-staging
+adapter against a completed, existing 2026-11-09 server snapshot.
+The operator-supplied local report (no secrets uploaded) confirms:
+
+- 245 old-domain entities; 36 old-domain device identifiers
+- 3,709 source files compared
+- Both existing Dashboard and Smart Living Stores retained
+- Source restored snapshot unchanged
+- Independent full-file rollback copy SHA-256 identical
+- No Home Assistant boot and no hardware execution
+- Final flag explicitly remains release_approved=false
+
+### Additional read-only site reference gate
+
+Run tools/rq12_site_reference_gate.py against the *existing* restored
+source and migration stage, with the actual productive /config host
+path supplied as an overlap guard. This tool does not create another
+copy or touch Home Assistant. It validates exact source/stage HA registry
+transformation, old Store presence and no remaining ACTIVE legacy
+service calls, logger channels, dynamic service references or root keys.
+
+Hidden historical backup YAML is intentionally preserved by the
+staging tool and is counted in a separate historical bucket, not
+misreported as an active HA configuration migration failure.
+Stable legacy-looking entity IDs and internal data Store keys remain
+deliberately unchanged for backward compatibility.
+
+**Do not treat a passed reference gate as a production boot test.**
