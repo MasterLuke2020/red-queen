@@ -1,0 +1,105 @@
+# Red Queen 1.2 – Smart Lighting Automation (development)
+
+> Status: **development feature branch only**. Not installed in production.
+> The installed Red Queen 1.1.0 and its existing manual scene/messaging
+> safeguards are unchanged. The manifest version remains 1.1.0 until a
+> separate, tested versioned release.
+
+## Product goal
+
+Trigger existing Smart Living light scenes from Home Assistant's own local
+clock, sunrise/sunset, or a verified binary state transition.
+
+Primary example: **turn on selected exterior lights at sunset and turn off
+those exact lights at 23:00 local time**. No polling clock is introduced and
+no PLC/WAGO or DALI parameter is changed.
+
+## Implemented in this branch
+
+- Optional `automations:` entries in `/config/wnhf/smart_living.yaml`.
+- Triggers:
+  - `{type: sun, event: sunset, offset_minutes: 0}`
+  - `{type: sun, event: sunrise, offset_minutes: 0}`
+  - `{type: time, at: "23:00"}`
+  - `{type: state, entity_id: binary_sensor.motion, to: "on"}`
+  - `{type: state, entity_id: input_boolean.permission, to: "off"}`
+- Sun callbacks are handled through HA's sunrise/sunset helpers, time triggers
+  through the HA local-time helper, and state triggers through indexed
+  `async_track_state_change_event`.
+- Triggered actions `on` / `off` refer to existing scene IDs. `on` applies
+  the scene's specified per-light on/off/brightness/color; `off` switches
+  off **only** the selected scene light targets.
+- Disabled by default, no writes or catch-up actions during startup.
+- Permission check before every individual dispatch. `on` defaults to home
+  only and blocked during quiet. Rules may explicitly opt in to
+  `away/vacation` and `allow_quiet: true`; an unavailable quiet sensor
+  always blocks scheduled **on**. Targeted **off** remains allowed.
+- Only allowlisted native Smart Living source lights (currently the same
+  DALI/explicit HA sources as manual scenes). No recursive Red Queen light
+  proxies, no arbitrary service calls or entity IDs.
+- Per-rule overlap prevention, registration/unregistration with HA entry
+  lifecycle, no startup replays, bounded in-memory last-100 audit.
+- Read-only HA service `wnhf.smart_automations_snapshot`; the returned
+  entries differentiate accepted HA dispatch from physically verified state.
+- Existing manual `wnhf.smart_scene_activate` continues to use the original
+  house/quiet guard and cannot be used to bypass it.
+
+## Example
+
+See `configuration/smart_lighting_automation.example.yaml` for a
+**disabled** sunset-on / 23:00-off pair of rules. The target entity in that
+example is deliberately a placeholder; it must not be used as an actual
+installation config without substitution and source verification.
+
+The `scenes:` and `automations:` lists share the same Smart Living YAML.
+Always merge examples into the existing file (do not duplicate root keys).
+There is no runtime YAML reload in this first slice; HA restart is required.
+
+## Important safeguards and limitations
+
+1. **Not yet customer ready.** This branch is not a 1.2 release and has not
+   been installed on the production server.
+2. No GUI scene/rule editor yet. This is the tested backend foundation; the
+   editor is a separate 1.2 workstream.
+3. **Recovery after missed OFF is not yet implemented.** If HA is offline at
+   23:00, the off callback is missed. Add explicit persisted reconciliation
+   and user-selectable policy before production rollout.
+4. Manual override persistence is not yet implemented. No automatic ON
+   replay occurs at restart, but a future distinct sensor/sun trigger could
+   issue a new ON action after the resident manually switched a light off.
+5. Only on/off state events from `binary_sensor` and `input_boolean` are
+   supported in this slice. Numeric lux thresholds and more trigger types
+   belong to the next step.
+6. Existing Smart Living scenes only support allowlisted native lights,
+   not arbitrary Red Queen semantic objects. Supporting PLC-semantic exterior
+   lights requires a separately reviewed adapter/permission design.
+7. A successfully accepted Home Assistant service call is **not** a
+   physically confirmed output. It cannot diagnose MiBoxer controller
+   peculiarities.
+8. Per-scene batch actions are sequential and **not atomic**. Per-light errors
+   are logged and shown in the audit. Multiple independent rules may still
+   target the same source; cross-rule priority/arbiter is a follow-up.
+9. Timezone and DST follow Home Assistant's configured local time, but
+   edge-case transitions require staging integration tests with the target
+   Home Assistant version before release.
+
+## Verification and release guard
+
+- Dependency-free parser/policy tests in
+  `tests/test_smart_lighting_automation_logic.py`.
+- Static CI, hassfest, and isolated Home Assistant synthetic boot run on
+  the feature branch.
+- Next required tests: real HA staging with synthetic sunset/time callbacks,
+  real state transitions and force reload/unload without orphaned listeners;
+  DST boundaries, missing sensors, missed off and manual override.
+- Only after these pass should a guarded, rollback-capable 1.2 release be
+  considered. Do not merge blindly into 1.1.0 production.
+
+## Separate 1.2 workstreams
+
+- Red Queen Identity & Branding: user-visible `wnhf_*` entity IDs and
+  service aliases migrated with compatibility mapping and rollback.
+- Integrated GUI scene editor with native light/color pickers and validation.
+- Rule editor with schedules, conditions, diagnostic status and disable switch.
+- New source adapter for Red Queen semantic/PLC lights to reach exterior
+  lights even if not represented as native DALI RGBW sources.
