@@ -148,9 +148,79 @@ async def check_dispatch():
     print("PASS: canonical ON/OFF dispatch only; color/brightness rejected")
 
 
+
+async def check_vendor_light():
+    """Synthetic Shelly RGBW is controlled exclusively through HA light.*."""
+    shelly = "light.shelly_rgbw2_kitchen"
+    states = {shelly: SimpleNamespace(state="off", attributes={
+        "supported_color_modes": ["rgbw"], "friendly_name": "Kitchen Shelly",
+    })}
+    calls = []
+
+    class Services:
+        def has_service(self, domain, name):
+            return domain == "light" and name in {"turn_on", "turn_off"}
+
+        async def async_call(self, domain, name, payload, blocking=False):
+            calls.append((domain, name, dict(payload), blocking))
+
+    runtime = runtime_module.SmartLivingRuntime.__new__(
+        runtime_module.SmartLivingRuntime
+    )
+    runtime.hass = SimpleNamespace(
+        states=SimpleNamespace(get=states.get),
+        services=Services(),
+        data={"red_queen": {"config_entry_id": "redqueen_entry"}},
+    )
+    runtime.rgbw_targets = {}
+    runtime.scene_external_targets = {}
+    runtime.semantic_targets = {}
+    runtime._target_locks = {}
+    runtime.audit = deque(maxlen=100)
+    entries = {
+        shelly: SimpleNamespace(
+            entity_id=shelly, platform="shelly", disabled_by=None,
+            config_entry_id="shelly_entry",
+        ),
+        "light.rq_proxy": SimpleNamespace(
+            entity_id="light.rq_proxy", platform="red_queen",
+            disabled_by=None, config_entry_id="redqueen_entry",
+        ),
+    }
+    with patch.object(
+        runtime_module.er, "async_get",
+        return_value=SimpleNamespace(entities=entries),
+    ):
+        assert shelly in runtime.editor_candidates
+        assert shelly not in runtime.scene_targets
+        runtime._discover_targets([], False, {shelly})
+    assert shelly in runtime.scene_targets
+    assert shelly not in runtime.rgbw_targets
+    assert "light.rq_proxy" not in runtime.scene_targets
+    await runtime.async_light_dispatch(
+        shelly, "turn_on",
+        {"brightness": 170, "rgbw_color": [11, 23, 37, 180]},
+    )
+    assert calls == [
+        ("light", "turn_on", {"entity_id": shelly, "brightness": 170,
+         "rgbw_color": (11, 23, 37, 180)}, True),
+    ], calls
+    assert (await runtime.async_all_rgbw_off())["target_count"] == 0
+    try:
+        await runtime.async_light_dispatch("light.unselected", "turn_on", {})
+    except HomeAssistantError:
+        pass
+    else:
+        raise AssertionError("Unapproved light dispatch accepted")
+    assert len(calls) == 1
+    print("PASS: Shelly RGBW white channel through standard HA light service")
+    print("PASS: opt-in scene only; no unintended global all-off")
+
+
 async def main():
     check_mapping()
     await check_dispatch()
+    await check_vendor_light()
     print("PASS: HA synthetic semantic light staging; no hardware touched")
 
 
