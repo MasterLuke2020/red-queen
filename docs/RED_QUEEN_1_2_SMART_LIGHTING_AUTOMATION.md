@@ -237,3 +237,15 @@ handover acceptance. The operator MUST manually disable both old HA
 automations before enabling the new Red Queen native rules; thereafter,
 confirm the reported automation states are OFF. No automatic switch-over
 or production activation occurs in this branch.
+
+
+## Vendor-neutral Home Assistant lighting (new in this branch)
+
+Native RGBW and dimming scenes now select **direct Home Assistant light
+sources by advertised capability, not by manufacturer**. This supports
+Shelly RGBW, MQTT/Zigbee, WLED and other HA lights as well as DALI, provided
+HA exposes the relevant `supported_color_modes`. The GUI first selects the
+light, then shows only the supported ON/OFF, brightness, RGB or RGBW fields.
+Previously selected external scene lights persist through a managed reload.
+They never silently join the legacy global RGBW all-off list. See
+`docs/RED_QUEEN_1_2_VENDOR_NEUTRAL_LIGHTS.md` for limits and tests.
