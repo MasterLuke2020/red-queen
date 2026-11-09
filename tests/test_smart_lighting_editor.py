@@ -159,6 +159,15 @@ class SmartLightingEditorTests(unittest.TestCase):
             "state": "off",
         })
 
+    def test_onoff_light_scene_carries_no_color_or_brightness(self):
+        self.assertEqual(ui["_scene_light_settings"]({
+            "state": "on",
+        }), {"state": "on"})
+        self.assertEqual(ui["_scene_light_settings"]({
+            "state": "off", "brightness": 200,
+            "color_mode": "rgbw", "red": 0, "green": 0, "blue": 0, "white": 255,
+        }), {"state": "off"})
+
     def test_time_selector_and_sunset_form_round_trip(self):
         self.assertEqual(ui["_trigger_from_editor"](
             {"trigger_kind": "time"},
