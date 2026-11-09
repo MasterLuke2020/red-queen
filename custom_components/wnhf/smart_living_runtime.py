@@ -24,6 +24,8 @@ from .smart_living_logic import (
     quiet_restriction, validate_light_request, parse_scenes,
 )
 from .smart_living_messages import SmartMessageComposer
+from .smart_living_automation_logic import parse_automation_rules
+from .smart_living_automation import SmartLightingScheduler
 
 _LOGGER = logging.getLogger(__name__)
 SIGNAL_SMART_LIVING_UPDATED = "wnhf_smart_living_updated"
@@ -50,6 +52,8 @@ class SmartLivingRuntime:
         self.composer = SmartMessageComposer(hass, self)
         self.scenes: dict[str, dict[str, Any]] = {}
         self.selected_scene: str | None = None
+        self.automation_rules: dict[str, dict[str, Any]] = {}
+        self.scheduler = SmartLightingScheduler(hass, self)
 
     async def async_setup(self) -> None:
         """Read only settings; persisted mode is saved after explicit user input."""
@@ -64,6 +68,7 @@ class SmartLivingRuntime:
         self._discover_targets(config["rgbw_entity_ids"], config["discover_dali"])
         self.scenes = config["scenes"]
         self.selected_scene = next(iter(self.scenes), None)
+        self.automation_rules = config["automations"]
         _LOGGER.info(
             "Smart Living ready: %s RGBW bindings; auto-away=%s",
             len(self.rgbw_targets), self.auto_away,
@@ -92,6 +97,7 @@ class SmartLivingRuntime:
             "rgbw_entity_ids": raw.get("rgbw_entity_ids", []),
             "message_route_id": raw.get("message_route_id", "notification.route.house"),
             "scenes": raw.get("scenes", []),
+            "automations": raw.get("automations", []),
         }
         if type(config["auto_away"]) is not bool or type(config["discover_dali"]) is not bool:
             raise HomeAssistantError("auto_away/discover_dali must be boolean")
@@ -104,6 +110,12 @@ class SmartLivingRuntime:
             config["scenes"] = parse_scenes(config["scenes"])
         except ValueError as err:
             raise HomeAssistantError("Smart Living scenes invalid: " + str(err)) from err
+        try:
+            config["automations"] = parse_automation_rules(
+                config["automations"], config["scenes"],
+            )
+        except ValueError as err:
+            raise HomeAssistantError("Smart Lighting automations invalid: " + str(err)) from err
         if not isinstance(config["message_route_id"], str) or not re.fullmatch(
             r"^notification\.route\.[a-z0-9_]+$", config["message_route_id"]
         ):
@@ -184,10 +196,26 @@ class SmartLivingRuntime:
             "message_route_id": self.composer.route_id,
             "message_audit_count": len(self.composer.audit),
             "selected_scene": self.selected_scene,
+            "automations": {
+                "enabled_count": sum(
+                    rule["enabled"] for rule in self.automation_rules.values()
+                ),
+                "rule_count": len(self.automation_rules),
+                "listener_count": len(self.scheduler._listeners),
+                "recent": list(self.scheduler.audit),
+            },
             "scenes": [{"id": x["id"], "name": x["name"],
                         "target_count": len(x["lights"])}
                        for x in self.scenes.values()],
         }
+
+    def async_start_automations(self) -> None:
+        """Arm only explicitly enabled rules, never trigger on startup."""
+        self.scheduler.async_start(self.automation_rules)
+
+    def async_stop_automations(self) -> None:
+        """Remove event listeners on integration unload."""
+        self.scheduler.async_stop()
 
     async def async_set_mode(self, mode: str) -> None:
         if mode not in HOUSE_MODES:
