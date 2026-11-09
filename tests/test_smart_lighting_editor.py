@@ -165,8 +165,8 @@ class SmartLightingEditorTests(unittest.TestCase):
                   "smart_lighting_real_outdoor_draft.example.yaml").read_text(
                       encoding="utf-8"
                   )
-        scene = sample.split("\\nscenes:\\n", 1)[1].split(
-            "\\nautomations:\\n", 1
+        scene = sample.split("\nscenes:\n", 1)[1].split(
+            "\nautomations:\n", 1
         )[0]
         targets = {
             line.strip().removesuffix(":") for line in scene.splitlines()
