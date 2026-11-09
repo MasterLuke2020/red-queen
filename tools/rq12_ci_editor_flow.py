@@ -15,6 +15,7 @@ sys.path.insert(0, "/config")
 from custom_components.wnhf.smart_lighting_options import SmartLightingOptionsMixin
 from custom_components.wnhf.smart_living_logic import parse_scenes
 from custom_components.wnhf.smart_living_automation_logic import parse_automation_rules
+from custom_components.wnhf.smart_living_editor import validate_editor_document
 
 SOURCE = "light.dali_test_rgbw"
 SCENE = {
@@ -30,24 +31,36 @@ RULE = {
 
 
 class FakeEditor:
+    def __init__(self):
+        self.scenes = [deepcopy(SCENE)]
+        self.automations = [deepcopy(RULE)]
+        self.save_count = 0
+
     async def async_save(self, scenes, rules, approved):
         assert SOURCE in approved
-        parsed = parse_scenes(scenes)
-        parse_automation_rules(rules, parsed)
+        validate_editor_document(scenes, rules, approved)
+        self.scenes = deepcopy(scenes)
+        self.automations = deepcopy(rules)
+        self.save_count += 1
 
 
 class FakeRuntime:
-    rgbw_targets = {SOURCE: "Synthetic DALI RGBW"}
-    editor = FakeEditor()
+    def __init__(self):
+        self.rgbw_targets = {SOURCE: "Synthetic DALI RGBW"}
+        self.editor = FakeEditor()
 
     def editor_document(self):
-        return deepcopy({"scenes": [SCENE], "automations": [RULE]})
+        return deepcopy({
+            "scenes": self.editor.scenes,
+            "automations": self.editor.automations,
+        })
 
 
 class FakeFlow(SmartLightingOptionsMixin):
     def __init__(self):
+        self.runtime = FakeRuntime()
         self.hass = SimpleNamespace(
-            data={"wnhf": {"smart_living": FakeRuntime()}},
+            data={"wnhf": {"smart_living": self.runtime}},
         )
 
     def async_show_form(self, **kwargs):
@@ -87,6 +100,9 @@ async def main():
         "brightness": 180, "red": 0, "green": 0, "blue": 0, "white": 255,
     })
     assert form["kind"] == "saved", form
+    assert len(flow.runtime.editor.scenes) == 2
+    assert flow.runtime.editor.scenes[1]["lights"][SOURCE][
+        "rgbw_color"] == [0, 0, 0, 255]
 
     form = await flow.async_step_smart_scene_pick()
     assert form["kind"] == "form"
@@ -96,6 +112,14 @@ async def main():
     assert form["kind"] == "form"
     form = await flow.async_step_smart_scene_target_pick({"entity_id": SOURCE})
     assert form["kind"] == "form" and form["step_id"] == "smart_scene_target_edit"
+    form = await flow.async_step_smart_scene_target_edit({
+        "entity_id": SOURCE, "state": "on", "color_mode": "rgbw",
+        "brightness": 160, "red": 0, "green": 0, "blue": 200,
+        "white": 0,
+    })
+    assert form["kind"] == "saved", form
+    assert flow.runtime.editor.scenes[0]["lights"][SOURCE][
+        "rgbw_color"] == [0, 0, 200, 0]
 
     form = await flow.async_step_smart_rules()
     assert "smart_rule_pick" in form["menu_options"]
@@ -112,6 +136,11 @@ async def main():
         "offset_minutes": -15,
     })
     assert form["kind"] == "saved", form
+    assert len(flow.runtime.editor.automations) == 2
+    assert flow.runtime.editor.automations[1]["trigger"] == {
+        "type": "sun", "event": "sunset", "offset_minutes": -15,
+    }
+    assert flow.runtime.editor.automations[1]["enabled"] is False
 
     form = await flow.async_step_smart_rule_pick({"rule_id": "test_aus"})
     assert form["kind"] == "menu"
@@ -119,7 +148,12 @@ async def main():
     assert form["kind"] == "form"
     form = await flow.async_step_smart_rule_toggle()
     assert form["kind"] == "form"
+    form = await flow.async_step_smart_rule_toggle({"confirm": True})
+    assert form["kind"] == "saved", form
+    assert flow.runtime.editor.automations[0]["enabled"] is True
+    assert flow.runtime.editor.save_count == 5
     print("PASS: HA native Smart Lighting scene and rule forms validated")
+    print("PASS: five synthetic GUI saves persisted scene/rule updates")
     print("PASS: GUI save path writes only to synthetic editor; no hardware")
 
 
