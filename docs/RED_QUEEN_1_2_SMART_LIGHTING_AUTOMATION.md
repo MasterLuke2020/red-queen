@@ -84,6 +84,41 @@ There is no runtime YAML reload in this first slice; HA restart is required.
 - HA native numeric/choice selectors are used at present. A custom graphical
   color-wheel widget is explicitly outside this first editor slice.
 
+## Native Red Queen / WAGO exterior-light scene adapter (development)
+
+A read-only Home Assistant Entity Registry inventory from the house showed
+**8 enabled Red Queen lighting entities** among 9 exterior candidates. The
+other exterior candidate is a disabled Tapo camera floodlight. There are
+13 native DALI RGBW light entities for indoor color control.
+
+- The original scene adapter intentionally allowed only native non-WNHF RGBW
+  sources, so it could not operate the actual WAGO-powered outdoor lights.
+- The new `smart_lighting_semantic.py` adapter resolves existing WNHF
+  `light.*` entities via a strict `platform == wnhf`, active entry ID,
+  enabled + controllable Red Queen registry object, and exact unique ID
+  match to `WNHFLightEntity`. Renamed HA entity IDs remain supported.
+- Scene and scheduler paths now accept both native DALI and native Red Queen
+  semantic light sources, keeping their roles separate.
+- Semantic lights accept **ON/OFF only**. They call
+  `native_execution.async_execute_canonical` with the canonical object ID
+  and `lighting.turn_on`/`lighting.turn_off` (same guarded route as the
+  existing Red Queen light tiles). They never call `button.press` or
+  re-enter the WNHF light proxy to trigger action recursively.
+- Semantic lights reject RGB, RGBW, brightness, transition and any other
+  attribute at the dispatch boundary; DALI scenes retain the existing
+  validated color/brightness path.
+- GUI editing of a semantic ON/OFF target stores only `{state: on/off}`.
+  The generic editor still shows unused RGB/brightness fields when choosing
+  a new mixed source; a dedicated type-aware source form remains a UX task.
+- The existing manual RGBW whole-house-off subset remains unchanged; no
+  implicit addition of semantic house lights to that subset.
+- A disabled-by-default sample using actual exterior entity IDs lives in
+  `configuration/smart_lighting_real_outdoor_draft.example.yaml`. It excludes
+  Garage innen and all camera controls, and does **not** execute anything.
+- HA CI uses synthetic registry objects plus the genuine
+  `native_execution`-level dispatch path (with the final canonical action
+  mocked). This is **not** an on-site test with physical feedback.
+
 ## Important safeguards and limitations
 
 1. **Not yet customer ready.** This branch is not a 1.2 release and has not
@@ -102,9 +137,10 @@ There is no runtime YAML reload in this first slice; HA restart is required.
 5. Only on/off state events from `binary_sensor` and `input_boolean` are
    supported in this slice. Numeric lux thresholds and more trigger types
    belong to the next step.
-6. Existing Smart Living scenes only support allowlisted native lights,
-   not arbitrary Red Queen semantic objects. Supporting PLC-semantic exterior
-   lights requires a separately reviewed adapter/permission design.
+6. Scenes now support **registered Red Queen semantic ON/OFF light objects**
+   as well as allowlisted DALI sources. Real outdoor wiring, time of sunset,
+   scene membership and feedback behavior still require acceptance testing
+   in the house before enabling rules.
 7. A successfully accepted Home Assistant service call is **not** a
    physically confirmed output. It cannot diagnose MiBoxer controller
    peculiarities.
