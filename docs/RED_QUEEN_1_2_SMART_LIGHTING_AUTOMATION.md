@@ -112,9 +112,16 @@ other exterior candidate is a disabled Tapo camera floodlight. There are
   a new mixed source; a dedicated type-aware source form remains a UX task.
 - The existing manual RGBW whole-house-off subset remains unchanged; no
   implicit addition of semantic house lights to that subset.
-- A disabled-by-default sample using actual exterior entity IDs lives in
-  `configuration/smart_lighting_real_outdoor_draft.example.yaml`. It excludes
-  Garage innen and all camera controls, and does **not** execute anything.
+- The sunset/23:00 exterior example is restricted by resident request to
+  exactly **Garage Außen Up/Down**, **Straße Up/Down**, and **Hof Up/Down**.
+  It must not switch on Hof Wand, Vorplatz Wand, Terrasse, Garage innen, or
+  any other light. The disabled-by-default sample lives in
+  `configuration/smart_lighting_real_outdoor_draft.example.yaml`.
+  Important: the registry contains two plausible Straßen Up/Down entity IDs
+  (`light.hof_vorplatz_red_queen_strasse_up_down` and
+  `light.wnhf_strasse_up_down`). The draft retains the originally selected
+  former ID only until its physical/canonical mapping is verified before
+  enabling the rule. No automatic writes should occur until that is clear.
 - HA CI uses synthetic registry objects plus the genuine
   `native_execution`-level dispatch path (with the final canonical action
   mocked). This is **not** an on-site test with physical feedback.
