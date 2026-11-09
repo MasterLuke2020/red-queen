@@ -103,20 +103,10 @@ assert len(entries) == 1, "Old HA boot did not register exactly one wnhf config 
 mapped = {e["unique_id"]: e["entity_id"] for e in original[1]["data"]["entities"]
           if e.get("platform") == "wnhf"}
 assert mapped, "Old HA boot did not persist Red Queen entities"
-print("Synthetic WNHF device association diagnostic (no identifiers disclosed):")
-for device in original[2]["data"]["devices"]:
-    identifiers = device.get("identifiers", [])
-    if not any(isinstance(i, list) and len(i) == 2 and i[0] == "wnhf"
-               for i in identifiers):
-        continue
-    linked = device.get("config_entries")
-    print({"config_entries_type": type(linked).__name__,
-           "linked_entries_count": len(linked) if isinstance(linked, list) else None,
-           "contains_old_entry": entries[0]["entry_id"] in linked
-           if isinstance(linked, list) else False})
 changed, stats = plan_registry_transform(*original)
 assert stats["entries"] == 1 and stats["entities"] == len(mapped), stats
 assert stats["devices"] >= 1, "Synthetic HA device registry unexpectedly empty"
+assert stats["namespace_only_devices"] >= 1, "Expected modern namespace-only device records"
 for key in keys:
     path = target / ".storage" / key
     tmp = path.with_suffix(path.suffix + ".rq12-temp")

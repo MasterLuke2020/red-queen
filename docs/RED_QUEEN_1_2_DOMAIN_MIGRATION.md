@@ -131,3 +131,15 @@ deployment tool must migrate all relevant persistence and references or
 abort and restore the complete pre-cutover backup.
 
 Test workflow changes apply only to this 1.2 experimental branch.
+
+## HA 2026.9.2 device registry format verified by failed-closed test
+
+The first synthetic old-installation boot exposed device records with
+`identifiers: [["wnhf", ...]]` but **without a `config_entries` field**.
+Our early migration guard correctly stopped instead of making assumptions.
+The offline transform now accepts an **absent** association field only when
+exactly one old-domain config entry exists and the old `wnhf` namespace is
+owned by that entry. An explicitly **present but contradictory** association
+still aborts the migration. The prototype reports `namespace_only_devices`
+separately. Real site cutover remains blocked until the full upgrade smoke
+test proves entity/device retention and staging of service references.

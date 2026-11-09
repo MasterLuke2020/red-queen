@@ -68,7 +68,8 @@ def plan_registry_transform(
         ):
             raise DomainMigrationError("Mixed-domain device identifiers after migration")
         return docs, {"already_migrated": True, "entries": 0,
-                      "entities": 0, "devices": 0, "entity_ids_renamed": 0}
+                      "entities": 0, "devices": 0, "namespace_only_devices": 0,
+                      "entity_ids_renamed": 0}
 
     if len(old_entries) != 1 or new_entries:
         raise DomainMigrationError("Expected one old-domain entry and no new-domain entry")
@@ -90,6 +91,7 @@ def plan_registry_transform(
         if isinstance(i, (list, tuple)) and len(i) == 2 and i[0] == NEW
     }
     changed_devices = 0
+    namespace_only_devices = 0
     for device in devices:
         identifiers = device.get("identifiers")
         if identifiers is None:
@@ -102,9 +104,19 @@ def plan_registry_transform(
         ]
         if not old_pairs:
             continue
-        linked = device.get("config_entries")
-        if not isinstance(linked, list) or entry_id not in linked:
-            raise DomainMigrationError("Old-domain device identifier not linked to old entry")
+        # HA 2026.9.2 can omit config_entries on the persisted device
+        # records. The precise old-domain identifier namespace is still
+        # exclusively owned by this integration, and one old config entry
+        # has already been verified above. A present but contradictory
+        # association is always rejected.
+        if "config_entries" in device:
+            linked = device["config_entries"]
+            if not isinstance(linked, list) or entry_id not in linked:
+                raise DomainMigrationError(
+                    "Old-domain device identifier has contradictory entry ownership"
+                )
+        else:
+            namespace_only_devices += 1
         for pair in old_pairs:
             target = (NEW, pair[1])
             if target in new_identifiers:
@@ -130,5 +142,6 @@ def plan_registry_transform(
         "entries": 1,
         "entities": changed_entities,
         "devices": changed_devices,
+        "namespace_only_devices": namespace_only_devices,
         "entity_ids_renamed": 0,
     }

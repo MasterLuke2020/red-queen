@@ -44,7 +44,7 @@ class TransformTests(unittest.TestCase):
         self.assertEqual(original, untouched)
         self.assertEqual(counts, {
             "already_migrated": False, "entries": 1, "entities": 2,
-            "devices": 1, "entity_ids_renamed": 0,
+            "devices": 1, "namespace_only_devices": 0, "entity_ids_renamed": 0,
         })
         entry = transformed["core.config_entries"]["data"]["entries"][0]
         self.assertEqual(entry["domain"], "red_queen")
@@ -88,6 +88,22 @@ class TransformTests(unittest.TestCase):
     def test_reject_device_identifier_collision(self):
         a, b, c = fixtures()
         c["data"]["devices"][1]["identifiers"].append(["red_queen", "framework"])
+        with self.assertRaises(tool.DomainMigrationError):
+            tool.plan_registry_transform(a, b, c)
+
+    def test_modern_device_registry_without_config_entries_field(self):
+        a, b, c = fixtures()
+        del c["data"]["devices"][0]["config_entries"]
+        result, counts = tool.plan_registry_transform(a, b, c)
+        self.assertEqual(counts["namespace_only_devices"], 1)
+        self.assertEqual(
+            result["core.device_registry"]["data"]["devices"][0]["identifiers"][0],
+            ["red_queen", "framework"],
+        )
+
+    def test_reject_invalid_present_config_entries_field(self):
+        a, b, c = fixtures()
+        c["data"]["devices"][0]["config_entries"] = "unexpected-text"
         with self.assertRaises(tool.DomainMigrationError):
             tool.plan_registry_transform(a, b, c)
 
