@@ -55,12 +55,44 @@ The `scenes:` and `automations:` lists share the same Smart Living YAML.
 Always merge examples into the existing file (do not duplicate root keys).
 There is no runtime YAML reload in this first slice; HA restart is required.
 
+## Native Red Queen Configurator (development GUI)
+
+- Navigate **Red Queen → Configure → Smart Lighting → Scenes / Rules**.
+- Available in both managed and manual registry modes.
+- Scenes: create, rename, add a light, select an existing light to edit its
+  values, remove light, or delete a scene with no dependent rules.
+- Per-light controls: on/off, independent brightness (0–255), native RGB
+  (red/green/blue) or RGBW (red/green/blue/white) channel values.
+- Rules: define a source scene, ON or targeted OFF, sun/time/state trigger,
+  allowed residential modes, night-time exception, disabled/enabled status;
+  edit, toggle or delete with explicit confirmation.
+- Saves never call physical light services. They use a separate versioned HA
+  Store key `wnhf.smart_lighting_editor` and keep the original manual YAML
+  file intact. Once the first GUI edit is saved, the GUI Store's scenes/rules
+  take precedence over the corresponding YAML lists. Other YAML settings
+  (DALI allowlist, away/quiet sensors, messaging route) remain in YAML.
+- The existing `OptionsFlowWithReload` lifecycle reloads the Red Queen
+  integration following a save so event subscriptions are refreshed; there
+  is no full Home Assistant process restart and no missed-event replay.
+- Each editor save preserves a one-version snapshot in Store for recovery.
+  Recovery by GUI is a follow-up work item.
+- If a stored scene source is deleted from the HA entity registry, the scene
+  remains readable while its enabled automations are suspended (diagnosed
+  via `wnhf.smart_automations_snapshot`); this must not interrupt core Red Queen.
+- An existing light cannot accidentally be added twice: select **Edit
+  existing scene light** for changing its values.
+- HA native numeric/choice selectors are used at present. A custom graphical
+  color-wheel widget is explicitly outside this first editor slice.
+
 ## Important safeguards and limitations
 
 1. **Not yet customer ready.** This branch is not a 1.2 release and has not
    been installed on the production server.
-2. No GUI scene/rule editor yet. This is the tested backend foundation; the
-   editor is a separate 1.2 workstream.
+2. A first native HA Options Flow GUI scene/rule editor now exists on this
+   branch. It supports scene create/rename/delete, per-target add/edit/remove,
+   sun/time/binary state rule create/edit/enable/disable/delete. The editor is
+   **not yet production-released**; GUI ergonomics, rollback UI, and real-world
+   tests remain to be completed.
 3. **Recovery after missed OFF is not yet implemented.** If HA is offline at
    23:00, the off callback is missed. Add explicit persisted reconciliation
    and user-selectable policy before production rollout.
