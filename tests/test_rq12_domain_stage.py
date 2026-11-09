@@ -37,7 +37,7 @@ class StageTests(unittest.TestCase):
         self.new_package.mkdir()
         store(self.new_package / "manifest.json", {"domain": "red_queen"})
         (self.new_package / "services.yaml").write_text(
-            "smart_scene_activate:\n  fields: {}\nlighting_all_off:\n  fields: {}\n"
+            "smart_scene_activate:\n  fields: {}\nlighting_all_off:\n  fields: {}\nsmart_message_send:\n  fields: {}\n"
         )
         store(self.source / ".storage/core.config_entries", {
             "data": {"entries": [{"domain": "wnhf", "entry_id": "entry1",
