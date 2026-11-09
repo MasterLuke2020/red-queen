@@ -215,10 +215,10 @@ async def main():
         # An absent/missing source is skipped without taking down the scheduler.
         blocked=await scheduler.async_fire("missing_on")
         assert blocked["status"]=="suppressed" and len(h.dispatches)==4
-        assert await scheduler.async_fire("disabled")=={
-            "rule_id":"disabled","status":"suppressed",
-            "reason":"rule_disabled",
-        } or scheduler.snapshot()["rules"]  # guard tested separately in logic
+        disabled = await scheduler.async_fire("disabled")
+        assert disabled["status"]=="suppressed"
+        assert disabled["reason"]=="rule_disabled"
+        assert len(h.dispatches)==4
 
         # Unsubscribe on unload: stale event callbacks cannot switch lights.
         scheduler.async_stop()
