@@ -1,0 +1,42 @@
+# Red Queen 1.2 – Muster für Außenlicht-Automatik
+# NUR BEISPIEL: noch NICHT in eine produktive Konfiguration kopieren.
+# Ziel-Entitäts-ID unten ist ein Platzhalter; vor dem Aktivieren gegen eine
+# echte, freigegebene Home-Assistant-Lichtentität austauschen.
+#
+# Diese Blöcke in /config/wnhf/smart_living.yaml mit vorhandenen 'scenes'
+# zusammenführen. Keine zweite 'scenes:'-Wurzel anlegen!
+# Die Licht-Entity muss von Smart Living unter rgbw_targets erkannt werden.
+# Für Nicht-DALI-Leuchten bei Bedarf unter rgbw_entity_ids explizit freigeben.
+# Niemals Red-Queen-Proxys/virtuelle Gruppen als Smart-Living-Quelle wählen.
+
+scenes:
+  - id: aussen_abend
+    name: "Außenbeleuchtung Abend"
+    lights:
+      light.beispiel_aussenbeleuchtung_rgbw:
+        state: "on"
+        brightness: 180
+
+automations:
+  - id: aussen_sonnenuntergang
+    name: "Außenbeleuchtung bei Sonnenuntergang EIN"
+    enabled: false  # erst nach isoliertem Test explizit aktivieren
+    scene_id: aussen_abend
+    action: "on"
+    trigger:
+      type: sun
+      event: sunset
+      offset_minutes: 0
+    allowed_modes: ["home", "away", "vacation"]
+    allow_quiet: true  # Nachtruhe nur bei bekannter Sensorstellung übergehen
+
+  - id: aussen_2300
+    name: "Außenbeleuchtung um 23 Uhr AUS"
+    enabled: false  # erst nach isoliertem Test explizit aktivieren
+    scene_id: aussen_abend
+    action: "off"
+    trigger:
+      type: time
+      at: "23:00"
+    # Ausschalten wird auch bei away/vacation/quiet erlaubt, da es
+    # ausschließlich die freigegebenen Ziele dieser Szene betrifft.
