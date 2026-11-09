@@ -8,6 +8,7 @@ initial_state: false
 triggers:
   - trigger: sun
     event: sunset
+    enabled: false
 conditions: []
 actions:
   - action: light.turn_on

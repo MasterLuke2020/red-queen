@@ -43,16 +43,16 @@ class OutdoorFallbackTests(unittest.TestCase):
 
     def test_only_sunset_turns_on(self):
         obj = yaml.safe_load(FILES[0].read_text(encoding="utf-8"))
-        self.assertEqual(obj["triggers"], [{"trigger": "sun", "event": "sunset"}])
+        self.assertEqual(obj["triggers"], [{"trigger": "sun", "event": "sunset", "enabled": False}])
         self.assertEqual(obj["actions"][0]["action"], "light.turn_on")
 
     def test_off_has_night_restart_guard_and_never_turns_on(self):
         obj = yaml.safe_load(FILES[1].read_text(encoding="utf-8"))
         self.assertEqual(obj["actions"][0]["action"], "light.turn_off")
         self.assertEqual(obj["triggers"], [
-            {"trigger": "time", "at": "23:00:00", "id": "scheduled_off"},
+            {"trigger": "time", "at": "23:00:00", "id": "scheduled_off", "enabled": False},
             {"trigger": "homeassistant", "event": "start",
-             "id": "restart_after_missed_off"},
+             "id": "restart_after_missed_off", "enabled": False},
         ])
         expr = obj["conditions"][0]["value_template"]
         self.assertIn("trigger.id == 'scheduled_off'", expr)

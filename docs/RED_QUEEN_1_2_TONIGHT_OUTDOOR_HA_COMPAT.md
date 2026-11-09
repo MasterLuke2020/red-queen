@@ -40,8 +40,9 @@ Alle anderen Außen- und Innenlichtkreise bleiben ausgeschlossen.
 4. Vor der Aktivierung: Auslösen per *Aktionen ausführen* oder die
    Lichtfunktionen einzeln testen. Dabei das physische Resultat und die
    Statusrückmeldungen prüfen. Niemals den ganzen Bereich schalten.
-5. Wenn alles eindeutig stimmt: bei **beiden** Automationen
-   `initial_state: false` entfernen, erneut speichern und beide
+5. Wenn alles eindeutig stimmt: **alle** `enabled: false`-Zeilen
+   unter `triggers:` und bei beiden Automationen `initial_state: false`
+   entfernen, erneut speichern und beide
    Automationen über die UI **aktivieren**. Sicherstellen, dass keine
    zweite Außenlicht-Automation mit denselben drei Kreisen aktiv ist.
 6. Am Abend: Sunset-Automation auslösen lassen; drei physische Licht-
