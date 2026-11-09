@@ -100,6 +100,15 @@ cat > "$OLD_CONFIG/.storage/lovelace.red-queen-ci" <<'JSON'
 {"data":{"config":{"views":[{"cards":[{"tap_action":{"action":"call-service","service":"wnhf.lighting_all_off"},"entity":"light.wnhf_existing_entity"}]}]}}}
 JSON
 
+# Add two representative Stores that exist in the actual house backup.
+# Both must be preserved as-is through staging AND rollback rehearsal.
+cat > "$OLD_CONFIG/.storage/wnhf.dashboard" <<'JSON'
+{"version":1,"data":{"operator_setting":"CI_KEEP_ME"}}
+JSON
+cat > "$OLD_CONFIG/.storage/wnhf.smart_living" <<'JSON'
+{"version":1,"data":{"manual_mode":"home"}}
+JSON
+
 # Preserve original HA IDs in an external CI assertion file; never change source.
 python3 - "$OLD_CONFIG" "$WORKDIR/expected.json" <<'PY'
 import json
@@ -118,9 +127,53 @@ PY
 # Exercise THE reusable copy-only staging tool rather than a separate inline
 # implementation. It refuses existing targets, duplicate config entries and
 # ambiguously described service calls.
-python3 "$ROOT/tools/rq12_domain_stage.py" \
-  --source "$OLD_CONFIG" --target "$NEW_CONFIG" \
-  --package "$ROOT/custom_components/red_queen"
+mkdir -p "$WORKDIR/production-do-not-touch"
+read -r EXPECTED_ENTITIES EXPECTED_DEVICES < <(
+python3 - "$OLD_CONFIG" <<'PY'
+import json
+from pathlib import Path
+import sys
+storage = Path(sys.argv[1]) / ".storage"
+entities = json.loads((storage / "core.entity_registry").read_text())["data"]["entities"]
+devices = json.loads((storage / "core.device_registry").read_text())["data"]["devices"]
+entity_count = sum(e.get("platform") == "wnhf" for e in entities)
+device_count = sum(
+    any(isinstance(i, list) and len(i) == 2 and i[0] == "wnhf"
+        for i in d.get("identifiers", []))
+    for d in devices
+)
+assert entity_count >= 1 and device_count >= 1
+print(entity_count, device_count)
+PY
+)
+# Exercise the SAME real-site preflight as the future on-site operator:
+# exact ownership-count gate, two legacy Stores, copy-only domain stage and
+# independent complete-file rollback clone, all strictly offline.
+python3 "$ROOT/tools/rq12_site_stage_preflight.py" \
+  --source "$OLD_CONFIG" --stage "$NEW_CONFIG" \
+  --rollback "$WORKDIR/restore_copy" \
+  --live-config "$WORKDIR/production-do-not-touch" \
+  --package "$ROOT/custom_components/red_queen" \
+  --expected-entities "$EXPECTED_ENTITIES" \
+  --expected-devices "$EXPECTED_DEVICES"
+
+python3 - "$OLD_CONFIG" "$WORKDIR/restore_copy" "$NEW_CONFIG" <<'PY'
+import json
+from pathlib import Path
+import sys
+source, rollback, staged = map(Path, sys.argv[1:])
+for file in (".storage/wnhf.dashboard", ".storage/wnhf.smart_living"):
+    assert (source / file).read_bytes() == (rollback / file).read_bytes()
+    assert (source / file).read_bytes() == (staged / file).read_bytes()
+result = json.loads((staged / "rq12_site_preflight.json").read_text())
+assert result["rollback_copy_exact"] is True
+assert result["source_modified"] is False
+assert result["home_assistant_started"] is False
+assert result["release_approved"] is False
+assert result["old_domain_entities"] >= 1
+assert result["old_domain_devices"] >= 1
+print("PASS: full offline restore copy and Store-byte identity verified")
+PY
 
 # Compare old and new external HA references without dumping any user settings.
 python3 "$ROOT/tools/rq12_domain_reference_audit.py" \
