@@ -135,12 +135,14 @@ other exterior candidate is a disabled Tapo camera floodlight. There are
    sun/time/binary state rule create/edit/enable/disable/delete. The editor is
    **not yet production-released**; GUI ergonomics, rollback UI, and real-world
    tests remain to be completed.
-3. **Recovery after missed OFF is not yet implemented.** If HA is offline at
-   23:00, the off callback is missed. Add explicit persisted reconciliation
-   and user-selectable policy before production rollout.
-4. Manual override persistence is not yet implemented. No automatic ON
-   replay occurs at restart, but a future distinct sensor/sun trigger could
-   issue a new ON action after the resident manually switched a light off.
+3. **Night OFF recovery is now opt-in.** Enabled evening-time OFF rules
+   may set `reconcile_missed_off: true`. Only a targeted OFF is retried
+   after HA has started, with an explicit below-horizon sun state and local
+   night window. This policy still requires staging and physical testing.
+4. **Manual override is now explicit via an optional HA toggle.**
+   `manual_pause_entity_id` blocks automatic ON while active or unavailable,
+   without disabling OFF. Automatic detection of physical/manual switches
+   and persistent per-light holdoffs are not implemented.
 5. Only on/off state events from `binary_sensor` and `input_boolean` are
    supported in this slice. Numeric lux thresholds and more trigger types
    belong to the next step.
@@ -152,8 +154,9 @@ other exterior candidate is a disabled Tapo camera floodlight. There are
    physically confirmed output. It cannot diagnose MiBoxer controller
    peculiarities.
 8. Per-scene batch actions are sequential and **not atomic**. Per-light errors
-   are logged and shown in the audit. Multiple independent rules may still
-   target the same source; cross-rule priority/arbiter is a follow-up.
+   are logged and shown in the audit. Rule execution is now serialized
+   to avoid simultaneous conflicting dispatches. Full cross-rule priority,
+   manual-switch detection and timeout handling remain future work.
 9. Timezone and DST follow Home Assistant's configured local time, but
    edge-case transitions require staging integration tests with the target
    Home Assistant version before release.
@@ -164,9 +167,10 @@ other exterior candidate is a disabled Tapo camera floodlight. There are
   `tests/test_smart_lighting_automation_logic.py`.
 - Static CI, hassfest, and isolated Home Assistant synthetic boot run on
   the feature branch.
-- Next required tests: real HA staging with synthetic sunset/time callbacks,
-  real state transitions and force reload/unload without orphaned listeners;
-  DST boundaries, missing sensors, missed off and manual override.
+- Synthetic HA now tests sunset/time/state events, late-night OFF recovery,
+  daylight suppression and explicit manual pause, including unload/reload.
+- Next required tests: site-derived HA staging, hardware feedback, DST edge
+  cases, stopped/restarted HA, backup restoration and real manual overrides.
 - Only after these pass should a guarded, rollback-capable 1.2 release be
   considered. Do not merge blindly into 1.1.0 production.
 

@@ -203,10 +203,11 @@ separate, privileged, HA-stopped, guarded maintenance procedure.
 - [ ] Migrate persistent Store names and \`/config/wnhf\` data namespace with
   an explicit, verifiable recovery plan; this is separate from domain cutover
 - [ ] User-visible WNHF naming cleanup without involuntary entity renames
-- [ ] Missed night-time OFF policy after power loss/HA downtime and explicit
-  manual override suppression
-- [ ] Verify the **physical** Straße Up/Down canonical mapping before any
-  automation is enabled
+- [x] Opt-in synthetic night-OFF reconciliation and explicit manual ON pause
+  implemented; **real-house staging and physical acceptance still pending**
+- [x] Operator confirmed Straße Up/Down physical entity:
+  `light.hof_vorplatz_red_queen_strasse_up_down`; legacy duplicate
+  `light.wnhf_strasse_up_down` is unavailable (2026-11-09)
 - [ ] Full sanitized-house staging with old dashboards, scripts, integrations,
   reboot, hardware-negative tests and restore verification
 - [ ] Version \`1.2.0\`, immutable release artifact, HACS qualification and
@@ -260,3 +261,17 @@ the staged copy and that entity IDs are untouched.
 This is a narrow source-level migration. Only an isolated on-site stage
 and subsequent HA package validation can confirm all real YAML structures
 and runtime dependencies. No production files have been changed.
+
+## 1.2 native scheduler safety additions (development)
+
+At commit `6c167675`, the scheduler supports explicitly opted-in
+`reconcile_missed_off` only for evening clock-based targeted OFF rules.
+It never replays a scheduled ON at startup, checks the configured local
+clock and sun position, and fails closed when sun is unavailable. It also
+supports an optional `manual_pause_entity_id` input_boolean to suppress
+scheduled ON without blocking OFF. Cross-rule actions are serialized.
+
+The two Home Assistant 1.1-compatible fallback automations remain the
+**only** proposed production lighting automation until Red Queen 1.2
+passes real-site staging and hardware acceptance. **Never enable both**
+the HA-native fallback and Red Queen native rules against the same lights.
