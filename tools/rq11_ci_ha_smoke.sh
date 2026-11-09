@@ -134,3 +134,9 @@ print("PASS: all 5 Smart Living entities were registered")
 print("PASS: zero duplicate RGBW proxies")
 print("PASS: no network, live data or hardware available")
 PY
+
+echo "Verifying read-only exterior lighting inventory against isolated HA registry"
+python3 "$ROOT/tools/rq12_readonly_light_inventory.py" \
+  --config "$WORKDIR/config" > "$WORKDIR/rq12_inventory_result.txt"
+grep -Fq 'RED QUEEN 1.2' "$WORKDIR/rq12_inventory_result.txt"
+echo "PASS: read-only live-registry inventory parsing"
