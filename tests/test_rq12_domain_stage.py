@@ -60,7 +60,10 @@ class StageTests(unittest.TestCase):
             "    custom_components.wnhf: info\n", encoding="utf-8")
         (self.source / "scripts.yaml").write_text(
             "night:\n  sequence:\n    - service: wnhf.smart_scene_activate\n"
-            "      data:\n        entity_id: light.wnhf_hof\n", encoding="utf-8")
+            "      data:\n        entity_id: light.wnhf_hof\n"
+            "    - service: system_log.write\n      data:\n"
+            "        logger: 'wnhf.voice_driver'  # internal channel\n",
+            encoding="utf-8")
         (self.source / "automations.yaml").write_text(
             "- action: 'wnhf.smart_message_send'\n", encoding="utf-8")
         self.before = {str(p.relative_to(self.source)): p.read_bytes()
@@ -76,6 +79,9 @@ class StageTests(unittest.TestCase):
                       (self.target / "configuration.yaml").read_text())
         self.assertIn("red_queen.smart_scene_activate",
                       (self.target / "scripts.yaml").read_text())
+        self.assertIn("logger: 'red_queen.voice_driver'  # internal channel",
+                      (self.target / "scripts.yaml").read_text())
+        self.assertEqual(result["stats"]["logger_channel_renames"], 1)
         self.assertIn("red_queen.smart_message_send",
                       (self.target / "automations.yaml").read_text())
         dashboard = json.loads((self.target / ".storage/lovelace.red-queen").read_text())
@@ -128,6 +134,32 @@ class StageTests(unittest.TestCase):
         self.assertEqual(root_count, 0)
         self.assertEqual(svc_count, 1)
         self.assertIn("entity_id: light.wnhf_hof", rewritten)
+
+    def test_known_logger_channels_are_exact_and_do_not_touch_entities(self):
+        source = (
+            "  logger: wnhf.channel_log\n"
+            "    logger: 'wnhf.channel_voice' # detail\n"
+            '    logger: "wnhf.notify"\n'
+            "    logger: wnhf.channel_router\n"
+            "    logger: wnhf.voice_driver\n"
+            "    entity_id: light.wnhf_hof\n"
+            "    logger: unrelated.component\n"
+        )
+        updated, count = tool.rewrite_logger_channels(source)
+        self.assertEqual(count, 5)
+        for name in ("channel_log", "channel_voice", "notify",
+                     "channel_router", "voice_driver"):
+            self.assertIn("red_queen." + name, updated)
+        self.assertIn("entity_id: light.wnhf_hof", updated)
+        self.assertIn("logger: unrelated.component", updated)
+
+    def test_unknown_or_dynamic_logger_channel_blocks_stage(self):
+        for line in (
+            "logger: wnhf.unexpected_new_channel\n",
+            'logger: "{{ wnhf.some_expression }}"\n',
+        ):
+            with self.subTest(line=line), self.assertRaises(tool.StageError):
+                tool.rewrite_logger_channels(line)
 
     def test_unrecognized_template_fails_closed(self):
         with self.assertRaises(tool.StageError):

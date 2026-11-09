@@ -235,3 +235,28 @@ deployment authorization. Service references are migrated only in explicitly
 supported syntax; templates and unclassified dynamic references require manual
 review. The synthetic old/new HA upgrade CI compares the auditor's reports so
 the expected literal service references disappear while entity IDs remain stable.
+
+
+## Phase 1d: five known site logger channels (isolated copy only)
+
+The on-site read-only diagnostic identified **exactly eight** formerly
+unclassified \`wnhf.*\` references: all are literal \`logger:\` values, not
+Home Assistant services or entity identifiers:
+
+- \`wnhf.channel_log\` (1)
+- \`wnhf.channel_voice\` (2)
+- \`wnhf.notify\` (3)
+- \`wnhf.channel_router\` (1)
+- \`wnhf.voice_driver\` (1)
+
+The staging migration now converts **only these exact five recognized**
+logging channel strings to their \`red_queen.*\` equivalents, preserving
+quoting and comments. Any other/dynamic \`logger: wnhf.*\` aborts staging
+rather than guessing. The reference inventory separately counts recognized
+logger-channel mentions; unknown ones remain a manual-review blocker.
+Synthetic unit and two-boot CI tests verify no legacy log channels survive
+the staged copy and that entity IDs are untouched.
+
+This is a narrow source-level migration. Only an isolated on-site stage
+and subsequent HA package validation can confirm all real YAML structures
+and runtime dependencies. No production files have been changed.

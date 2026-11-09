@@ -91,6 +91,9 @@ ci_test:
     - service: wnhf.smart_scene_activate
       target:
         entity_id: light.wnhf_existing_entity
+    - service: system_log.write
+      data:
+        logger: wnhf.voice_driver
 YAML
 mkdir -p "$OLD_CONFIG/.storage"
 cat > "$OLD_CONFIG/.storage/lovelace.red-queen-ci" <<'JSON'
@@ -133,9 +136,11 @@ b, a = before["totals"], after["totals"]
 assert b["literal_service_calls"] >= 2, b
 assert b["root_domain_keys"] == 1, b
 assert b["legacy_logger_keys"] == 1, b
+assert b["logger_channel_mentions"] == 1, b
 assert a.get("literal_service_calls", 0) == 0, a
 assert a.get("root_domain_keys", 0) == 0, a
 assert a.get("legacy_logger_keys", 0) == 0, a
+assert a.get("logger_channel_mentions", 0) == 0, a
 assert b["entity_id_mentions"] == a["entity_id_mentions"], (b, a)
 print("PASS: all synthetic service and logger references migrated")
 print("PASS: legacy entity-ID references intentionally preserved")
@@ -153,9 +158,11 @@ assert report["stats"]["devices"] >= 1
 assert report["stats"]["namespace_only_devices"] >= 1
 assert report["stats"]["yaml_service_calls"] >= 1
 assert report["stats"]["lovelace_service_calls"] >= 1
+assert report["stats"]["logger_channel_renames"] == 1
 assert report["entity_ids_renamed"] == 0
 assert (old / "scripts.yaml").read_text().find("wnhf.smart_scene_activate") >= 0
 assert (new / "scripts.yaml").read_text().find("red_queen.smart_scene_activate") >= 0
+assert "logger: red_queen.voice_driver" in (new / "scripts.yaml").read_text()
 assert (new / ".storage/lovelace.red-queen-ci").read_text().find(
     "red_queen.lighting_all_off") >= 0
 assert "custom_components.red_queen: info" in (new / "configuration.yaml").read_text()

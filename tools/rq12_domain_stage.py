@@ -37,6 +37,21 @@ SERVICE_RE = re.compile(
     r"(?P=quote)(?P<tail>\s*(?:#.*)?)$"
 )
 SERVICE_NAME = re.compile(r"^wnhf\.([a-z][a-z0-9_]*)$")
+# Exactly the application-specific log-channel tags found in the real house
+# audit on 2026-11-09. Do not rewrite arbitrary wnhf.* YAML values.
+KNOWN_LOGGER_CHANNELS = frozenset({
+    "wnhf.channel_log", "wnhf.channel_voice", "wnhf.notify",
+    "wnhf.channel_router", "wnhf.voice_driver",
+})
+LOGGER_CHANNEL_RE = re.compile(
+    r"""(?m)^(?P<head>[ \t]*(?:-[ \t]+)?logger[ \t]*:[ \t]*)"""
+    r"""(?P<quote>['"]?)(?P<value>wnhf\.[a-z][a-z0-9_]*)"""
+    r"""(?P=quote)(?P<tail>[ \t]*(?:#.*)?)$"""
+)
+LOGGER_CONTAINING_WNHF_RE = re.compile(
+    r"(?m)^[ \t]*(?:-[ \t]+)?logger[ \t]*:.*wnhf\."
+)
+
 CORE = ("core.config_entries", "core.entity_registry", "core.device_registry")
 YAML_EXTENSIONS = {".yaml", ".yml"}
 EXCLUDE_TOP = {"custom_components", "www", "deps", "tts", "media", "backups"}
@@ -117,6 +132,26 @@ def rewrite_yaml_source(
     return text, configs, count[0]
 
 
+def rewrite_logger_channels(text: str) -> tuple[str, int]:
+    """Rename only five explicit internal log tags; fail on ambiguous values."""
+    count = 0
+
+    def replace(m: re.Match[str]) -> str:
+        nonlocal count
+        value = m.group("value")
+        if value not in KNOWN_LOGGER_CHANNELS:
+            raise StageError("Unrecognized legacy logger channel")
+        count += 1
+        return (m.group("head") + m.group("quote") +
+                value.replace("wnhf.", "red_queen.", 1) + m.group("quote") +
+                m.group("tail"))
+
+    rewritten = LOGGER_CHANNEL_RE.sub(replace, text)
+    if LOGGER_CONTAINING_WNHF_RE.search(rewritten):
+        raise StageError("Dynamic or unclassified old-domain logger reference")
+    return rewritten, count
+
+
 def rewrite_lovelace_json(
     obj: dict[str, Any], *, allowed_services: set[str] | None = None,
 ) -> tuple[dict[str, Any], int]:
@@ -179,8 +214,6 @@ def _eligible_yaml(root: Path) -> list[Path]:
         if (rel.parts[0] in EXCLUDE_TOP or ".storage" in rel.parts
                 or any(part.startswith(".") for part in rel.parts)):
             continue
-
-            continue
         paths.append(path)
     return sorted(paths)
 
@@ -240,8 +273,10 @@ def stage(source: Path, target: Path, package: Path) -> dict[str, Any]:
                                           == "configuration.yaml"),
                 allowed_services=allowed_services
             )
+            updated, channel_count = rewrite_logger_channels(updated)
             stats["yaml_root_renames"] += domain_count
             stats["yaml_service_calls"] += calls
+            stats["logger_channel_renames"] += channel_count
             if updated != text:
                 path.write_text(updated, encoding="utf-8")
         for path in sorted((temporary / ".storage").glob("lovelace*")):

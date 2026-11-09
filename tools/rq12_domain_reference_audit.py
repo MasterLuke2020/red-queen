@@ -40,6 +40,21 @@ WNHF_PREFIX = re.compile(r"(?<![a-z0-9_])wnhf_[a-z0-9_]+")
 STORE_NAMES = ("wnhf.dashboard", "wnhf.smart_living", "wnhf.smart_lighting_editor")
 SERVICE_KEYS = {"service", "action", "perform_action", "service_template",
                 "action_template", "domain"}
+# Exactly the application-specific log-channel tags found in the real house
+# audit on 2026-11-09. Do not rewrite arbitrary wnhf.* YAML values.
+KNOWN_LOGGER_CHANNELS = frozenset({
+    "wnhf.channel_log", "wnhf.channel_voice", "wnhf.notify",
+    "wnhf.channel_router", "wnhf.voice_driver",
+})
+LOGGER_CHANNEL_RE = re.compile(
+    r"""(?m)^(?P<head>[ \t]*(?:-[ \t]+)?logger[ \t]*:[ \t]*)"""
+    r"""(?P<quote>['"]?)(?P<value>wnhf\.[a-z][a-z0-9_]*)"""
+    r"""(?P=quote)(?P<tail>[ \t]*(?:#.*)?)$"""
+)
+LOGGER_CONTAINING_WNHF_RE = re.compile(
+    r"(?m)^[ \t]*(?:-[ \t]+)?logger[ \t]*:.*wnhf\."
+)
+
 
 
 class ReferenceAuditError(ValueError):
@@ -61,6 +76,10 @@ def _yaml_counts(text: str, *, root: bool) -> Counter[str]:
     counts["template_or_domain_calls"] = len(TEMPLATE_LINE.findall(text))
     counts["entity_id_mentions"] = len(ENTITY_ID.findall(text))
     counts["legacy_logger_keys"] = len(LOGGER_KEY.findall(text))
+    counts["logger_channel_mentions"] = sum(
+        1 for match in LOGGER_CHANNEL_RE.finditer(text)
+        if match.group("value") in KNOWN_LOGGER_CHANNELS
+    )
     counts["root_domain_keys"] = len(ROOT_KEY.findall(text)) if root else 0
     counts["legacy_prefix_mentions"] = len(WNHF_PREFIX.findall(text))
     counts["legacy_dotted_mentions"] = len(DOTTED_DOMAIN.findall(text))
@@ -68,7 +87,7 @@ def _yaml_counts(text: str, *, root: bool) -> Counter[str]:
     # references for manual review instead of silently claiming they migrated.
     counts["unclassified_dotted_mentions"] = max(
         0, counts["legacy_dotted_mentions"] - counts["literal_service_calls"]
-        - counts["template_or_domain_calls"] - counts["legacy_logger_keys"]
+        - counts["template_or_domain_calls"] - counts["legacy_logger_keys"] - counts["logger_channel_mentions"]
     )
     return counts
 
@@ -87,7 +106,10 @@ def _unclassified_yaml_locations(text: str, relative: str) -> list[dict[str, Any
             continue
         exact_service = SERVICE_LINE.fullmatch(line) is not None
         template_service = TEMPLATE_LINE.fullmatch(line) is not None
-        if exact_service or template_service:
+        recognized_logger = LOGGER_CHANNEL_RE.fullmatch(line)
+        if (exact_service or template_service or
+            (recognized_logger is not None and
+             recognized_logger.group("value") in KNOWN_LOGGER_CHANNELS)):
             continue
         key = YAML_KEY.match(line)
         classification = (

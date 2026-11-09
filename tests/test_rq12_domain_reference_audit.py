@@ -42,6 +42,33 @@ class DomainReferenceAuditTests(unittest.TestCase):
         self.assertNotIn("SECRET_TEST_DO_NOT_PRINT", json.dumps(report))
         self.assertEqual(path.read_bytes(), original)
 
+    def test_five_known_loggers_are_not_service_calls_or_unknowns(self):
+        path = self.root / "packages/wnhf/channels.yaml"
+        path.parent.mkdir(parents=True)
+        path.write_text(
+            'logger: wnhf.channel_log\n'
+            '  logger: "wnhf.channel_voice"\n'
+            "  logger: 'wnhf.notify' # audit\n"
+            '  logger: wnhf.channel_router\n'
+            '  logger: wnhf.voice_driver\n',
+            encoding="utf-8",
+        )
+        report = tool.audit(self.root)
+        self.assertEqual(report["totals"]["logger_channel_mentions"], 5)
+        self.assertEqual(report["totals"]["literal_service_calls"], 0)
+        self.assertEqual(report["totals"]["unclassified_dotted_mentions"], 0)
+        self.assertEqual(report["unclassified_locations"], [])
+        self.assertFalse(report["manual_review_required"])
+
+    def test_unknown_logger_channel_still_requires_manual_review(self):
+        (self.root / "scripts.yaml").write_text(
+            "logger: wnhf.mystery\n", encoding="utf-8"
+        )
+        report = tool.audit(self.root)
+        self.assertTrue(report["manual_review_required"])
+        self.assertEqual(report["totals"]["unclassified_dotted_mentions"], 1)
+        self.assertEqual(len(report["unclassified_locations"]), 1)
+
     def test_detect_template_as_review_blocker(self):
         (self.root / "automations.yaml").write_text(
             "- service_template: '{{ \"wnhf.\" ~ states(\"input_text.service\") }}'\n",
