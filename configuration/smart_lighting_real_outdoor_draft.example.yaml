@@ -1,0 +1,45 @@
+# Red Queen 1.2 – Muster für die tatsächlich vorhandenen Außenlichter
+# Read-only-Registry-Inventur vom 09.11.2026. NUR BEISPIEL, NICHT produktiv!
+#
+# Die Red-Queen-Leuchten sind SPS-/PLC-Schaltlichter: nur state on/off.
+# Keine RGB-, Dimm- oder Impuls-Parameter eintragen!
+# Das Beispiel ist bewusst deaktiviert und schaltet nichts automatisch.
+# 'Garage innen' ist kein Außenlicht und bleibt ausdrücklich ausgeschlossen.
+#
+# Wenn bereits eine 'scenes:'-Liste besteht: Szene in die Liste aufnehmen,
+# NICHT eine zweite 'scenes:'-Wurzel anlegen.
+# Im fertigen Red-Queen-1.2-Konfigurator können die Leuchten ausgewählt
+# werden; YAML-Dateien müssen dann nicht mehr bearbeitet werden.
+
+scenes:
+  - id: aussen_grundbeleuchtung
+    name: "Außenbeleuchtung – Grundlicht"
+    lights:
+      light.wnhf_vorplatz_wand:
+        state: "on"
+      light.wnhf_hof_wand:
+        state: "on"
+      light.hof_vorplatz_red_queen_strasse_up_down:
+        state: "on"
+
+automations:
+  - id: aussen_abend_ein
+    name: "Außenbeleuchtung bei Sonnenuntergang"
+    enabled: false
+    scene_id: aussen_grundbeleuchtung
+    action: "on"
+    trigger:
+      type: sun
+      event: sunset
+      offset_minutes: 0
+    allowed_modes: ["home", "away", "vacation"]
+    allow_quiet: true
+
+  - id: aussen_nacht_aus
+    name: "Außenbeleuchtung um 23 Uhr AUS"
+    enabled: false
+    scene_id: aussen_grundbeleuchtung
+    action: "off"
+    trigger:
+      type: time
+      at: "23:00"
