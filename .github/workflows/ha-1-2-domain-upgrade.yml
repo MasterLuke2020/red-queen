@@ -8,6 +8,7 @@ on:
     paths:
       - "custom_components/red_queen/**"
       - "tools/rq12_domain_registry_transform.py"
+      - "tools/rq12_domain_stage.py"
       - "tools/rq12_ci_domain_upgrade_smoke.sh"
       - ".github/workflows/ha-1-2-domain-upgrade.yml"
   workflow_dispatch:
