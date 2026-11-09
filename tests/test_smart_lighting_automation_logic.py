@@ -68,7 +68,10 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(rules["aussen_an"]["trigger"]["offset_minutes"], -15)
         self.assertEqual(rules["aussen_aus"]["trigger"]["at"], "23:00")
         self.assertTrue(logic.automation_permission(
-            rules["aussen_an"], "vacation", True,
+            rules["aussen_an"], "vacation", True, quiet_state="on",
+        )[0])
+        self.assertFalse(logic.automation_permission(
+            rules["aussen_an"], "vacation", True, quiet_state="unavailable",
         )[0])
         self.assertTrue(logic.automation_permission(
             rules["aussen_aus"], "away", True,
