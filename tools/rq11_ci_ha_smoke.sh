@@ -22,6 +22,8 @@ trap cleanup EXIT
 
 mkdir -p "$WORKDIR/config/custom_components" "$WORKDIR/config/wnhf/house/registry"
 cp -a "$ROOT/custom_components/wnhf" "$WORKDIR/config/custom_components/wnhf"
+# Execute native Configurator step definitions against the real HA selector APIs.
+cp "$ROOT/tools/rq12_ci_editor_flow.py" "$WORKDIR/config/rq12_ci_editor_flow.py"
 cat > "$WORKDIR/config/configuration.yaml" <<'YAML'
 homeassistant:
   name: Red Queen CI Smoke
@@ -82,6 +84,9 @@ if [[ "$STARTED" != 1 ]]; then
   fi
   exit 1
 fi
+echo "Exercising Smart Lighting GUI dialogs with installed HA selector types"
+docker exec -e PYTHONPATH=/config "$NAME" \
+  python3 /config/rq12_ci_editor_flow.py
 sleep 8
 docker stop -t 20 "$NAME" >/dev/null
 docker rm "$NAME" >/dev/null
