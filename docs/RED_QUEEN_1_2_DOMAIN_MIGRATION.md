@@ -293,3 +293,21 @@ native Red Queen scene/rules and observe one sunset and 23:00 cycle. In a
 rollback, disable the native rules first, restore known good HA fallback
 configuration and then reactivate fallback automations. Never command the
 same lights from both systems simultaneously.
+
+
+## Phase 1e: offline site staging and independent recovery copy
+
+The new \`tools/rq12_site_stage_preflight.py\` is an extra acceptance gate
+for a **consistent restored backup** of the actual house HA configuration.
+It requires explicit old-domain 245 entity / 36 device ownership counts,
+presence and bytewise preservation of \`wnhf.dashboard\` and
+\`wnhf.smart_living\`, unchanged legacy house registry files, unchanged
+source-file hashes, private 0700 destination parents, and a separately
+created byte-identical rollback copy. It rejects any source or destination
+overlapping the supplied real productive HA config host mount.
+
+The old-domain → new-domain two-boot synthetic CI now uses this same
+site-style preflight rather than a bespoke shortcut. See
+\`docs/RED_QUEEN_1_2_SITE_STAGING.md\` for requirements and commands.
+This check **does not** start a stage containing real house credentials,
+prove a live disaster recovery, merge anything, or release v1.2.0.
