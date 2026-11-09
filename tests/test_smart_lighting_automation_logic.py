@@ -80,6 +80,26 @@ class RulesTests(unittest.TestCase):
             rules["aussen_aus"], "unknown", True,
         )[0])
 
+    def test_state_trigger_for_motion_and_explicit_switch_only(self):
+        rule = logic.parse_automation_rules([
+            make_rule(enabled=True, trigger={
+                "type": "state",
+                "entity_id": "binary_sensor.bewegung_vorraum",
+                "to": "on",
+            })
+        ], SCENES)["aussen_an"]
+        self.assertEqual(rule["trigger"]["to"], "on")
+        self.assertEqual(rule["trigger"]["entity_id"],
+                         "binary_sensor.bewegung_vorraum")
+        other = logic.parse_automation_rules([
+            make_rule(enabled=True, trigger={
+                "type": "state",
+                "entity_id": "input_boolean.freigabe",
+                "to": "off",
+            })
+        ], SCENES)["aussen_an"]
+        self.assertEqual(other["trigger"]["to"], "off")
+
     def test_no_implicit_away_or_quiet_bypass(self):
         rule = logic.parse_automation_rules([
             make_rule(enabled=True)
@@ -113,6 +133,8 @@ class RulesTests(unittest.TestCase):
             make_rule(trigger={"type": "sun", "event": "sunset",
                                "offset_minutes": 121}),
             make_rule(trigger={"type": "state", "entity_id": "binary_sensor.x"}),
+            make_rule(trigger={"type": "state", "entity_id": "light.aussen", "to": "on"}),
+            make_rule(trigger={"type": "state", "entity_id": "binary_sensor.x", "to": "unavailable"}),
             make_rule(arbitrary="service.call"),
         ]
         for rule in cases:
@@ -129,6 +151,7 @@ class RulesTests(unittest.TestCase):
         self.assertIn("async_track_sunset", source)
         self.assertIn("async_track_sunrise", source)
         self.assertIn("async_track_time_change", source)
+        self.assertIn("async_track_state_change_event", source)
         self.assertIn("self._listeners.append(unsubscribe)", source)
         self.assertIn("unsubscribe()", source)
         self.assertIn("self.runtime.async_light_dispatch(", source)
