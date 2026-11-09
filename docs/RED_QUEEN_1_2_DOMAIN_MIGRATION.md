@@ -275,3 +275,21 @@ The two Home Assistant 1.1-compatible fallback automations remain the
 **only** proposed production lighting automation until Red Queen 1.2
 passes real-site staging and hardware acceptance. **Never enable both**
 the HA-native fallback and Red Queen native rules against the same lights.
+
+
+## Explicit HA-native → Red Queen native lighting cutover gate
+
+The operator confirmed the two HA 1.1-compatible sunset/23:00 automations
+are already enabled and should remain in service until Red Queen 1.2 is
+production-approved. The Red Queen 1.2 scheduler now contains a narrow
+dispatch-time interlock: for scenes touching any of the three confirmed
+outdoor lights, active/uncertain known HA fallback automation aliases
+suppress native Red Queen dispatch. Other scenes stay unaffected.
+
+Do **not** rely on alias matching for renamed automations. Required physical
+handover order: validate all three circuits; record HA automation entity IDs;
+confirm both fallback automations OFF; then explicitly activate only the
+native Red Queen scene/rules and observe one sunset and 23:00 cycle. In a
+rollback, disable the native rules first, restore known good HA fallback
+configuration and then reactivate fallback automations. Never command the
+same lights from both systems simultaneously.

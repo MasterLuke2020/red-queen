@@ -168,6 +168,35 @@ class RulesTests(unittest.TestCase):
         off["enabled"] = False
         self.assertFalse(yes("2026-11-09T23:30:00", "below_horizon"))
 
+    def test_handover_interlock_for_exact_fallback_automations(self):
+        from types import SimpleNamespace
+        target = "light.hof_vorplatz_red_queen_strasse_up_down"
+        status = lambda name, state: SimpleNamespace(
+            state=state, attributes={"friendly_name": name},
+        )
+        sunset = "Red Queen – Außenbeleuchtung Sonnenuntergang EIN"
+        night = "Red Queen – Außenbeleuchtung 23 Uhr AUS"
+        with self.subTest("active on"):
+            self.assertTrue(logic.active_outdoor_fallback(
+                [status(sunset, "on")], [target],
+            ))
+        with self.subTest("ambiguous unknown fail closed"):
+            self.assertTrue(logic.active_outdoor_fallback(
+                [status(night, "unavailable")], [target],
+            ))
+        with self.subTest("both disabled"):
+            self.assertFalse(logic.active_outdoor_fallback(
+                [status(sunset, "off"), status(night, "off")], [target],
+            ))
+        with self.subTest("other scenes unaffected"):
+            self.assertFalse(logic.active_outdoor_fallback(
+                [status(night, "on")], ["light.dali_eg_buro_rgbw"],
+            ))
+        with self.subTest("unrecognized alias"):
+            self.assertFalse(logic.active_outdoor_fallback(
+                [status("A manually renamed automation", "on")], [target],
+            ))
+
     def test_missed_off_rejects_on_and_morning_rules(self):
         cases = [
             make_rule(reconcile_missed_off=True),

@@ -23,6 +23,7 @@ from homeassistant.helpers.event import (
 
 from .smart_living_automation_logic import (
     automation_permission, should_reconcile_missed_off,
+    active_outdoor_fallback,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -157,6 +158,15 @@ class SmartLightingScheduler:
                 self._queue(rule["id"])
 
     def _permission(self, rule: dict[str, Any]) -> tuple[bool, str]:
+        # Operator confirmed both HA 1.1-compatible fallback automations
+        # active. Interlock only overlapping outdoor scenes. Never toggle
+        # an existing HA automation without explicit operator action.
+        if rule["scene_id"] in self.runtime.scenes:
+            targets = self.runtime.scenes[rule["scene_id"]]["lights"]
+            if active_outdoor_fallback(
+                self.hass.states.async_all("automation"), targets,
+            ):
+                return False, "ha_outdoor_fallback_still_active"
         # A manually operated HA input_boolean pauses automatic ON only.
         # Unknown/unavailable helper state fails closed. Targeted OFF is
         # still allowed, including the opt-in missed-night recovery.

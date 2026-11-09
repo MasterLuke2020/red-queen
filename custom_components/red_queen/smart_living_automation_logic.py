@@ -148,6 +148,44 @@ def automation_permission(
 
 
 
+# HA 1.1-compatible handover automations that the operator reported ACTIVE.
+# Recognition is intentionally limited to exact alias names and known scene
+# targets; other automations cannot be reliably detected from their names.
+FALLBACK_OUTDOOR_TARGETS = frozenset({
+    "light.wnhf_garage_aussen_up_down",
+    "light.hof_vorplatz_red_queen_strasse_up_down",
+    "light.wnhf_hof_up_down",
+})
+FALLBACK_AUTOMATION_ALIASES = frozenset({
+    "Red Queen – Außenbeleuchtung Sonnenuntergang EIN",
+    "Red Queen – Außenbeleuchtung bei Sonnenuntergang EIN",
+    "Red Queen – Außenbeleuchtung 23 Uhr AUS",
+})
+
+
+def active_outdoor_fallback(
+    automation_states: Any, targets: Any,
+) -> bool:
+    """Guard native scene dispatch while a known HA fallback is still enabled.
+
+    Run this on every native dispatch, not just at integration start. An
+    unavailable/unknown matched automation also blocks native operation.
+    Unrelated scene targets are unaffected. Renamed or differently written
+    user automations are deliberately *not* assumed safe; the operator must
+    verify and deactivate them during the handover checklist.
+    """
+    if not set(targets).intersection(FALLBACK_OUTDOOR_TARGETS):
+        return False
+    for item in automation_states:
+        attrs = getattr(item, "attributes", None)
+        friendly = attrs.get("friendly_name") if isinstance(attrs, dict) else None
+        if friendly in FALLBACK_AUTOMATION_ALIASES and (
+            getattr(item, "state", None) != "off"
+        ):
+            return True
+    return False
+
+
 def should_reconcile_missed_off(
     rule: dict[str, Any], *, local_now: datetime, sun_state: str | None,
 ) -> bool:

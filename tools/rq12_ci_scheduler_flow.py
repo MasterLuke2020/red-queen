@@ -42,8 +42,12 @@ class Harness:
             ),
             self.quiet_entity_id: SimpleNamespace(state="off", attributes={}),
         }
+        self.automation_states = []
         self.hass = SimpleNamespace(
-            states=SimpleNamespace(get=lambda entity_id:self.states.get(entity_id)),
+            states=SimpleNamespace(
+                get=lambda entity_id:self.states.get(entity_id),
+                async_all=lambda domain:self.automation_states if domain == "automation" else [],
+            ),
             async_create_task=self.create_task,
         )
         self.rgbw_targets = {LIGHT:"Synthetic exterior", OTHER:"Synthetic lounge"}
@@ -262,6 +266,40 @@ async def main():
         assert disabled["status"]=="suppressed"
         assert disabled["reason"]=="rule_disabled"
         assert len(h.dispatches)==5
+
+        # Fallback interlock: while an older HA sunset or 23:00 automation
+        # is on, the native scheduler must not dispatch overlapping targets.
+        # For synthetic runtime, the scene target is replaced with one of
+        # the exact real-world exterior target IDs.
+        old_scene = h.scenes["exterior"]
+        original_targets = h.rgbw_targets
+        real_target = "light.hof_vorplatz_red_queen_strasse_up_down"
+        h.rgbw_targets = {**original_targets, real_target: "CI street"}
+        h.states[real_target] = SimpleNamespace(
+            state="off", attributes={"supported_color_modes": ["onoff"]},
+        )
+        old_scene["lights"][real_target] = {
+            "state": "on", "attributes": {},
+        }
+        h.automation_states = [SimpleNamespace(
+            state="on",
+            attributes={"friendly_name":
+                        "Red Queen – Außenbeleuchtung 23 Uhr AUS"},
+        )]
+        before = len(h.dispatches)
+        blocked = await scheduler.async_fire("clock_off")
+        assert blocked["reason"] == "ha_outdoor_fallback_still_active", blocked
+        blocked = await scheduler.async_fire("sun_on")
+        assert blocked["reason"] == "ha_outdoor_fallback_still_active", blocked
+        assert len(h.dispatches) == before
+        # Handover performed manually in HA: both automations OFF.
+        h.automation_states[0].state = "off"
+        released = await scheduler.async_fire("sun_on")
+        assert released["status"] == "dispatched", released
+        assert len(h.dispatches) == before + 2
+        old_scene["lights"].pop(real_target)
+        h.rgbw_targets = original_targets
+        h.automation_states.clear()
 
         # Unsubscribe on unload: stale event callbacks cannot switch lights.
         scheduler.async_stop()

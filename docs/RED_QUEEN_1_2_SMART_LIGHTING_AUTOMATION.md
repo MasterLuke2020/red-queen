@@ -212,3 +212,28 @@ accepted HA call is not proof of physical state.
 transition automations for the same three outdoor lights are already
 active, keep native Red Queen ON/OFF rules disabled until the transition
 automations have been explicitly deactivated and the release is approved.
+
+
+## Native / Home Assistant exterior handover interlock (2026-11-09)
+
+The user reports the two **existing HA-native fallback automations are ACTIVE**:
+
+- "Red Queen – Außenbeleuchtung Sonnenuntergang EIN" (also recognizes
+  "... bei Sonnenuntergang EIN")
+- "Red Queen – Außenbeleuchtung 23 Uhr AUS"
+
+The Red Queen 1.2 scheduler checks the Home Assistant automation state
+registry **on each native rule dispatch**. When a matching known HA fallback
+automation has state ON or an uncertain/unavailable state, it suppresses any
+Red Queen scene overlapping the three specifically confirmed exterior light
+entity IDs; other rooms/scenes are unaffected. It never disables the user's
+existing automations. The block reason is
+\`ha_outdoor_fallback_still_active\` in the scheduler audit.
+
+**Limitation:** Automations renamed by the user or configured with other
+aliases cannot be reliably recognized from the HA friendly name alone.
+This is a defense-in-depth interlock, **not** a substitute for physical
+handover acceptance. The operator MUST manually disable both old HA
+automations before enabling the new Red Queen native rules; thereafter,
+confirm the reported automation states are OFF. No automatic switch-over
+or production activation occurs in this branch.
