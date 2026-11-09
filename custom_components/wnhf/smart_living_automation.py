@@ -95,6 +95,13 @@ class SmartLightingScheduler:
                 f"Red Queen Smart Lighting rule {rule_id}",
             )
 
+    def _permission(self, rule: dict[str, Any]) -> tuple[bool, str]:
+        state = self.hass.states.get(self.runtime.quiet_entity_id)
+        return automation_permission(
+            rule, self.runtime.mode, self.runtime.quiet,
+            quiet_state=state.state if state is not None else None,
+        )
+
     def async_stop(self) -> None:
         """Unsubscribe before services and entities are unloaded."""
         self._started = False
@@ -141,9 +148,7 @@ class SmartLightingScheduler:
             "status": "suppressed",
         }
         try:
-            allowed, reason = automation_permission(
-                rule, self.runtime.mode, self.runtime.quiet,
-            )
+            allowed, reason = self._permission(rule)
             if not allowed:
                 record["reason"] = reason
                 return record
@@ -180,9 +185,7 @@ class SmartLightingScheduler:
                         "entity_id": entity_id, "status": "stopped",
                     })
                     break
-                allowed, reason = automation_permission(
-                    rule, self.runtime.mode, self.runtime.quiet,
-                )
+                allowed, reason = self._permission(rule)
                 if not allowed:
                     results.append({
                         "entity_id": entity_id,
