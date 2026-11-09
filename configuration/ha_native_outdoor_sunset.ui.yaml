@@ -1,0 +1,21 @@
+# Paste as ONE automation into Home Assistant UI > Edit in YAML.
+# SAFE DEFAULT: disabled until physical validation of all 3 circuits.
+alias: "Red Queen – Außenbeleuchtung bei Sonnenuntergang EIN"
+description: >-
+  Übergangslösung mit Red Queen 1.1.0, ausschließlich drei genehmigte
+  Außenlichtkreise. Vor Aktivierung Straße Up/Down physisch zuordnen.
+initial_state: false
+triggers:
+  - trigger: sun
+    event: sunset
+conditions: []
+actions:
+  - action: light.turn_on
+    target:
+      entity_id:
+        - light.wnhf_garage_aussen_up_down
+        # VOR AKTIVIERUNG mit physischem Test bestätigen!
+        # Alternativer Kandidat: light.wnhf_strasse_up_down
+        - light.hof_vorplatz_red_queen_strasse_up_down
+        - light.wnhf_hof_up_down
+mode: single
