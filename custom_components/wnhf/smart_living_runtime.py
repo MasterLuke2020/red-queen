@@ -26,6 +26,10 @@ from .smart_living_logic import (
 from .smart_living_messages import SmartMessageComposer
 from .smart_living_automation_logic import parse_automation_rules
 from .smart_living_automation import SmartLightingScheduler
+from .smart_living_editor import (
+    SmartLightingEditorStore, scenes_to_raw, rules_to_raw,
+    validate_editor_document,
+)
 
 _LOGGER = logging.getLogger(__name__)
 SIGNAL_SMART_LIVING_UPDATED = "wnhf_smart_living_updated"
@@ -54,6 +58,7 @@ class SmartLivingRuntime:
         self.selected_scene: str | None = None
         self.automation_rules: dict[str, dict[str, Any]] = {}
         self.scheduler = SmartLightingScheduler(hass, self)
+        self.editor = SmartLightingEditorStore(hass)
 
     async def async_setup(self) -> None:
         """Read only settings; persisted mode is saved after explicit user input."""
@@ -69,6 +74,20 @@ class SmartLivingRuntime:
         self.scenes = config["scenes"]
         self.selected_scene = next(iter(self.scenes), None)
         self.automation_rules = config["automations"]
+        # The GUI store takes precedence ONLY after an explicit edit. Keep
+        # existing manual YAML as an untouched recovery baseline.
+        stored = await self.editor.async_load()
+        if stored is not None:
+            try:
+                self.scenes, self.automation_rules = validate_editor_document(
+                    stored["scenes"], stored["automations"],
+                    set(self.rgbw_targets),
+                )
+            except ValueError as err:
+                raise HomeAssistantError(
+                    "Smart Lighting editor data invalid: " + str(err)
+                ) from err
+            self.selected_scene = next(iter(self.scenes), None)
         # Reject bad bindings BEFORE registering services, platforms, or
         # scheduled listeners; disabled templates need not resolve yet.
         for rule in self.automation_rules.values():
@@ -219,6 +238,13 @@ class SmartLivingRuntime:
             "scenes": [{"id": x["id"], "name": x["name"],
                         "target_count": len(x["lights"])}
                        for x in self.scenes.values()],
+        }
+
+    def editor_document(self) -> dict[str, list[dict[str, Any]]]:
+        """Read-only, normalized view for the Smart Lighting options flow."""
+        return {
+            "scenes": scenes_to_raw(self.scenes),
+            "automations": rules_to_raw(self.automation_rules),
         }
 
     def async_start_automations(self) -> None:
