@@ -98,6 +98,7 @@ def inspect(config: Path) -> dict[str, Any]:
 
     existing_ids = {e.get("entity_id") for e in entities if isinstance(e.get("entity_id"), str)}
     proposed: dict[str, str] = {}
+    foreign_prefix_ids: list[str] = []
     conflicts: list[str] = []
     for item in entities:
         entity_id = item.get("entity_id")
@@ -105,6 +106,11 @@ def inspect(config: Path) -> dict[str, Any]:
             continue
         prefix, object_id = entity_id.split(".", 1)
         if not object_id.startswith("wnhf_"):
+            continue
+        if item.get("platform") != OLD or item.get("config_entry_id") not in old_entry_ids:
+            # A user-named Automation or unrelated integration is NOT owned by
+            # Red Queen even if its entity_id starts with the legacy prefix.
+            foreign_prefix_ids.append(entity_id)
             continue
         target = prefix + ".red_queen_" + object_id[len("wnhf_"):]
         proposed[entity_id] = target
@@ -142,6 +148,7 @@ def inspect(config: Path) -> dict[str, Any]:
             "entities_linked_to_old_entry": len(linked_entities),
             "old_domain_device_identifiers": len(old_devices),
             "proposed_entity_id_changes": len(proposed),
+            "foreign_wnhf_prefix_entity_ids": len(foreign_prefix_ids),
             "entity_id_collisions": len(conflicts),
         },
         "sample_old_entity_ids": sorted(
@@ -153,6 +160,7 @@ def inspect(config: Path) -> dict[str, Any]:
             for old_id in sorted(proposed)[:MAX_EXAMPLES]
         ],
         "colliding_target_ids": sorted(set(conflicts))[:MAX_EXAMPLES],
+        "sample_foreign_wnhf_prefix_entity_ids": sorted(foreign_prefix_ids)[:MAX_EXAMPLES],
         "legacy_storage_keys": old_storage_keys,
         "new_storage_keys": new_storage_keys,
         "reference_counts_by_file": source_counts,

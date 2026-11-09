@@ -96,6 +96,19 @@ class MigrationAuditTests(unittest.TestCase):
         self.assertEqual(report["status"], "invalid_path")
         self.assertTrue(report["blockers"])
 
+    def test_foreign_platform_prefix_is_not_renamed(self) -> None:
+        write_registry(self.root, "core.entity_registry", {"entities": [
+            {"platform": "wnhf", "config_entry_id": "entry1",
+             "entity_id": "light.wnhf_hof_up_down"},
+            {"platform": "automation", "config_entry_id": None,
+             "entity_id": "automation.wnhf_channel_voice"},
+        ]})
+        report = audit.inspect(self.root)
+        self.assertEqual(report["counts"]["proposed_entity_id_changes"], 1)
+        self.assertEqual(report["counts"]["foreign_wnhf_prefix_entity_ids"], 1)
+        self.assertEqual(report["sample_foreign_wnhf_prefix_entity_ids"],
+                         ["automation.wnhf_channel_voice"])
+
 
 if __name__ == "__main__":
     unittest.main()

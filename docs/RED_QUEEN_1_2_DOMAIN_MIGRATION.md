@@ -73,3 +73,28 @@ an unqualified new domain alongside the active wnhf integration.
 
 Rollback means restore the entire matched configuration snapshot and 1.1.0
 integration package before restarting HA, not merely rename a directory.
+
+## Phase 0.5: immutable-domain registry prototype (implemented, test-only)
+
+The pure function in `tools/rq12_domain_registry_transform.py` transforms
+offline *in-memory* registry objects to change only these ownership fields:
+
+- HA config entry `domain`: `wnhf` → `red_queen`;
+- HA entity platform `platform` for entities owned by that entry;
+- HA device `identifiers` namespaces for that same entry.
+
+It explicitly **does not rename** `entity_id`, `unique_id`, config entry IDs,
+device IDs or user's settings. This preserves most dashboard references and
+avoids disturbing third-party integrations with a legacy-looking display name.
+The transform is not a migration runner; it has no filesystem write function,
+and requires an independently verified stopped-HA cutover procedure.
+
+Audit candidate entity-ID changes are now counted only for platform-owned
+entities; third-party entities with a `wnhf_`-prefixed *user-visible name*
+are reported separately. Entity-ID renaming is optional and out of scope
+for the first domain cutover.
+
+HA Store keys (`wnhf.smart_living`, `wnhf.dashboard`, future editor Store),
+service namespace references in YAML/dashboard/scripts, and the HACS package
+layout must be handled in separate, validated steps. Not covered by this
+three-registry transform.
