@@ -103,6 +103,19 @@ class SmartLightingEditorTests(unittest.TestCase):
         self.assertEqual(new_scene, parsed_scene)
         self.assertEqual(new_rule, parsed_rule)
 
+    def test_keep_saved_scenes_readable_if_source_disappears(self):
+        # On HA startup the scene is kept for repair; its enabled schedule is
+        # blocked from registration instead of taking Red Queen down.
+        scenes, rules = helpers["validate_editor_document"](
+            [SCENE], [RULE], set(), require_sources=False,
+        )
+        self.assertIn("buero", scenes)
+        self.assertIn("buero_aus", rules)
+        scheduler = (ROOT / "smart_living_automation.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("self.blocked_rules", scheduler)
+
     def test_reject_unapproved_sources_and_broken_rule_refs(self):
         with self.assertRaises(ValueError):
             helpers["validate_editor_document"]([SCENE], [RULE], set())
