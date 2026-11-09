@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
 from types import SimpleNamespace
 from unittest.mock import patch
 import sys
@@ -147,6 +148,14 @@ class EventStubs:
     def active(self,kind):
         return [item for item in self.listeners if item.active and item.kind==kind]
 
+    def started(self, hass, callback):
+        return self.attach("started", callback)
+
+    def fire_started(self, hass):
+        for listener in self.active("started"):
+            listener.callback(hass)
+
+
     def fire_clock(self,hour,minute):
         for listener in self.active("time"):
             if listener.details["hour"]==hour and listener.details["minute"]==minute:
@@ -271,11 +280,63 @@ async def main():
         assert len(trackers.active("state"))==1
         assert not h.tasks
         scheduler2.async_stop()
+        # Opt-in recovery is tested with real HA startup callback signature.
+        # No ON is issued on startup; only the 23:00 targeted OFF may run.
+        h2 = Harness()
+        h2.states[LIGHT].state = "on"
+        h2.states["sun.sun"] = SimpleNamespace(
+            state="below_horizon", attributes={},
+        )
+        h2.rules["clock_off"]["reconcile_missed_off"] = True
+        t2 = EventStubs()
+        with (patch.object(scheduler_module, "async_track_sunset", t2.sunset),
+              patch.object(scheduler_module, "async_track_sunrise", t2.sunrise),
+              patch.object(scheduler_module, "async_track_time_change", t2.clock),
+              patch.object(scheduler_module, "async_track_state_change_event", t2.state),
+              patch.object(scheduler_module, "async_at_started", t2.started),
+              patch.object(
+                  scheduler_module.dt_util, "now",
+                  return_value=datetime(
+                      2026, 11, 10, 2, 15, tzinfo=ZoneInfo("Europe/Vienna")
+                  ),
+              )):
+            resumed = scheduler_module.SmartLightingScheduler(h2.hass, h2)
+            resumed.async_start(h2.rules)
+            assert len(t2.active("started")) == 1
+            assert not h2.dispatches, "Must not act before HA has started"
+            t2.fire_started(h2.hass)
+            await h2.flush()
+            assert h2.dispatches == [(LIGHT, "turn_off", {})], h2.dispatches
+            assert h2.states[LIGHT].state == "off"
+            # An automatic ON pause never blocks a required recovery OFF.
+            h2.manual_pause_entity_id = "input_boolean.manual_pause"
+            h2.states[h2.manual_pause_entity_id] = SimpleNamespace(
+                state="on", attributes={},
+            )
+            h2.states[LIGHT].state = "on"
+            again = await resumed.async_fire("clock_off")
+            assert again["status"] == "dispatched", again
+            assert h2.states[LIGHT].state == "off"
+            resumed.async_stop()
+            assert all(not event.active for event in t2.listeners)
+            # Unknown / already daytime sun must never produce recovery OFF.
+            h2.states[LIGHT].state = "on"
+            h2.states["sun.sun"].state = "above_horizon"
+            daytime = scheduler_module.SmartLightingScheduler(h2.hass, h2)
+            daytime.async_start(h2.rules)
+            t2.fire_started(h2.hass)
+            await h2.flush()
+            assert h2.states[LIGHT].state == "on"
+            assert len(h2.dispatches) == 2
+            daytime.async_stop()
+
         print("PASS: HA imports: 3 listeners + 1 safely suspended rule")
         print("PASS: sunset offset, targeted ON and OFF, time at 23:00")
         print("PASS: vacation and known quiet opt-in; unavailable quiet fail closed")
         print("PASS: no startup commands; synthetic movement only on real off->on")
-        print("PASS: unload/reload removes and rebinds listeners with no replay")
+        print("PASS: unload/reload removes and rebinds listeners with no ON replay")
+        print("PASS: opt-in missed 23:00 OFF on restart, fail-closed in daylight")
+        print("PASS: manual pause stops ON but never targeted OFF")
         print("PASS: no real lights, PLC, Sonos, integrations or network required")
 
 
