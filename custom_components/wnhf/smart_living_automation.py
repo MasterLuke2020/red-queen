@@ -15,6 +15,7 @@ from homeassistant.helpers.event import (
     async_track_sunrise,
     async_track_sunset,
     async_track_time_change,
+    async_track_state_change_event,
 )
 
 from .smart_living_automation_logic import automation_permission
@@ -66,6 +67,26 @@ class SmartLightingScheduler:
 
                     unsubscribe = async_track_time_change(
                         self.hass, on_time, hour=hour, minute=minute, second=0,
+                    )
+                elif trigger["type"] == "state":
+
+                    @callback
+                    def on_state(event: Any, _id: str = rule_id,
+                                 _target: str = trigger["to"]) -> None:
+                        previous = event.data.get("old_state")
+                        current = event.data.get("new_state")
+                        # Ignore restore/initial state and unknown -> on/off;
+                        # only real available transitions can start a scene.
+                        if previous is None or current is None:
+                            return
+                        if previous.state not in {"on", "off"}:
+                            return
+                        if current.state != _target or previous.state == _target:
+                            return
+                        self._queue(_id)
+
+                    unsubscribe = async_track_state_change_event(
+                        self.hass, [trigger["entity_id"]], on_state,
                     )
                 else:
 
