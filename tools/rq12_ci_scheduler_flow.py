@@ -15,6 +15,7 @@ import sys
 sys.path.insert(0, "/config")
 from custom_components.wnhf import smart_living_automation as scheduler_module
 from custom_components.wnhf.smart_living_automation_logic import parse_automation_rules
+from custom_components.wnhf.smart_living_logic import validate_light_request, exposed_modes
 
 
 LIGHT = "light.dali_synthetic_aussen_rgbw"
@@ -82,6 +83,19 @@ class Harness:
                 "trigger":{"type":"sun","event":"sunrise"},
             },
         ], self.scenes)
+
+    @property
+    def scene_targets(self):
+        return self.rgbw_targets
+
+    def validate_scene_light_request(self, entity_id, service, attributes, state):
+        assert entity_id in self.scene_targets
+        return (
+            validate_light_request(
+                exposed_modes(state.attributes.get("supported_color_modes")),
+                attributes,
+            ) if service == "turn_on" else {}
+        )
 
     @property
     def quiet(self):
