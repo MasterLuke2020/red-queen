@@ -214,3 +214,24 @@ separate, privileged, HA-stopped, guarded maintenance procedure.
 
 No checkbox above may be treated as satisfied merely by a successful
 synthetic Home Assistant start. The current manifest remains 1.1.0 on purpose.
+
+
+## Phase 1c: privacy-safe site reference inventory
+
+The standalone tool \`tools/rq12_domain_reference_audit.py\` inventories YAML
+and Lovelace configuration without exposing raw configuration values. It
+identifies recognized legacy Home Assistant service calls, entity-ID references,
+logger keys, old top-level integration keys, template/dynamic references, and
+old/new Store key existence. Data is aggregated per relative file path and
+category, with no secrets or full YAML/JSON contents printed.
+
+Read-only example:
+
+    python3 tools/rq12_domain_reference_audit.py --config /path/to/ha-config
+
+**Important limitation:** This is a heuristic inventory and cannot detect all
+third-party or remote consumers. A successful migration audit is not a live
+deployment authorization. Service references are migrated only in explicitly
+supported syntax; templates and unclassified dynamic references require manual
+review. The synthetic old/new HA upgrade CI compares the auditor's reports so
+the expected literal service references disappear while entity IDs remain stable.

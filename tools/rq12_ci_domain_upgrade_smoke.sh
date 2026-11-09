@@ -119,6 +119,28 @@ python3 "$ROOT/tools/rq12_domain_stage.py" \
   --source "$OLD_CONFIG" --target "$NEW_CONFIG" \
   --package "$ROOT/custom_components/red_queen"
 
+# Compare old and new external HA references without dumping any user settings.
+python3 "$ROOT/tools/rq12_domain_reference_audit.py" \
+  --config "$OLD_CONFIG" > "$WORKDIR/rq12_references_before.json"
+python3 "$ROOT/tools/rq12_domain_reference_audit.py" \
+  --config "$NEW_CONFIG" > "$WORKDIR/rq12_references_after.json"
+python3 - "$WORKDIR/rq12_references_before.json" "$WORKDIR/rq12_references_after.json" <<'PY'
+import json
+from pathlib import Path
+import sys
+before, after = [json.loads(Path(p).read_text()) for p in sys.argv[1:]]
+b, a = before["totals"], after["totals"]
+assert b["literal_service_calls"] >= 2, b
+assert b["root_domain_keys"] == 1, b
+assert b["legacy_logger_keys"] == 1, b
+assert a.get("literal_service_calls", 0) == 0, a
+assert a.get("root_domain_keys", 0) == 0, a
+assert a.get("legacy_logger_keys", 0) == 0, a
+assert b["entity_id_mentions"] == a["entity_id_mentions"], (b, a)
+print("PASS: all synthetic service and logger references migrated")
+print("PASS: legacy entity-ID references intentionally preserved")
+PY
+
 python3 - "$OLD_CONFIG" "$NEW_CONFIG" <<'PY'
 import json
 from pathlib import Path
