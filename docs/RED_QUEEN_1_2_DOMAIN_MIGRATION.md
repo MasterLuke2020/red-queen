@@ -143,3 +143,74 @@ owned by that entry. An explicitly **present but contradictory** association
 still aborts the migration. The prototype reports `namespace_only_devices`
 separately. Real site cutover remains blocked until the full upgrade smoke
 test proves entity/device retention and staging of service references.
+
+
+## Phase 1b: copy-only staging migration (implemented, not production)
+
+\`tools/rq12_domain_stage.py\` accepts \`--source\`, \`--target\` and
+\`--package\` and creates a **new** Home Assistant config directory. It refuses
+existing destinations, nested source/destination paths, symlinks, mismatched
+package domains, mixed/ambiguous HA domain registries, and inconsistent entity
+identity. It never edits or deletes the source.
+
+Changes are limited to the staged copy:
+
+- Change HA config entry domain, Red Queen entity platform and owned device
+  identifier namespace with the separately tested pure transform.
+- Replace the old integration package by \`custom_components/red_queen\`.
+- Rewrite only unambiguous **service call** references of the form
+  \`wnhf.service_name\` in YAML \`service:\`/\`action:\` keys and Lovelace
+  JSON \`service\`/\`action\` keys.
+- Change an explicitly recognized top-level \`wnhf:\` YAML configuration key
+  to \`red_queen:\`.
+- Keep all existing \`light.wnhf_...\`, \`sensor.wnhf_...\` and other entity IDs,
+  unique IDs, user configuration settings, previous dashboard ownership Store,
+  Smart Living Store, and \`/config/wnhf\` data intact.
+- Validate preserved config-entry, entity and device identity and output
+  SHA-256 digests of before/after registry documents in a stage report.
+
+User-authored YAML templates or unusual dashboard actions that cannot be
+unambiguously recognized are a **manual-review blocker**: they may not be
+silently rewritten. Do not interpret a clean stage as evidence that all
+external automation consumers are covered.
+
+Example **offline snapshot only**:
+
+    python3 tools/rq12_domain_stage.py \
+      --source /path/to/stopped-ha-backup-copy \
+      --target /tmp/red-queen-12-stage \
+      --package custom_components/red_queen
+
+The target must not exist. The command does not start Home Assistant, change
+production files, merge GitHub branches or activate house automations. The
+original backup remains the rollback source; remove the stage directory to
+discard an experimental migration. A production deployment will require a
+separate, privileged, HA-stopped, guarded maintenance procedure.
+
+## Red Queen 1.2 release checklist
+
+- [x] Separate domain-migration development branch, parent Smart Lighting
+  feature branch and protected production installation
+- [x] Read-only on-site registry inventory (245 entities and 36 old namespace
+  device identifiers reported; no name collisions in initial audit)
+- [x] New integration package and registered Home Assistant domain
+- [x] Strict offline registry ownership mapping; entity identity unchanged
+- [x] Synthetic fresh-boot tests
+- [x] Synthetic old-domain → new-domain two-boot migration fixture
+- [ ] Validate the **copy-only stage tool** in the same two-boot CI workflow
+- [ ] Diagnose all on-site custom dashboard/script calls including templates
+  and unscanned external references
+- [ ] Migrate persistent Store names and \`/config/wnhf\` data namespace with
+  an explicit, verifiable recovery plan; this is separate from domain cutover
+- [ ] User-visible WNHF naming cleanup without involuntary entity renames
+- [ ] Missed night-time OFF policy after power loss/HA downtime and explicit
+  manual override suppression
+- [ ] Verify the **physical** Straße Up/Down canonical mapping before any
+  automation is enabled
+- [ ] Full sanitized-house staging with old dashboards, scripts, integrations,
+  reboot, hardware-negative tests and restore verification
+- [ ] Version \`1.2.0\`, immutable release artifact, HACS qualification and
+  documented maintenance-window production acceptance
+
+No checkbox above may be treated as satisfied merely by a successful
+synthetic Home Assistant start. The current manifest remains 1.1.0 on purpose.
