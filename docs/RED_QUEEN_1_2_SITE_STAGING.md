@@ -121,3 +121,21 @@ automatic deletion is done; first follow the approved retention policy.
   approval for a tightly controlled maintenance-window cutover.
 
 **No production activation is authorized by a passed offline preflight.**
+
+## Site discovery checkpoint — 2026-11-09
+
+The operator checked the productive Home Assistant Docker bind mount and
+confirmed that the HA container uses a normal host /config directory.
+Scheduled daily server Restic backup, HA-to-NAS copy and the related
+backup/retention/watchdog timers are present. Local recovery documents exist.
+
+**This is NOT completed snapshot validation.** A systemd timer's presence
+or last-trigger time does not prove that a Restic snapshot contains a
+consistent HA configuration or can be restored. First check the real
+backup service result and restore a specific completed snapshot using
+the site's privately maintained, approved recovery guide.
+
+The exact live host mount is kept in the private operator runbook and not
+hardcoded as a public default. Pass the verified mount through --live-config
+to enforce source/output isolation. Do not disclose Restic credentials,
+private endpoints or config-entry data.
