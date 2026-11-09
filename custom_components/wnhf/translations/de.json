@@ -48,7 +48,8 @@
           "dashboard": "Dashboard",
           "manage": "Objekte verwalten",
           "diagnostics": "Diagnose",
-          "migration_repair": "Migration & Reparatur"
+          "migration_repair": "Migration & Reparatur",
+          "smart_lighting": "Smart Lighting – Szenen & Automatik"
         }
       },
       "status": {
@@ -468,6 +469,165 @@
           "area_id": "Home-Assistant-Bereich",
           "confirm": "Diese Bereichs-/Etagenverknüpfung übernehmen"
         }
+      },
+      "smart_lighting": {
+        "title": "Smart Lighting",
+        "description": "Szenen und Zeit-/Triggerregeln in Red Queen verwalten. Speichern schaltet KEIN Licht ein.",
+        "menu_options": {
+          "smart_scenes": "Lichtszenen verwalten",
+          "smart_rules": "Automatikregeln verwalten"
+        }
+      },
+      "smart_scenes": {
+        "title": "Lichtszenen",
+        "description": "{count} Szenen vorhanden. Änderungen werden separat gespeichert; die bisherige YAML bleibt unverändert.",
+        "menu_options": {
+          "smart_scene_add": "Neue Lichtszene",
+          "smart_scene_pick": "Vorhandene Szene bearbeiten"
+        }
+      },
+      "smart_scene_add": {
+        "title": "Neue Lichtszene",
+        "data": {
+          "name": "Name",
+          "id": "Technische ID (optional)"
+        }
+      },
+      "smart_scene_first_light": {
+        "title": "Erste Leuchte der Szene",
+        "description": "Leuchte auswählen und Helligkeit/Farbe festlegen. Dieser Dialog führt keine Schaltaktion aus.",
+        "data": {
+          "entity_id": "Leuchte",
+          "state": "Zustand",
+          "brightness": "Helligkeit 0–255",
+          "color_mode": "Farbsteuerung",
+          "red": "Rot 0–255",
+          "green": "Grün 0–255",
+          "blue": "Blau 0–255",
+          "white": "Weiß 0–255"
+        }
+      },
+      "smart_scene_pick": {
+        "title": "Lichtszene auswählen",
+        "data": {
+          "scene_id": "Lichtszene"
+        }
+      },
+      "smart_scene_actions": {
+        "title": "Szene: {name}",
+        "description": "Aktuell {target_count} Leuchten.",
+        "menu_options": {
+          "smart_scene_rename": "Szene umbenennen",
+          "smart_scene_target": "Leuchte hinzufügen / bearbeiten",
+          "smart_scene_target_remove": "Leuchte entfernen",
+          "smart_scene_delete": "Szene löschen"
+        }
+      },
+      "smart_scene_rename": {
+        "title": "Lichtszene umbenennen",
+        "data": {
+          "name": "Neuer Name"
+        }
+      },
+      "smart_scene_target": {
+        "title": "Szenen-Leuchte hinzufügen oder bearbeiten",
+        "description": "Die gewählte Leuchte wird hinzugefügt oder ihre vorhandenen Werte werden ersetzt. Keine Ausführung.",
+        "data": {
+          "entity_id": "Leuchte",
+          "state": "Zustand",
+          "brightness": "Helligkeit 0–255",
+          "color_mode": "Farbsteuerung",
+          "red": "Rot 0–255",
+          "green": "Grün 0–255",
+          "blue": "Blau 0–255",
+          "white": "Weiß 0–255"
+        }
+      },
+      "smart_scene_target_remove": {
+        "title": "Leuchte aus Szene entfernen",
+        "data": {
+          "entity_id": "Leuchte",
+          "confirm": "Änderung ausdrücklich bestätigen"
+        }
+      },
+      "smart_scene_delete": {
+        "title": "Szene {name} löschen",
+        "description": "Die Szene wird nur aus Red Queen entfernt, keine physische Schaltung.",
+        "data": {
+          "confirm": "Löschung ausdrücklich bestätigen"
+        }
+      },
+      "smart_rules": {
+        "title": "Automatikregeln",
+        "description": "{count} Automatikregeln vorhanden. Neue Regeln bleiben standardmäßig deaktiviert.",
+        "menu_options": {
+          "smart_rule_add": "Neue Automatikregel",
+          "smart_rule_pick": "Vorhandene Regel bearbeiten"
+        }
+      },
+      "smart_rule_add": {
+        "title": "Neue Automatikregel",
+        "description": "Zuerst Szene, Aktion und Freigaben festlegen; anschließend den Auslöser wählen.",
+        "data": {
+          "name": "Name der Regel",
+          "scene_id": "Lichtszene",
+          "action": "Aktion (an / aus)",
+          "trigger_kind": "Auslöser",
+          "allowed_modes": "Erlaubte Hausmodi",
+          "allow_quiet": "Automatische Einschaltung bei Nachtruhe erlauben",
+          "enabled": "Regel sofort aktivieren"
+        }
+      },
+      "smart_rule_pick": {
+        "title": "Automatikregel wählen",
+        "data": {
+          "rule_id": "Regel"
+        }
+      },
+      "smart_rule_actions": {
+        "title": "Regel: {name}",
+        "description": "Status: {status}.",
+        "menu_options": {
+          "smart_rule_edit": "Regel ändern",
+          "smart_rule_toggle": "Regel aktivieren / deaktivieren",
+          "smart_rule_delete": "Regel löschen"
+        }
+      },
+      "smart_rule_edit": {
+        "title": "Automatikregel bearbeiten",
+        "data": {
+          "name": "Name",
+          "scene_id": "Lichtszene",
+          "action": "Aktion",
+          "trigger_kind": "Auslöser",
+          "allowed_modes": "Erlaubte Hausmodi",
+          "allow_quiet": "Nachtruhe-Ausnahme",
+          "enabled": "Aktiv"
+        }
+      },
+      "smart_rule_trigger": {
+        "title": "Auslöser konfigurieren",
+        "description": "Zeitangaben beziehen sich auf die Home-Assistant-Zeitzone. Erst beim Speichern wird die Regel übernommen; keine Sofortausführung.",
+        "data": {
+          "at": "Uhrzeit",
+          "offset_minutes": "Minuten vor (-) / nach (+) Sonnenereignis",
+          "entity_id": "Trigger-Entität",
+          "to": "Zielzustand"
+        }
+      },
+      "smart_rule_toggle": {
+        "title": "Regel {name}",
+        "description": "Regel auf {next} setzen? Keine sofortige Lichtschaltung.",
+        "data": {
+          "confirm": "Änderung ausdrücklich bestätigen"
+        }
+      },
+      "smart_rule_delete": {
+        "title": "Regel {name} löschen",
+        "description": "Nach Bestätigung wird die Regel samt Zeit-Trigger entfernt.",
+        "data": {
+          "confirm": "Löschung ausdrücklich bestätigen"
+        }
       }
     },
     "error": {
@@ -498,7 +658,13 @@
       "repair_replacement_missing": "Die gewählte Ersatz-Entity existiert nicht.",
       "repair_replacement_disabled": "Die gewählte Ersatz-Entity ist in Home Assistant deaktiviert.",
       "repair_source_changed": "Die Registry hat sich seit der Reparaturvorschau geändert. Es wurde nichts repariert.",
-      "repair_apply_failed": "Die Reparatur konnte nicht sicher angewendet werden."
+      "repair_apply_failed": "Die Reparatur konnte nicht sicher angewendet werden.",
+      "smart_lighting_invalid_name": "Bitte einen gültigen Namen mit höchstens 80 Zeichen verwenden.",
+      "smart_lighting_duplicate_id": "ID bereits vergeben oder ungültig.",
+      "smart_lighting_save_failed": "Speichern/Validierung fehlgeschlagen. Keine Lichtbefehle ausgelöst.",
+      "smart_lighting_invalid_mode": "Mindestens einen Hausmodus auswählen.",
+      "smart_lighting_confirm_required": "Bestätigung erforderlich.",
+      "smart_lighting_target_missing": "Leuchte nicht in dieser Szene vorhanden."
     },
     "abort": {
       "commissioning_state_lost": "Der Einrichtungsentwurf ist verloren gegangen. Starte erneut.",
@@ -517,7 +683,13 @@
       "migration_source_changed": "Die Registry hat sich seit der Vorschau geändert. Es wurde nichts übernommen.",
       "repair_not_available": "Es gibt derzeit keinen geführten Reparaturfall.",
       "repair_source_changed": "Die Registry oder der Befund hat sich geändert. Starte die Reparatur erneut.",
-      "repair_not_supported": "Dieser Befund kann nicht gefahrlos geführt repariert werden."
+      "repair_not_supported": "Dieser Befund kann nicht gefahrlos geführt repariert werden.",
+      "smart_lighting_no_sources": "Keine freigegebenen Smart-Living-Lichtentitäten verfügbar.",
+      "smart_lighting_no_scenes": "Noch keine Lichtszenen angelegt.",
+      "smart_lighting_no_rules": "Noch keine Automatikregeln angelegt.",
+      "smart_lighting_state_lost": "Bearbeitungskontext verloren – Vorgang erneut starten.",
+      "smart_lighting_last_target": "Die letzte Leuchte kann nicht entfernt werden. Bitte die gesamte Szene löschen.",
+      "smart_lighting_scene_in_use": "Szene ist noch mit Automatikregeln verknüpft. Zuerst Regeln entfernen."
     }
   },
   "exceptions": {
