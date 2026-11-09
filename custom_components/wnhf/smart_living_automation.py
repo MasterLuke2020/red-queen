@@ -19,7 +19,6 @@ from homeassistant.helpers.event import (
 )
 
 from .smart_living_automation_logic import automation_permission
-from .smart_living_logic import exposed_modes, validate_light_request
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,7 +45,7 @@ class SmartLightingScheduler:
             if not rule["enabled"]:
                 continue
             targets = self.runtime.scenes[rule["scene_id"]]["lights"]
-            invalid = set(targets) - set(self.runtime.rgbw_targets)
+            invalid = set(targets) - set(self.runtime.scene_targets)
             if invalid:
                 self.blocked_rules[rule["id"]] = (
                     "Missing Smart Living light source(s): "
@@ -190,7 +189,7 @@ class SmartLightingScheduler:
             # due to missing or deauthorized light bindings.
             plan: list[tuple[str, str, dict[str, Any]]] = []
             for entity_id, item in scene["lights"].items():
-                if entity_id not in self.runtime.rgbw_targets:
+                if entity_id not in self.runtime.scene_targets:
                     record["reason"] = "scene_source_not_allowlisted"
                     return record
                 state = self.hass.states.get(entity_id)
@@ -203,13 +202,10 @@ class SmartLightingScheduler:
                     service = (
                         "turn_on" if item["state"] == "on" else "turn_off"
                     )
-                    params = (
-                        validate_light_request(
-                            exposed_modes(
-                                state.attributes.get("supported_color_modes")
-                            ),
-                            item["attributes"],
-                        ) if service == "turn_on" else {}
+                    params = self.runtime.validate_scene_light_request(
+                        entity_id, service,
+                        item["attributes"] if service == "turn_on" else {},
+                        state,
                     )
                 plan.append((entity_id, service, params))
             for entity_id, service, params in plan:
