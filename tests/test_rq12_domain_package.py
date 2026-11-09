@@ -51,6 +51,20 @@ class DomainPackageTests(unittest.TestCase):
             self.assertNotIn("custom_components.wnhf", source)
             self.assertIn("custom_components.red_queen", source)
 
+    def test_release_candidate_metadata_is_consistent(self) -> None:
+        manifest = json.loads((PKG / "manifest.json").read_text(encoding="utf-8"))
+        release = json.loads((PKG / "RELEASE.json").read_text(encoding="utf-8"))
+        const = (PKG / "const.py").read_text(encoding="utf-8")
+        self.assertEqual(manifest["version"], "1.2.0-rc1")
+        self.assertEqual(manifest["domain"], "red_queen")
+        self.assertEqual(release["version"], manifest["version"])
+        self.assertEqual(release["candidate"], manifest["version"])
+        self.assertEqual(release["technical_domain"], "red_queen")
+        self.assertEqual(release["canonical_execution_service"],
+                         "red_queen.execution_execute")
+        self.assertEqual(release["candidate_status"], "development")
+        self.assertIn('VERSION = "1.2.0-rc1"', const)
+
     def test_python_package_parses(self) -> None:
         for path in PKG.rglob("*.py"):
             with self.subTest(path=path.relative_to(PKG)):
