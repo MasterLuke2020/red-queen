@@ -47,6 +47,8 @@ class FakeEditor:
 class FakeRuntime:
     def __init__(self):
         self.rgbw_targets = {SOURCE: "Synthetic DALI RGBW"}
+        self.semantic_targets = {}
+        self.scene_targets = dict(self.rgbw_targets)
         self.editor = FakeEditor()
 
     def editor_document(self):
