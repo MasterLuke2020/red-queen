@@ -13,9 +13,9 @@ from unittest.mock import patch
 import sys
 
 sys.path.insert(0, "/config")
-from custom_components.wnhf import smart_living_automation as scheduler_module
-from custom_components.wnhf.smart_living_automation_logic import parse_automation_rules
-from custom_components.wnhf.smart_living_logic import validate_light_request, exposed_modes
+from custom_components.red_queen import smart_living_automation as scheduler_module
+from custom_components.red_queen.smart_living_automation_logic import parse_automation_rules
+from custom_components.red_queen.smart_living_logic import validate_light_request, exposed_modes
 
 
 LIGHT = "light.dali_synthetic_aussen_rgbw"

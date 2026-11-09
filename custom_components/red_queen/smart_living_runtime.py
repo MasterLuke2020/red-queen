@@ -178,7 +178,7 @@ class SmartLivingRuntime:
                 and AUTO_DALI_RE.fullmatch(entity_id) is not None
             )
             if auto or entity_id in explicit:
-                if entry.platform == "wnhf":
+                if entry.platform == DOMAIN:
                     raise HomeAssistantError("Recursive Red Queen light binding rejected")
                 discovered[entity_id] = entity_id.removeprefix("light.").replace("_", " ").title()
         missing = sorted(set(explicit) - set(discovered))

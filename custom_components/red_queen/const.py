@@ -1,8 +1,8 @@
-"""Constants for Red Queen (technical Home Assistant domain: wnhf)."""
+"""Constants for Red Queen (technical Home Assistant domain: red_queen)."""
 
 from __future__ import annotations
 
-DOMAIN = "wnhf"
+DOMAIN = "red_queen"
 PRODUCT_NAME = "Red Queen"
 DEVELOPMENT_NAME = "WNHF"
 DEVELOPMENT_BASELINE_VERSION = "1.40.0"

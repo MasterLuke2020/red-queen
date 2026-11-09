@@ -6,7 +6,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1] / "custom_components/wnhf"
+ROOT = Path(__file__).resolve().parents[1] / "custom_components/red_queen"
 module_path = ROOT / "smart_living_automation_logic.py"
 spec = importlib.util.spec_from_file_location("rq_automation_logic_test", module_path)
 assert spec is not None and spec.loader is not None

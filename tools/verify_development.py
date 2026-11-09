@@ -21,7 +21,7 @@ def fail(message: str) -> None:
     ERRORS.append(message)
 
 
-for path in sorted((ROOT / "custom_components" / "wnhf").rglob("*.py")):
+for path in sorted((ROOT / "custom_components" / "red_queen").rglob("*.py")):
     try:
         ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     except (OSError, UnicodeError, SyntaxError) as err:
@@ -33,23 +33,23 @@ for path in sorted((ROOT / "tools").glob("*.py")):
     except (OSError, UnicodeError, SyntaxError) as err:
         fail(f"Tools syntax: {path.relative_to(ROOT)}: {err}")
 
-for path in sorted((ROOT / "custom_components" / "wnhf").rglob("*.json")):
+for path in sorted((ROOT / "custom_components" / "red_queen").rglob("*.json")):
     try:
         json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError) as err:
         fail(f"JSON validation: {path.relative_to(ROOT)}: {err}")
 
-for path in (ROOT / "custom_components" / "wnhf").rglob("*.yaml"):
+for path in (ROOT / "custom_components" / "red_queen").rglob("*.yaml"):
     try:
         yaml.safe_load(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, yaml.YAMLError) as err:
         fail(f"YAML validation: {path.relative_to(ROOT)}: {err}")
 
 manifest = json.loads(
-    (ROOT / "custom_components" / "wnhf" / "manifest.json").read_text()
+    (ROOT / "custom_components" / "red_queen" / "manifest.json").read_text()
 )
-if manifest.get("domain") != "wnhf":
-    fail("Technical domain must remain wnhf")
+if manifest.get("domain") != "red_queen":
+    fail("Technical domain must be red_queen")
 if manifest.get("version") != "1.1.0":
     fail("1.1 RC manifest version must be 1.1.0")
 release = json.loads(

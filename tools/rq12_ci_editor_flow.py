@@ -12,10 +12,10 @@ from types import SimpleNamespace
 
 sys.path.insert(0, "/config")
 
-from custom_components.wnhf.smart_lighting_options import SmartLightingOptionsMixin
-from custom_components.wnhf.smart_living_logic import parse_scenes
-from custom_components.wnhf.smart_living_automation_logic import parse_automation_rules
-from custom_components.wnhf.smart_living_editor import validate_editor_document
+from custom_components.red_queen.smart_lighting_options import SmartLightingOptionsMixin
+from custom_components.red_queen.smart_living_logic import parse_scenes
+from custom_components.red_queen.smart_living_automation_logic import parse_automation_rules
+from custom_components.red_queen.smart_living_editor import validate_editor_document
 
 SOURCE = "light.dali_test_rgbw"
 SCENE = {
@@ -62,7 +62,7 @@ class FakeFlow(SmartLightingOptionsMixin):
     def __init__(self):
         self.runtime = FakeRuntime()
         self.hass = SimpleNamespace(
-            data={"wnhf": {"smart_living": self.runtime}},
+            data={"red_queen": {"smart_living": self.runtime}},
         )
 
     def async_show_form(self, **kwargs):

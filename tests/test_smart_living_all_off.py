@@ -8,7 +8,7 @@ from types import SimpleNamespace
 from typing import Any
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1] / "custom_components/wnhf"
+ROOT = Path(__file__).resolve().parents[1] / "custom_components/red_queen"
 
 
 def load_runtime_method():
@@ -103,7 +103,7 @@ class SmartLivingAllOffTests(unittest.TestCase):
         self.assertNotIn("async_activate_scene", source)
 
         renderer = (ROOT / "dashboard_renderer.py").read_text(encoding="utf-8")
-        self.assertIn('action="wnhf.lighting_all_off"', renderer)
+        self.assertIn('action=f"{DOMAIN}.lighting_all_off"', renderer)
         self.assertIn("if model.features.lights or bindings.smart_lights:", renderer)
         self.assertIn("item.entity_id\n                for item in bindings.smart_lights", renderer)
 

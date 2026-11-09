@@ -7,7 +7,7 @@ from pathlib import Path
 import unittest
 
 MODULE = Path(__file__).resolve().parents[1] / (
-    "custom_components/wnhf/smart_living_logic.py"
+    "custom_components/red_queen/smart_living_logic.py"
 )
 spec = importlib.util.spec_from_file_location("redqueen_smart_living_logic", MODULE)
 assert spec and spec.loader

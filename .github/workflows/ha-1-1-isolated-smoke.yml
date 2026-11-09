@@ -5,9 +5,10 @@ on:
     branches:
       - feature/1.1.0-smart-living
       - feature/1.2.0-smart-lighting-automation
+      - feature/1.2.0-domain-identity-migration
   pull_request:
     paths:
-      - "custom_components/wnhf/**"
+      - "custom_components/red_queen/**"
       - "tools/rq11_ci_ha_smoke.sh"
       - ".github/workflows/ha-1-1-isolated-smoke.yml"
   workflow_dispatch:

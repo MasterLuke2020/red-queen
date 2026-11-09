@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1] / "custom_components/wnhf"
+ROOT = Path(__file__).resolve().parents[1] / "custom_components/red_queen"
 
 
 def load_pure_module(filename: str, name: str):

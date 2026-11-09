@@ -21,7 +21,7 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$WORKDIR/config/custom_components" "$WORKDIR/config/wnhf/house/registry"
-cp -a "$ROOT/custom_components/wnhf" "$WORKDIR/config/custom_components/wnhf"
+cp -a "$ROOT/custom_components/red_queen" "$WORKDIR/config/custom_components/red_queen"
 # Execute native Configurator step definitions against the real HA selector APIs.
 cp "$ROOT/tools/rq12_ci_editor_flow.py" "$WORKDIR/config/rq12_ci_editor_flow.py"
 cp "$ROOT/tools/rq12_ci_scheduler_flow.py" "$WORKDIR/config/rq12_ci_scheduler_flow.py"
@@ -33,11 +33,11 @@ homeassistant:
 http: {}
 frontend: {}
 lovelace: {}
-wnhf: {}
+red_queen: {}
 logger:
   default: warning
   logs:
-    custom_components.wnhf: info
+    custom_components.red_queen: info
 YAML
 cat > "$WORKDIR/config/wnhf/house/registry/rooms.yaml" <<'YAML'
 building:
@@ -107,7 +107,7 @@ import sys
 
 config = Path(sys.argv[1])
 manifest = json.loads(
-    (config / "custom_components/wnhf/manifest.json").read_text(encoding="utf-8")
+    (config / "custom_components/red_queen/manifest.json").read_text(encoding="utf-8")
 )
 assert manifest["version"] == "1.1.0", manifest["version"]
 registry_path = config / ".storage/core.entity_registry"
@@ -116,7 +116,7 @@ registered = json.loads(registry_path.read_text(encoding="utf-8"))
 entities = registered["data"]["entities"]
 unique = {
     entity.get("unique_id") for entity in entities
-    if entity.get("platform") == "wnhf"
+    if entity.get("platform") == "red_queen"
 }
 required = {
     "wnhf_smart_living_house_mode",
@@ -128,7 +128,7 @@ required = {
 missing = sorted(required - unique)
 dupes = [
     e.get("entity_id") for e in entities
-    if e.get("platform") == "wnhf"
+    if e.get("platform") == "red_queen"
     and str(e.get("unique_id", "")).startswith("wnhf_rgbw_")
 ]
 assert not missing, f"Missing Smart Living entities: {missing}"

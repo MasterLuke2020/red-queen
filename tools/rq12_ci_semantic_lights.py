@@ -12,18 +12,18 @@ import sys
 
 sys.path.insert(0, "/config")
 from homeassistant.exceptions import HomeAssistantError
-from custom_components.wnhf import smart_living_runtime as runtime_module
-from custom_components.wnhf.smart_lighting_semantic import (
+from custom_components.red_queen import smart_living_runtime as runtime_module
+from custom_components.red_queen.smart_lighting_semantic import (
     semantic_light_unique_id, resolve_semantic_light_bindings,
 )
-from custom_components.wnhf.smart_living_editor import validate_editor_document
+from custom_components.red_queen.smart_living_editor import validate_editor_document
 
 OBJECT = "light.outside.straße_up_down"
 ENTITY = "light.hof_vorplatz_red_queen_strasse_up_down"
 ENTRY = "synthetic-config-entry"
 
 
-def registry_entry(entity_id, object_id, *, platform="wnhf", config_entry_id=ENTRY,
+def registry_entry(entity_id, object_id, *, platform="red_queen", config_entry_id=ENTRY,
                    disabled_by=None):
     return SimpleNamespace(
         entity_id=entity_id, platform=platform,

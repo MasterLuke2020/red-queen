@@ -61,7 +61,7 @@ def main() -> int:
             word in text for word in KEYWORDS
         ):
             outside_switches.append(info)
-        if platform == "wnhf" and (
+        if platform in {"wnhf", "red_queen"} and (
             "wnhf" in entity_id or "redqueen" in entity_id
         ):
             legacy.append((entity_id, name))

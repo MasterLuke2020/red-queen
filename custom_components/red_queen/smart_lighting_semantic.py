@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .const import DOMAIN
+
 
 def semantic_light_unique_id(object_id: str) -> str:
     if not isinstance(object_id, str) or not object_id.startswith("light."):
@@ -46,7 +48,7 @@ def resolve_semantic_light_bindings(
             continue
         if getattr(entry, "disabled_by", None) is not None:
             continue
-        if getattr(entry, "platform", None) != "wnhf":
+        if getattr(entry, "platform", None) != DOMAIN:
             continue
         if getattr(entry, "config_entry_id", None) != config_entry_id:
             continue

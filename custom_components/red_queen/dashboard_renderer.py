@@ -17,6 +17,7 @@ from hashlib import sha256
 import json
 from typing import Any
 
+from .const import DOMAIN
 from .dashboard_binding import (
     DashboardBindings,
     DashboardCoverBinding,
@@ -479,7 +480,7 @@ def _overview_action_cards(
             _action_button(
                 name="Licht komplett aus",
                 icon="mdi:lightbulb-group-off",
-                action="wnhf.lighting_all_off",
+                action=f"{DOMAIN}.lighting_all_off",
             )
         )
 

@@ -98,3 +98,36 @@ HA Store keys (`wnhf.smart_living`, `wnhf.dashboard`, future editor Store),
 service namespace references in YAML/dashboard/scripts, and the HACS package
 layout must be handled in separate, validated steps. Not covered by this
 three-registry transform.
+
+## Phase 1a: new integration package for synthetic HA boot (implemented)
+
+The in-development package has moved to
+\`custom_components/red_queen\` with manifest \`domain: red_queen\`
+and the runtime \`DOMAIN\` constant changed coherently.
+
+- HA service registration, smart-lighting semantic registry lookup, native
+  dashboard service calls, and synthetic HA CI entry-point imports use the
+  new domain.
+- Original integration unique IDs (\`wnhf_*\`) and existing entity IDs remain
+  untouched. Renaming them during a domain cutover would break dashboards.
+- **Transitional data namespace** remains \`/config/wnhf\` with Store keys
+  \`wnhf.smart_living\`, \`wnhf.dashboard\` and
+  \`wnhf.smart_lighting_editor\`. This allows isolated package tests and
+  preservation of manually configured settings; eventual data-key migration
+  requires a separate, explicitly reversible phase.
+- Python class names with \`WNHF\` remain internal implementation details.
+  No WAGO output mapping, PLC logic, canonical object IDs, or DALI data was
+  deliberately renamed.
+- CI creates only a synthetic empty registry and must NOT run against the
+  house server. It verifies package startup, basic editor/scheduler/semantic
+  actions, and HA registry ownership. It is not a test of a real migrated
+  \`wnhf\` config entry.
+
+**Hard gate:** This package is NOT safe to install over Red Queen 1.1.0.
+Production still contains an old-domain config entry; Home Assistant does
+not automatically rewrite existing config-entry domain owners. The offline
+pure transform is only a prototype. A separate coordinated offline
+deployment tool must migrate all relevant persistence and references or
+abort and restore the complete pre-cutover backup.
+
+Test workflow changes apply only to this 1.2 experimental branch.
