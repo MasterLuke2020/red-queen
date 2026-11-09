@@ -48,7 +48,7 @@ def parse_automation_rules(
         if not isinstance(scene_id, str) or scene_id not in scenes:
             raise ValueError("automation references unknown scene")
         action = item.get("action")
-        if action not in {"on", "off"}:
+        if not isinstance(action, str) or action not in {"on", "off"}:
             raise ValueError("automation action must be on/off")
         trigger = item.get("trigger")
         if not isinstance(trigger, dict) or "type" not in trigger:
@@ -68,7 +68,7 @@ def parse_automation_rules(
                 raise ValueError("sun trigger keys invalid")
             event = trigger["event"]
             offset = trigger.get("offset_minutes", 0)
-            if event not in {"sunrise", "sunset"}:
+            if not isinstance(event, str) or event not in {"sunrise", "sunset"}:
                 raise ValueError("sun event must be sunrise/sunset")
             if type(offset) is not int or not -120 <= offset <= 120:
                 raise ValueError("sun offset_minutes must be integer -120..120")
