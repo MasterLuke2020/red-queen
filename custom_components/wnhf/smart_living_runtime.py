@@ -81,7 +81,7 @@ class SmartLivingRuntime:
             try:
                 self.scenes, self.automation_rules = validate_editor_document(
                     stored["scenes"], stored["automations"],
-                    set(self.rgbw_targets),
+                    set(self.rgbw_targets), require_sources=False,
                 )
             except ValueError as err:
                 raise HomeAssistantError(
