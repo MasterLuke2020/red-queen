@@ -49,6 +49,10 @@ printf 'plants: []\n' > "$OLD_CONFIG/wnhf/house/registry/plants.yaml"
 
 boot_stop() {
   local config="$1" domain="$2" found=0 logs
+  local marker="Red Queen 1.1.0 started via config entry"
+  if [[ "$domain" == "red_queen" ]]; then
+    marker="Red Queen 1.2.0-rc1 started via config entry"
+  fi
   echo "Booting synthetic HA with domain $domain"
   sudo chown -R 0:0 "$config"
   sudo chmod 0700 "$config"
@@ -59,11 +63,11 @@ boot_stop() {
   RUNNING=1
   for _attempt in $(seq 1 100); do
     logs="$(docker logs "$NAME" 2>&1 || true)"
-    if grep -Fq 'Red Queen 1.1.0 started via config entry' <<< "$logs"; then
+    if grep -Fq "$marker" <<< "$logs"; then
       found=1; break
     fi
     if [[ -f "$config/home-assistant.log" ]] &&
-       sudo grep -Fq 'Red Queen 1.1.0 started via config entry' "$config/home-assistant.log"; then
+       sudo grep -Fq "$marker" "$config/home-assistant.log"; then
       found=1; break
     fi
     if [[ "$(docker inspect -f '{{.State.Running}}' "$NAME")" != true ]]; then break; fi
