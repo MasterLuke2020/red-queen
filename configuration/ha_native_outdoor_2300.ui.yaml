@@ -26,8 +26,8 @@ actions:
     target:
       entity_id:
         - light.wnhf_garage_aussen_up_down
-        # VOR AKTIVIERUNG denselben physischen Straßenkreis wie beim EIN verwenden!
-        # Alternativer Kandidat: light.wnhf_strasse_up_down
+        # Straße Up/Down vom Betreiber bestätigt (09.11.2026).
+        # light.wnhf_strasse_up_down ist unavailable und ausgeschlossen.
         - light.hof_vorplatz_red_queen_strasse_up_down
         - light.wnhf_hof_up_down
 mode: single

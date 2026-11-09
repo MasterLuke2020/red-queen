@@ -3,7 +3,7 @@
 alias: "Red Queen – Außenbeleuchtung bei Sonnenuntergang EIN"
 description: >-
   Übergangslösung mit Red Queen 1.1.0, ausschließlich drei genehmigte
-  Außenlichtkreise. Vor Aktivierung Straße Up/Down physisch zuordnen.
+  Außenlichtkreise. Straße Up/Down zugeordnet; übrige zwei Kreise vor Aktivierung testen.
 initial_state: false
 triggers:
   - trigger: sun
@@ -15,8 +15,8 @@ actions:
     target:
       entity_id:
         - light.wnhf_garage_aussen_up_down
-        # VOR AKTIVIERUNG mit physischem Test bestätigen!
-        # Alternativer Kandidat: light.wnhf_strasse_up_down
+        # Straße Up/Down vom Betreiber bestätigt (09.11.2026).
+        # light.wnhf_strasse_up_down ist unavailable und ausgeschlossen.
         - light.hof_vorplatz_red_queen_strasse_up_down
         - light.wnhf_hof_up_down
 mode: single

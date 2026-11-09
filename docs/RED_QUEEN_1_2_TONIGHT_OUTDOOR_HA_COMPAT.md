@@ -15,21 +15,20 @@ Home-Assistant-Automatik sicherer und kurzfristiger testbar.
 
 Nur:
 1. `light.wnhf_garage_aussen_up_down`
-2. `light.hof_vorplatz_red_queen_strasse_up_down` (noch **ungeprüft**)
+2. `light.hof_vorplatz_red_queen_strasse_up_down` (**vom Betreiber am 09.11.2026 bestätigt**)
 3. `light.wnhf_hof_up_down`
 
-Im aktuellen Registry-Inventar gibt es einen weiteren Straßenkandidaten:
-`light.wnhf_strasse_up_down`. **Vor dem Aktivieren** beide Straßen-
-Entitäten über Home Assistant einzeln physisch testen und genau eine
-korrekte Entität in **beiden** YAML-Automationen verwenden.
+Die alternative Straßen-Entität `light.wnhf_strasse_up_down` ist
+laut Betreiber `unavailable` und wird **nicht** benutzt. Die korrekte
+Straßen-Entität ist bereits in beiden Vorlagen eingetragen.
 Alle anderen Außen- und Innenlichtkreise bleiben ausgeschlossen.
 
 ## Einrichtung (HA UI)
 
 1. Über **Entwicklerwerkzeuge → Zustände** die exakten Entitäts-IDs
    prüfen. Garage und Hof einzeln über die reguläre HA-Lichtsteuerung
-   physisch auf EIN/AUS testen. Die beiden Straßenkandidaten einzeln
-   testen; anschließend die physisch richtige ID in den Vorlagen wählen.
+   physisch auf EIN/AUS testen. Die Straßen-Entität wurde vom Betreiber
+   bereits bestätigt; deren Zustand und physische Wirkung nochmals beobachten.
    Nicht weiterarbeiten, wenn ein Kreis bereits direkt über WAGO oder
    Home Assistant nicht korrekt reagiert.
 2. **Einstellungen → Automatisierungen & Szenen → Automatisierung erstellen
