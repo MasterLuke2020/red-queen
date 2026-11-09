@@ -73,7 +73,7 @@ class ReferenceGateTests(unittest.TestCase):
         (self.src / "wnhf/house/registry/lights.yaml").write_text("lights: []\n")
         archived = self.src / ".old-config/configuration.yaml"
         archived.parent.mkdir()
-        archived.write_text("wnhf: {}\n", encoding="utf-8")
+        archived.write_text("wnhf: {}\nservice: wnhf.lighting_all_off\n", encoding="utf-8")
 
     def migrate(self):
         preflight.rehearse(
@@ -94,7 +94,7 @@ class ReferenceGateTests(unittest.TestCase):
         self.assertEqual(report["logger_channels_after"], 0)
         self.assertEqual(report["active_legacy_reference_blockers"], {})
         self.assertEqual(report["preserved_active_entity_reference_mentions"], 2)
-        self.assertEqual(report["historical_hidden_backup_references"]["root_domain_keys"], 1)
+        self.assertEqual(report["historical_hidden_backup_references"]["literal_service_calls"], 1)
         self.assertNotIn("hidden", json.dumps(report))
         self.assertNotIn("not shown", json.dumps(report))
         self.assertFalse(report["release_approved"])
