@@ -592,3 +592,4 @@ SERVICE_RGBW_DISPATCH_AUDIT = "rgbw_dispatch_audit"
 
 SERVICE_SMART_SCENES_SNAPSHOT = "smart_scenes_snapshot"
 SERVICE_SMART_SCENE_ACTIVATE = "smart_scene_activate"
+SERVICE_SMART_AUTOMATIONS_SNAPSHOT = "smart_automations_snapshot"
