@@ -53,6 +53,7 @@ class SmartLivingRuntime:
         self.auto_away = False
         self.away_entity_id = "binary_sensor.datawebstateabwesenheit"
         self.quiet_entity_id = "binary_sensor.wnhf_quiet_mode_active"
+        self.manual_pause_entity_id: str | None = None
         self.rgbw_targets: dict[str, str] = {}
         # Independent allowlist: native Red Queen ON/OFF lights mapped only
         # via registry Unique IDs, never via another light service proxy.
@@ -75,6 +76,7 @@ class SmartLivingRuntime:
         self.auto_away = config["auto_away"]
         self.away_entity_id = config["away_entity_id"]
         self.quiet_entity_id = config["quiet_entity_id"]
+        self.manual_pause_entity_id = config["manual_pause_entity_id"]
         self.composer.route_id = config["message_route_id"]
         self._discover_targets(config["rgbw_entity_ids"], config["discover_dali"])
         self._discover_semantic_targets()
@@ -132,6 +134,7 @@ class SmartLivingRuntime:
                 "quiet_entity_id", "binary_sensor.wnhf_quiet_mode_active"
             ),
             "discover_dali": raw.get("discover_dali", True),
+            "manual_pause_entity_id": raw.get("manual_pause_entity_id"),
             "rgbw_entity_ids": raw.get("rgbw_entity_ids", []),
             "message_route_id": raw.get("message_route_id", "notification.route.house"),
             "scenes": raw.get("scenes", []),
@@ -158,6 +161,14 @@ class SmartLivingRuntime:
             r"^notification\.route\.[a-z0-9_]+$", config["message_route_id"]
         ):
             raise HomeAssistantError("message_route_id must be a semantic route ID")
+        pause = config["manual_pause_entity_id"]
+        if pause is not None and (
+            not isinstance(pause, str)
+            or not re.fullmatch(r"^input_boolean\.[a-z0-9_]+$", pause)
+        ):
+            raise HomeAssistantError(
+                "manual_pause_entity_id must be an input_boolean or omitted"
+            )
         for key in ("away_entity_id", "quiet_entity_id"):
             value = config[key]
             if not isinstance(value, str) or not re.fullmatch(

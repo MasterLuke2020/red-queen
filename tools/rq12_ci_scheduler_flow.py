@@ -31,6 +31,7 @@ class Harness:
         self.dispatches = []
         self.mode = "home"
         self.quiet_entity_id = "binary_sensor.synthetic_quiet"
+        self.manual_pause_entity_id = None
         self.states = {
             LIGHT: SimpleNamespace(
                 state="off", attributes={"supported_color_modes": ["rgbw"]}
@@ -226,13 +227,32 @@ async def main():
         assert len(h.dispatches)==4
         assert h.dispatches[-1][1]=="turn_on"
 
+        # Explicit manual override helper stops automatic ON, but never OFF.
+        pause = "input_boolean.synthetic_automation_pause"
+        h.manual_pause_entity_id = pause
+        h.states[pause] = SimpleNamespace(state="on", attributes={})
+        before = len(h.dispatches)
+        blocked = await scheduler.async_fire("sun_on")
+        assert blocked["reason"] == "manual_pause_active", blocked
+        assert len(h.dispatches) == before
+        h.states[pause].state = "unavailable"
+        blocked = await scheduler.async_fire("sun_on")
+        assert blocked["reason"] == "manual_pause_unavailable", blocked
+        assert len(h.dispatches) == before
+        h.states[LIGHT].state = "on"
+        night = await scheduler.async_fire("clock_off")
+        assert night["status"] == "dispatched"
+        assert h.states[LIGHT].state == "off"
+        assert len(h.dispatches) == before + 1
+        h.manual_pause_entity_id = None
+
         # An absent/missing source is skipped without taking down the scheduler.
         blocked=await scheduler.async_fire("missing_on")
-        assert blocked["status"]=="suppressed" and len(h.dispatches)==4
+        assert blocked["status"]=="suppressed" and len(h.dispatches)==5
         disabled = await scheduler.async_fire("disabled")
         assert disabled["status"]=="suppressed"
         assert disabled["reason"]=="rule_disabled"
-        assert len(h.dispatches)==4
+        assert len(h.dispatches)==5
 
         # Unsubscribe on unload: stale event callbacks cannot switch lights.
         scheduler.async_stop()

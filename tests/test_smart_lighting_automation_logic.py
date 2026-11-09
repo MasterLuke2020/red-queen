@@ -143,6 +143,44 @@ class RulesTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             logic.parse_automation_rules([make_rule(), make_rule()], SCENES)
 
+    def test_restart_reconciliation_is_explicit_off_only_and_night_only(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        zone = ZoneInfo("Europe/Vienna")
+        off = logic.parse_automation_rules([
+            make_rule(
+                id="night_off", enabled=True, action="off",
+                trigger={"type": "time", "at": "23:00"},
+                reconcile_missed_off=True,
+            ),
+        ], SCENES)["night_off"]
+        yes = lambda when, sun: logic.should_reconcile_missed_off(
+            off, local_now=datetime.fromisoformat(when).replace(tzinfo=zone),
+            sun_state=sun,
+        )
+        self.assertTrue(yes("2026-11-09T23:30:00", "below_horizon"))
+        self.assertTrue(yes("2026-11-10T02:30:00", "below_horizon"))
+        self.assertTrue(yes("2026-03-29T03:30:00", "below_horizon"))
+        self.assertFalse(yes("2026-11-09T22:00:00", "below_horizon"))
+        self.assertFalse(yes("2026-11-10T06:30:00", "above_horizon"))
+        self.assertFalse(yes("2026-11-10T12:30:00", "below_horizon"))
+        self.assertFalse(yes("2026-11-09T23:30:00", "unavailable"))
+        off["enabled"] = False
+        self.assertFalse(yes("2026-11-09T23:30:00", "below_horizon"))
+
+    def test_missed_off_rejects_on_and_morning_rules(self):
+        cases = [
+            make_rule(reconcile_missed_off=True),
+            make_rule(reconcile_missed_off="yes"),
+            make_rule(action="off", reconcile_missed_off=True,
+                      trigger={"type":"time", "at":"07:00"}),
+            make_rule(action="off", reconcile_missed_off=True,
+                      trigger={"type":"sun", "event":"sunset"}),
+        ]
+        for item in cases:
+            with self.subTest(item=item), self.assertRaises(ValueError):
+                logic.parse_automation_rules([item], SCENES)
+
     def test_runtime_contract_is_opt_in_and_unsubscribes(self):
         runtime = ast.parse(
             (ROOT / "smart_living_automation.py").read_text(encoding="utf-8")

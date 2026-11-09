@@ -178,3 +178,33 @@ other exterior candidate is a disabled Tapo camera floodlight. There are
 - Rule editor with schedules, conditions, diagnostic status and disable switch.
 - New source adapter for Red Queen semantic/PLC lights to reach exterior
   lights even if not represented as native DALI RGBW sources.
+
+
+## 1.2 opt-in night OFF recovery and manual ON pause (development)
+
+The native scheduler offers two independent safeguards, disabled by default:
+
+- \`reconcile_missed_off: true\` is accepted **only** for enabled,
+  evening-local-time (\`18:00..23:59\`) \`action: off\` rules. After HA startup
+  (also after integration reload), it issues a **targeted OFF only** if the
+  HA sun state is explicitly \`below_horizon\` and the local clock is past
+  the cutoff, or before 12:00 the next morning. It never replays a scheduled
+  ON. If \`sun.sun\` is missing or unknown, no recovery is attempted. The
+  option defaults to \`false\` and is preserved by GUI serialization.
+- \`manual_pause_entity_id: input_boolean.red_queen_automatik_pause\` is an
+  optional top-level Smart Living YAML setting. Create the toggle manually
+  as a HA Helper; **ON** pauses every scheduled ON, while scheduled OFF
+  remains active. Unknown/unavailable helper state blocks ON (fail-closed).
+  If no helper is configured, current default behavior is preserved. This
+  is an explicit manual override, *not* automatic inference from wall switch
+  state changes; physical/manual override detection remains future work.
+
+The scheduler serializes all rule dispatches and suppresses duplicate
+concurrent executions of the same rule, avoiding interleaved commands to
+the same PLC light. As with existing sequential per-scene dispatch, an
+accepted HA call is not proof of physical state.
+
+**No native rule is enabled merely by this code change.** If HA-native
+transition automations for the same three outdoor lights are already
+active, keep native Red Queen ON/OFF rules disabled until the transition
+automations have been explicitly deactivated and the release is approved.

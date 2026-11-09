@@ -1,3 +1,5 @@
+# Optional für 1.2: manual_pause_entity_id: input_boolean.red_queen_automatik_pause
+# Ist dieser Helfer ON oder nicht verfügbar, bleiben automatische EIN-Befehle gesperrt.
 # Red Queen 1.2 – Muster für die tatsächlich vorhandenen Außenlichter
 # Read-only-Registry-Inventur vom 09.11.2026. NUR BEISPIEL, NICHT produktiv!
 #
@@ -48,3 +50,4 @@ automations:
     trigger:
       type: time
       at: "23:00"
+    reconcile_missed_off: false  # nach Staging-Abnahme explizit einschalten
