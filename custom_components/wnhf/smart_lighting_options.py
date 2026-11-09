@@ -73,7 +73,11 @@ def _trigger_from_editor(pending: dict[str, Any],
                          inputs: dict[str, Any]) -> dict[str, Any]:
     kind = pending["trigger_kind"]
     if kind == "time":
-        return {"type": "time", "at": inputs["at"]}
+        # HA TimeSelector may return HH:MM:SS; the schedule contract is HH:MM.
+        selected = inputs["at"]
+        if len(selected) == 8 and selected.endswith(":00"):
+            selected = selected[:5]
+        return {"type": "time", "at": selected}
     if kind in {"sunrise", "sunset"}:
         return {"type": "sun", "event": kind,
                 "offset_minutes": inputs["offset_minutes"]}
