@@ -34,27 +34,33 @@ class SmartLightingScheduler:
         self.audit: deque[dict[str, Any]] = deque(maxlen=100)
         self._listeners: list[Any] = []
         self._running_rules: set[str] = set()
+        self.blocked_rules: dict[str, str] = {}
         self._started = False
 
     def async_start(self, rules: dict[str, dict[str, Any]]) -> None:
         """Register rules without firing anything on startup."""
         if self._started:
             raise RuntimeError("Smart Lighting scheduler already started")
+        self.blocked_rules.clear()
         for rule in rules.values():
             if not rule["enabled"]:
                 continue
             targets = self.runtime.scenes[rule["scene_id"]]["lights"]
             invalid = set(targets) - set(self.runtime.rgbw_targets)
             if invalid:
-                raise ValueError(
-                    "Automation has unapproved scene light sources: "
+                self.blocked_rules[rule["id"]] = (
+                    "Missing Smart Living light source(s): "
                     + ", ".join(sorted(invalid))
+                )
+                _LOGGER.warning(
+                    "Red Queen Smart Lighting rule %s suspended: %s",
+                    rule["id"], self.blocked_rules[rule["id"]],
                 )
         self.rules = rules
         self._started = True
         try:
             for rule in rules.values():
-                if not rule["enabled"]:
+                if not rule["enabled"] or rule["id"] in self.blocked_rules:
                     continue
                 rule_id = rule["id"]
                 trigger = rule["trigger"]
@@ -147,6 +153,7 @@ class SmartLightingScheduler:
                 for rule in self.rules.values()
             ],
             "listener_count": len(self._listeners),
+            "blocked_rules": dict(self.blocked_rules),
             "recent": list(self.audit),
         }
 
@@ -159,6 +166,11 @@ class SmartLightingScheduler:
         rule = self.rules.get(rule_id)
         if not self._started or rule is None:
             return {"status": "inactive", "rule_id": rule_id}
+        if rule_id in self.blocked_rules:
+            return {
+                "status": "suppressed", "rule_id": rule_id,
+                "reason": self.blocked_rules[rule_id],
+            }
         if rule_id in self._running_rules:
             return {"status": "already_running", "rule_id": rule_id}
         self._running_rules.add(rule_id)
