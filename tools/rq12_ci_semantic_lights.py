@@ -93,6 +93,7 @@ async def check_dispatch():
     )
     runtime.hass = fake_hass
     runtime.rgbw_targets = {}
+    runtime.scene_external_targets = {}
     runtime.semantic_targets = {ENTITY:OBJECT}
     runtime._target_locks = {}
     runtime.audit = deque(maxlen=100)

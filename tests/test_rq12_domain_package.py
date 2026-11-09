@@ -33,7 +33,8 @@ class DomainPackageTests(unittest.TestCase):
         self.assertIn('getattr(entry, "platform", None) != DOMAIN', semantic)
         self.assertIn('return "wnhf_"', semantic)
         runtime = (PKG / "smart_living_runtime.py").read_text(encoding="utf-8")
-        self.assertIn('entry.platform == DOMAIN', runtime)
+        self.assertIn('entry.platform in {"wnhf", DOMAIN}', runtime)
+        self.assertIn('eligible_ha_light_sources(', runtime)
 
     def test_service_route_and_test_harness_use_new_domain(self) -> None:
         renderer = (PKG / "dashboard_renderer.py").read_text(encoding="utf-8")
