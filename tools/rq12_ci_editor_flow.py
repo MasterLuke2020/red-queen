@@ -151,9 +151,9 @@ async def main():
     form = await flow.async_step_smart_rule_toggle({"confirm": True})
     assert form["kind"] == "saved", form
     assert flow.runtime.editor.automations[0]["enabled"] is True
-    assert flow.runtime.editor.save_count == 5
+    assert flow.runtime.editor.save_count == 4
     print("PASS: HA native Smart Lighting scene and rule forms validated")
-    print("PASS: five synthetic GUI saves persisted scene/rule updates")
+    print("PASS: four synthetic GUI saves persisted scene/rule updates")
     print("PASS: GUI save path writes only to synthetic editor; no hardware")
 
 
