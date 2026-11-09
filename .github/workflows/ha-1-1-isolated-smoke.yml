@@ -1,9 +1,10 @@
-name: Red Queen 1.1.0 isolated HA boot (synthetic)
+name: Red Queen 1.1/1.2 isolated HA boot (synthetic)
 
 on:
   push:
     branches:
       - feature/1.1.0-smart-living
+      - feature/1.2.0-smart-lighting-automation
   pull_request:
     paths:
       - "custom_components/wnhf/**"
