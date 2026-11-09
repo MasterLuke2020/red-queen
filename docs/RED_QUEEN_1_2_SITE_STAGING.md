@@ -139,3 +139,35 @@ The exact live host mount is kept in the private operator runbook and not
 hardcoded as a public default. Pass the verified mount through --live-config
 to enforce source/output isolation. Do not disclose Restic credentials,
 private endpoints or config-entry data.
+
+## One-command Restic-to-staging adapter (added in 1.2 development)
+
+The guarded `tools/rq12_site_restic_restore.py` is the supported site
+entry point when an existing Restic repository is already mounted.
+It selects a snapshot matching an **explicit date**, the exact host
+and a backup root containing the full HA config. It does **not**
+fall back to `latest` or select an unrelated old snapshot.
+
+The adapter performs `restic snapshots --json` and then restores only
+the HA config subtree using `restic restore SNAPSHOT --include ...`
+to a newly created local 0700 laboratory directory. It calls the
+site-stage preflight afterward, including independent rollback-copy
+hash verification and the strict 245-entity / 36-device gate.
+
+Restic is run in **no-lock** read-only mode; coordinate with the host's
+daily backup and retention schedules so no writer is active. The helper
+does not mount backup media itself and refuses a missing mount. If the
+existing operator procedure provides a separate read-only mount,
+use that. A repository password-file path is passed as an argument;
+its contents are never printed, copied or uploaded.
+
+Inputs: `--repository`, `--repository-mount`, `--password-file`,
+`--lab`, `--live-config`, `--host`, `--date` and optionally `--package`.
+The source package is pinned by the operator to a reviewed Git commit.
+Both the source restore and staged/rollback copies remain confidential
+and local. On failure, data under the private lab is deliberately
+retained for operator inspection rather than silently deleted.
+
+An offline PASS means **file-migration and copy integrity**, not a
+real HA hardware boot, firmware behavior or productive recovery proof.
+Do not connect the resulting test config to the house network.
