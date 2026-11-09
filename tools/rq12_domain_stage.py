@@ -24,6 +24,13 @@ from rq12_domain_registry_transform import DomainMigrationError, plan_registry_t
 
 DOMAIN_RE = re.compile(r"(?m)^(?P<indent>)(?P<name>wnhf)(?P<suffix>\s*:)")
 NEW_ROOT_RE = re.compile(r"(?m)^red_queen\s*:")
+
+# Preserve the explicit HA logger level for the renamed integration.
+LOGGER_KEY_RE = re.compile(
+    r"(?m)^(?P<indent>[ \t]+)(?P<quote>['\"]?)"
+    r"custom_components\.wnhf(?P=quote)(?P<colon>[ \t]*:)"
+)
+
 SERVICE_RE = re.compile(
     r"(?m)^(?P<lead>\s*(?:-\s*)?(?:service|action)\s*:\s*)"
     r"(?P<quote>['\"]?)(?P<service>wnhf\.[a-z][a-z0-9_]*)"
@@ -83,6 +90,15 @@ def rewrite_yaml_source(
         if matches:
             text = DOMAIN_RE.sub("red_queen\\g<suffix>", text)
             configs = 1
+
+    if configuration_root:
+        # A different logger namespace otherwise hides the HA start marker.
+        text = LOGGER_KEY_RE.sub(
+            lambda m: (m.group("indent") + m.group("quote") +
+                       "custom_components.red_queen" + m.group("quote") +
+                       m.group("colon")),
+            text,
+        )
 
     count = [0]
     def replace(match: re.Match[str]) -> str:

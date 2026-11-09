@@ -136,6 +136,7 @@ assert (old / "scripts.yaml").read_text().find("wnhf.smart_scene_activate") >= 0
 assert (new / "scripts.yaml").read_text().find("red_queen.smart_scene_activate") >= 0
 assert (new / ".storage/lovelace.red-queen-ci").read_text().find(
     "red_queen.lighting_all_off") >= 0
+assert "custom_components.red_queen: info" in (new / "configuration.yaml").read_text()
 assert (old / "custom_components/wnhf").is_dir()
 assert not (new / "custom_components/wnhf").exists()
 print("PASS: staged copy preserves original and rewrites only service calls")

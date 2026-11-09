@@ -56,7 +56,8 @@ class StageTests(unittest.TestCase):
                                           "service": "wnhf.lighting_all_off"},
                             "entity": "light.wnhf_hof"}]}]}}})
         (self.source / "configuration.yaml").write_text(
-            "homeassistant:\n  name: House\nwnhf: {}\n", encoding="utf-8")
+            "homeassistant:\n  name: House\nwnhf: {}\nlogger:\n  logs:\n"
+            "    custom_components.wnhf: info\n", encoding="utf-8")
         (self.source / "scripts.yaml").write_text(
             "night:\n  sequence:\n    - service: wnhf.smart_scene_activate\n"
             "      data:\n        entity_id: light.wnhf_hof\n", encoding="utf-8")
@@ -71,6 +72,8 @@ class StageTests(unittest.TestCase):
         self.assertFalse((self.target / "custom_components/wnhf").exists())
         self.assertTrue((self.target / "custom_components/red_queen").exists())
         self.assertIn("red_queen: {}", (self.target / "configuration.yaml").read_text())
+        self.assertIn("custom_components.red_queen: info",
+                      (self.target / "configuration.yaml").read_text())
         self.assertIn("red_queen.smart_scene_activate",
                       (self.target / "scripts.yaml").read_text())
         self.assertIn("red_queen.smart_message_send",
