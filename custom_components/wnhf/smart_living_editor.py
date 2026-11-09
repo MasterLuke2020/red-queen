@@ -54,6 +54,7 @@ def validate_editor_document(
     scenes_raw: Any,
     rules_raw: Any,
     approved_sources: set[str],
+    *, require_sources: bool = True,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
     if not isinstance(scenes_raw, list) or len(scenes_raw) > MAX_SCENES:
         raise ValueError("Too many Smart Lighting scenes")
@@ -63,7 +64,7 @@ def validate_editor_document(
     # Every GUI-managed scene must target a source already safely approved by
     # the current integration runtime. No recursive WNHF/Red Queen proxies.
     for scene in scenes.values():
-        if set(scene["lights"]) - approved_sources:
+        if require_sources and set(scene["lights"]) - approved_sources:
             raise ValueError(
                 "Scene refers to a non-approved light: "
                 + ", ".join(sorted(set(scene["lights"]) - approved_sources))
