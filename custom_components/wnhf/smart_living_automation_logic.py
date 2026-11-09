@@ -11,7 +11,7 @@ from typing import Any
 _ID = re.compile(r"[a-z][a-z0-9_]{0,63}\Z")
 _HHMM = re.compile(r"(?P<h>[01][0-9]|2[0-3]):(?P<m>[0-5][0-9])\Z")
 _MODES = frozenset({"home", "away", "vacation"})
-_TRIGGER_ENTITY = re.compile(r"(?:binary_sensor|input_boolean)\\.[a-z0-9_]+\\Z")
+_TRIGGER_ENTITY = re.compile(r"(?:binary_sensor|input_boolean)\.[a-z0-9_]+\Z")
 _ALLOWED_KEYS = frozenset({
     "id", "name", "enabled", "scene_id", "action", "trigger",
     "allowed_modes", "allow_quiet",
