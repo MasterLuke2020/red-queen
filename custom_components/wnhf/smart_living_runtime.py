@@ -26,6 +26,9 @@ from .smart_living_logic import (
 from .smart_living_messages import SmartMessageComposer
 from .smart_living_automation_logic import parse_automation_rules
 from .smart_living_automation import SmartLightingScheduler
+from .smart_lighting_semantic import resolve_semantic_light_bindings
+from .native_execution import async_execute_canonical
+from .const import DATA_ENGINE, DOMAIN
 from .smart_living_editor import (
     SmartLightingEditorStore, scenes_to_raw, rules_to_raw,
     validate_editor_document,
@@ -51,6 +54,9 @@ class SmartLivingRuntime:
         self.away_entity_id = "binary_sensor.datawebstateabwesenheit"
         self.quiet_entity_id = "binary_sensor.wnhf_quiet_mode_active"
         self.rgbw_targets: dict[str, str] = {}
+        # Independent allowlist: native Red Queen ON/OFF lights mapped only
+        # via registry Unique IDs, never via another light service proxy.
+        self.semantic_targets: dict[str, str] = {}
         self.audit: deque[dict[str, Any]] = deque(maxlen=100)
         self._target_locks: dict[str, Any] = {}
         self.composer = SmartMessageComposer(hass, self)
@@ -71,6 +77,7 @@ class SmartLivingRuntime:
         self.quiet_entity_id = config["quiet_entity_id"]
         self.composer.route_id = config["message_route_id"]
         self._discover_targets(config["rgbw_entity_ids"], config["discover_dali"])
+        self._discover_semantic_targets()
         self.scenes = config["scenes"]
         self.selected_scene = next(iter(self.scenes), None)
         self.automation_rules = config["automations"]
@@ -81,7 +88,7 @@ class SmartLivingRuntime:
             try:
                 self.scenes, self.automation_rules = validate_editor_document(
                     stored["scenes"], stored["automations"],
-                    set(self.rgbw_targets), require_sources=False,
+                    set(self.scene_targets), require_sources=False,
                 )
             except ValueError as err:
                 raise HomeAssistantError(
@@ -94,7 +101,7 @@ class SmartLivingRuntime:
             if not rule["enabled"]:
                 continue
             scene_sources = set(self.scenes[rule["scene_id"]]["lights"])
-            missing = scene_sources - set(self.rgbw_targets)
+            missing = scene_sources - set(self.scene_targets)
             if missing:
                 _LOGGER.warning(
                     "Smart Lighting automation %s suspended: missing source(s): %s",
@@ -181,6 +188,56 @@ class SmartLivingRuntime:
             )
         self.rgbw_targets = dict(sorted(discovered.items()))
 
+    def _discover_semantic_targets(self) -> None:
+        """Use native unique IDs to map existing Red Queen entities to objects."""
+        domain_data = self.hass.data.get(DOMAIN, {})
+        engine = domain_data.get(DATA_ENGINE)
+        entry_id = domain_data.get("config_entry_id")
+        if engine is None or not isinstance(entry_id, str):
+            self.semantic_targets = {}
+            return
+        registry = er.async_get(self.hass)
+        house = engine._require_house()
+        self.semantic_targets = resolve_semantic_light_bindings(
+            registry.entities.values(), house.enabled_lights, entry_id,
+        )
+
+    @property
+    def scene_targets(self) -> dict[str, str]:
+        """HA light IDs allowed in configured scenes (native + semantic)."""
+        return {
+            **self.rgbw_targets,
+            **{
+                entity_id: f"Red Queen – {object_id}"
+                for entity_id, object_id in self.semantic_targets.items()
+            },
+        }
+
+    def validate_scene_light_request(
+        self, entity_id: str, service: str, attributes: dict[str, Any],
+        state: Any,
+    ) -> dict[str, Any]:
+        """Semantic Red Queen lights are strictly ON/OFF, no RGB or dimming."""
+        if service not in {"turn_on", "turn_off"}:
+            raise HomeAssistantError("Unsupported scene light service")
+        if entity_id in self.semantic_targets:
+            if attributes:
+                raise HomeAssistantError(
+                    "Red Queen semantic light supports on/off only: " + entity_id
+                )
+            return {}
+        if entity_id not in self.rgbw_targets:
+            raise HomeAssistantError("Scene light source not allowlisted")
+        if service == "turn_off":
+            return {}
+        try:
+            return validate_light_request(
+                exposed_modes(state.attributes.get("supported_color_modes")),
+                attributes,
+            )
+        except ValueError as err:
+            raise HomeAssistantError(str(err)) from err
+
     @property
     def mode(self) -> str:
         value = self.hass.states.get(self.away_entity_id)
@@ -222,6 +279,10 @@ class SmartLivingRuntime:
             "rgbw_targets": [
                 {"entity_id": key, "name": name}
                 for key, name in self.rgbw_targets.items()
+            ],
+            "semantic_targets": [
+                {"entity_id": key, "object_id": value}
+                for key, value in self.semantic_targets.items()
             ],
             "dispatch_audit_count": len(self.audit),
             "message_route_id": self.composer.route_id,
@@ -277,23 +338,18 @@ class SmartLivingRuntime:
         """
         import asyncio
 
-        if source_entity_id not in self.rgbw_targets:
-            raise HomeAssistantError("RGBW source not allowlisted")
+        if source_entity_id not in self.scene_targets:
+            raise HomeAssistantError("Scene light source not allowlisted")
         if service not in {"turn_on", "turn_off"}:
             raise HomeAssistantError("Unsupported RGBW service")
         state = self.hass.states.get(source_entity_id)
-        if state is None or state.state in {"unknown", "unavailable"}:
-            raise HomeAssistantError("RGBW source is unavailable")
+        if state is None or state.state not in {"on", "off"}:
+            raise HomeAssistantError("Scene light source is unavailable")
         if not self.hass.services.has_service("light", service):
             raise HomeAssistantError("Home Assistant light service unavailable")
-        modes = exposed_modes(state.attributes.get("supported_color_modes"))
-        try:
-            params = (
-                validate_light_request(modes, attributes)
-                if service == "turn_on" else {}
-            )
-        except ValueError as err:
-            raise HomeAssistantError(str(err)) from err
+        params = self.validate_scene_light_request(
+            source_entity_id, service, attributes, state,
+        )
         lock = self._target_locks.setdefault(source_entity_id, asyncio.Lock())
         async with lock:
             stamp = datetime.now(UTC).isoformat()
@@ -304,10 +360,22 @@ class SmartLivingRuntime:
                 "status": "rejected",
             }
             try:
-                await self.hass.services.async_call(
-                    "light", service, {"entity_id": source_entity_id, **params},
-                    blocking=True,
-                )
+                if source_entity_id in self.semantic_targets:
+                    # Exactly the same canonical guarded path as the native
+                    # Red Queen LightEntity, without any proxy recursion.
+                    await async_execute_canonical(
+                        self.hass,
+                        action_id=(
+                            "lighting.turn_on" if service == "turn_on"
+                            else "lighting.turn_off"
+                        ),
+                        object_id=self.semantic_targets[source_entity_id],
+                    )
+                else:
+                    await self.hass.services.async_call(
+                        "light", service, {"entity_id": source_entity_id, **params},
+                        blocking=True,
+                    )
                 outcome["status"] = "accepted_dispatch_not_verified"
             except Exception as err:
                 outcome["reason"] = type(err).__name__
@@ -391,17 +459,15 @@ class SmartLivingRuntime:
 
         plan: list[tuple[str, str, dict[str, Any]]] = []
         for entity_id, entry in scene["lights"].items():
-            if entity_id not in self.rgbw_targets:
+            if entity_id not in self.scene_targets:
                 raise HomeAssistantError("Scene source not allowlisted: " + entity_id)
             state = self.hass.states.get(entity_id)
             if state is None or state.state in {"unknown", "unavailable"}:
                 raise HomeAssistantError("Scene source unavailable: " + entity_id)
             action = "turn_on" if entry["state"] == "on" else "turn_off"
-            attrs = (
-                validate_light_request(
-                    exposed_modes(state.attributes.get("supported_color_modes")),
-                    entry["attributes"],
-                ) if action == "turn_on" else {}
+            attrs = self.validate_scene_light_request(
+                entity_id, action,
+                entry["attributes"] if action == "turn_on" else {}, state,
             )
             plan.append((entity_id, action, attrs))
         results: list[dict[str, Any]] = []
