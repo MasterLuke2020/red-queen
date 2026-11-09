@@ -160,6 +160,27 @@ class SmartLightingEditorTests(unittest.TestCase):
         ), {"type": "state", "entity_id": "binary_sensor.bewegung",
             "to": "on"})
 
+    def test_outdoor_sunset_example_only_three_approved_circuits(self):
+        sample = (ROOT.parents[1] / "configuration" /
+                  "smart_lighting_real_outdoor_draft.example.yaml").read_text(
+                      encoding="utf-8"
+                  )
+        scene = sample.split("\\nscenes:\\n", 1)[1].split(
+            "\\nautomations:\\n", 1
+        )[0]
+        targets = {
+            line.strip().removesuffix(":") for line in scene.splitlines()
+            if line.startswith("      light.")
+        }
+        self.assertEqual(targets, {
+            "light.wnhf_garage_aussen_up_down",
+            "light.hof_vorplatz_red_queen_strasse_up_down",
+            "light.wnhf_hof_up_down",
+        })
+        self.assertNotIn("light.wnhf_hof_wand", targets)
+        self.assertNotIn("light.wnhf_vorplatz_wand", targets)
+        self.assertEqual(sample.count("enabled: false"), 2)
+
     def test_gui_is_integrated_without_startup_physical_calls(self):
         cfg = (ROOT / "config_flow.py").read_text(encoding="utf-8")
         self.assertIn(
