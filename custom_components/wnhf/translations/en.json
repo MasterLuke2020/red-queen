@@ -520,7 +520,8 @@
           "smart_scene_rename": "Rename scene",
           "smart_scene_target": "Add / edit light",
           "smart_scene_target_remove": "Remove light",
-          "smart_scene_delete": "Delete scene"
+          "smart_scene_delete": "Delete scene",
+          "smart_scene_target_pick": "Select scene light to edit"
         }
       },
       "smart_scene_rename": {
@@ -628,6 +629,26 @@
         "data": {
           "confirm": "Confirm deletion"
         }
+      },
+      "smart_scene_target_pick": {
+        "title": "Select scene light",
+        "data": {
+          "entity_id": "Light"
+        }
+      },
+      "smart_scene_target_edit": {
+        "title": "Edit scene light and color values",
+        "description": "Existing values are pre-filled. Saving sends no light commands.",
+        "data": {
+          "entity_id": "Light",
+          "state": "State",
+          "brightness": "Brightness 0–255",
+          "color_mode": "Color control",
+          "red": "Red 0–255",
+          "green": "Green 0–255",
+          "blue": "Blue 0–255",
+          "white": "White 0–255"
+        }
       }
     },
     "error": {
@@ -664,7 +685,8 @@
       "smart_lighting_save_failed": "Unable to validate/save. No light commands sent.",
       "smart_lighting_invalid_mode": "Select at least one house mode.",
       "smart_lighting_confirm_required": "Explicit confirmation required.",
-      "smart_lighting_target_missing": "Light is not part of this scene."
+      "smart_lighting_target_missing": "Light is not part of this scene.",
+      "smart_lighting_target_exists": "This light is already in the scene. Use 'Select scene light to edit'."
     },
     "abort": {
       "commissioning_state_lost": "The commissioning draft was lost. Start again.",
