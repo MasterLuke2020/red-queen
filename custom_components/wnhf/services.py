@@ -29,6 +29,7 @@ from .const import (
     SERVICE_RGBW_DISPATCH_AUDIT,
     SERVICE_SMART_SCENES_SNAPSHOT,
     SERVICE_SMART_SCENE_ACTIVATE,
+    SERVICE_SMART_AUTOMATIONS_SNAPSHOT,
     SERVICE_LIGHTING_ALL_OFF,
     SERVICE_LIGHTING_OBJECT_OFF,
     SERVICE_LIGHTING_ROOM_OFF,
@@ -269,6 +270,10 @@ async def async_register_services(
     async def handle_smart_scene_activate(call: ServiceCall) -> dict:
         runtime = hass.data[DOMAIN][DATA_SMART_LIVING]
         return await runtime.async_activate_scene(call.data["scene_id"])
+
+    async def handle_smart_automations_snapshot(call: ServiceCall) -> dict:
+        runtime = hass.data[DOMAIN][DATA_SMART_LIVING]
+        return runtime.scheduler.snapshot()
 
     async def handle_list_registry(call: ServiceCall) -> dict:
         return engine.list_registry(call.data[ATTR_REGISTRY_TYPE])
@@ -953,6 +958,12 @@ async def async_register_services(
         DOMAIN,
         SERVICE_SMART_SCENES_SNAPSHOT,
         handle_smart_scenes_snapshot,
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SMART_AUTOMATIONS_SNAPSHOT,
+        handle_smart_automations_snapshot,
         supports_response=SupportsResponse.ONLY,
     )
     hass.services.async_register(
