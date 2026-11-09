@@ -116,6 +116,18 @@ class SiteRehearsalTests(unittest.TestCase):
         self.assertFalse(self.stage.exists())
         self.assertFalse(self.rollback.exists())
 
+    def test_refuse_shared_output_parent_with_user_secrets(self):
+        shared = self.root / "shared"
+        shared.mkdir(mode=0o755)
+        shared.chmod(0o755)
+        with self.assertRaises(tool.SitePreflightError):
+            tool.rehearse(
+                self.source, shared / "stage", self.rollback,
+                self.live, self.package,
+                expected_entities=1, expected_devices=1,
+            )
+        self.assertFalse((shared / "stage").exists())
+
     def test_reject_count_drift_without_writing_anywhere(self):
         with self.assertRaises(tool.SitePreflightError):
             self.run_it(entities=245)

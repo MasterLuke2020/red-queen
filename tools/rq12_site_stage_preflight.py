@@ -92,6 +92,13 @@ def _guard_paths(source: Path, staged: Path, rollback: Path, live: Path) -> None
             raise SitePreflightError("Output parent does not exist")
         if target.parent == Path("/") or target == Path("/"):
             raise SitePreflightError("Cannot use filesystem root as output")
+        # Entire HA snapshot contains credentials, keys and device endpoints.
+        # A private parent prevents other users from accessing temporary files
+        # while copytree preserves the original file permissions.
+        if target.parent.stat().st_mode & 0o077:
+            raise SitePreflightError(
+                "Staging/rollback parent MUST be private (chmod 0700)"
+            )
 
 
 def _space_guard(source: Path, staged: Path, rollback: Path) -> None:
