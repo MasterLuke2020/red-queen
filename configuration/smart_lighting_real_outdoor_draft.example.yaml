@@ -4,7 +4,12 @@
 # Die Red-Queen-Leuchten sind SPS-/PLC-Schaltlichter: nur state on/off.
 # Keine RGB-, Dimm- oder Impuls-Parameter eintragen!
 # Das Beispiel ist bewusst deaktiviert und schaltet nichts automatisch.
-# 'Garage innen' ist kein Außenlicht und bleibt ausdrücklich ausgeschlossen.
+# Ausschließlich drei Kreise: Garage Außen Up/Down, Straße Up/Down, Hof Up/Down.
+# Vorplatz Wand, Hof Wand, Garage innen, Terrasse u. a. sind ausgeschlossen.
+# WICHTIG: Im Registry-Inventar stehen zwei Straßen-IDs: 
+# light.hof_vorplatz_red_queen_strasse_up_down und light.wnhf_strasse_up_down.
+# Das Beispiel nutzt die bereits zuvor ausgewählte erste Entität; vor
+# Aktivierung muss geprüft werden, welche die tatsächliche Straße steuert.
 #
 # Wenn bereits eine 'scenes:'-Liste besteht: Szene in die Liste aufnehmen,
 # NICHT eine zweite 'scenes:'-Wurzel anlegen.
@@ -15,11 +20,11 @@ scenes:
   - id: aussen_grundbeleuchtung
     name: "Außenbeleuchtung – Grundlicht"
     lights:
-      light.wnhf_vorplatz_wand:
-        state: "on"
-      light.wnhf_hof_wand:
+      light.wnhf_garage_aussen_up_down:
         state: "on"
       light.hof_vorplatz_red_queen_strasse_up_down:
+        state: "on"
+      light.wnhf_hof_up_down:
         state: "on"
 
 automations:
