@@ -1,8 +1,9 @@
 # Red Queen 1.2.0-rc1 — release candidate notes
 
-**Status (2026-11-09): DEVELOPMENT CANDIDATE — NOT YET RELEASED OR
-APPROVED FOR PRODUCTION.** The package manifest, runtime constant and
-release metadata use the same version `1.2.0-rc1`.
+**Status (2026-11-13): DEVELOPMENT CANDIDATE — NOT YET RELEASED OR
+APPROVED FOR PRODUCTION.** The manifest, runtime constants and RELEASE.json
+identify `1.2.0-rc1` as a candidate/rc. The service contract uses the
+technical Home Assistant domain `red_queen`.
 
 ## What changes
 
@@ -46,13 +47,37 @@ release metadata use the same version `1.2.0-rc1`.
   `voluptuous` import-order warning remain documented; neither establishes
   a Red Queen code exception.
 
+## Additional site-derived tests (2026-11-13)
+
+These tests used the **unchanged fixed RC code at commit `5aaa2923`**,
+before the subsequent release-contract corrections:
+
+- Uninstrumented A/B test on private scoped lab copies:
+  old / RC / RC / old = **PASS / PASS / PASS / PASS**.
+  The two RC legs completed in 16 seconds each.
+- Fresh cold-start tests on three independent private copies of the
+  original 52-entry migrated house staging, scoped to one Red Queen entry:
+  **RC / old / RC = PASS / PASS / PASS**, 16 seconds each.
+- In every fresh test the startup validation reported zero structural errors,
+  dashboard adapter initialized and all **245 entity identities** and
+  **36 migrated Red Queen device identifiers** remained intact.
+- Original full house stage remained unmodified (SHA-256 checked);
+  all tests were network-isolated with no production changes or physical
+  commands.
+- Earlier uninstrumented RC stalls are **not reproducible under these
+  controlled conditions**, but their root cause is not established.
+  No full-house/hardware acceptance can be inferred.
+
 ## Release blockers / NOT proven
 
-- Verify new release-candidate commit with GitHub Actions, hassfest and
-  exact package smoke tests; historical site boot used the prior pinned
-  migration commit and is not certification of a new candidate commit.
-- Re-stage and test the exact versioned RC package in a new private
-  disposable copy. Do not modify the old staged evidence.
+- Re-run all CI, unit/contract tests, synthetic HA boots and the scoped
+  private-house staging smoke against the **final corrected commit/artifact**.
+  Passing evidence for commit `5aaa2923` does not certify later edits.
+- Prove config-entry reload/unload, preserved dashboard and Store state,
+  safe-mode handling and coherent offline rollback before production.
+- Review the released candidate's service/upgrade metadata and check that
+  historical `wnhf` data paths and entity identifiers are retained without
+  claiming the old `wnhf.*` service namespace remains available.
 - Full non-Red-Queen integration availability, external API connections,
   WAGO/PLC, garage, covers, RGBW devices and physical light control are not
   validated by isolated tests.
