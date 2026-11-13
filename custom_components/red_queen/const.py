@@ -317,8 +317,8 @@ SERVICE_RELEASE_SCOPE = "release_scope"
 ACTION_RELEASE_SCOPE = "release_scope"
 SIGNAL_RELEASE_SCOPE_UPDATED = "wnhf_release_scope_updated"
 RELEASE_SCOPE_API_VERSION = "1.1"
-RELEASE_CHANNEL = "stable"
-RELEASE_PHASE = "stable"
+RELEASE_CHANNEL = "candidate"
+RELEASE_PHASE = "rc"
 
 
 # Release Profile - Stage 3.10 / WP-4.7.8.5
@@ -338,8 +338,8 @@ RELEASE_INFO_API_VERSION = "1.1"
 PUBLIC_API_REGISTRY_VERSION = "1.1"
 QUALIFICATION_API_VERSION = "1.1"
 UPGRADE_CHECK_API_VERSION = "1.1"
-# Red Queen 1.0.0 is the first stable public release.
-RELEASE_CANDIDATE = None
+# Red Queen 1.2.0 is still a release candidate; stable 1.0.0 remains unchanged.
+RELEASE_CANDIDATE = "1.2.0-rc1"
 CANONICAL_EXECUTION_API_VERSION = "1.0"
 CANONICAL_EXECUTION_CONTRACT_VERSION = "2.3-rc11"
 LEGACY_PUBLIC_EXECUTION_API_VERSION = "1.3"
