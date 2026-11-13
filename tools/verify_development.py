@@ -72,6 +72,26 @@ if release.get("home_assistant_service_count") != 73:
 runtime_constants = (ROOT / "custom_components" / "red_queen" / "const.py").read_text(encoding="utf-8")
 if 'VERSION = "1.2.0-rc1"' not in runtime_constants:
     fail("Runtime and manifest versions must match")
+for name, expected_value in (
+    ("RELEASE_CHANNEL", "candidate"),
+    ("RELEASE_PHASE", "rc"),
+    ("RELEASE_CANDIDATE", "1.2.0-rc1"),
+):
+    if f'{name} = "{expected_value}"' not in runtime_constants:
+        fail(f"Runtime release contract mismatch: {name}")
+
+profile_source = (
+    ROOT / "custom_components" / "red_queen" / "release_candidate.py"
+).read_text(encoding="utf-8")
+for old_service in (
+    '"service": "wnhf.',
+    '"canonical_execution_entry": "wnhf.',
+    '"productive_execution_entry": "wnhf.',
+    '"legacy_execution_entry": "wnhf.',
+    'f"wnhf.{service}"',
+):
+    if old_service in profile_source:
+        fail(f"Release profile advertises legacy service namespace: {old_service}")
 platform_constants = (ROOT / "custom_components" / "red_queen" / "const.py").read_text(encoding="utf-8")
 for marker in ('"light"', '"select"', '"text"', '"button"'):
     if marker not in platform_constants:
