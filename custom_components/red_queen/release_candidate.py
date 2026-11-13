@@ -25,6 +25,7 @@ from .const import (
     DEVELOPMENT_BASELINE_VERSION,
     RELEASE_BASELINE,
     VERSION,
+    DOMAIN,
 )
 from .release_scope import ReleaseScopeManager
 
@@ -160,21 +161,21 @@ class ReleaseProfile:
                 "channel": cls.CHANNEL,
                 "phase": cls.PHASE,
                 "phase_name": (
-                    "Stable 1.0"
+                    "Stable Release"
                     if cls.PHASE == "stable"
-                    else f"Release Candidate {cls.CANDIDATE.removeprefix('rc')}"
+                    else f"Release Candidate {cls.CANDIDATE}"
                 ),
                 "candidate": cls.CANDIDATE,
                 "candidate_assigned": cls.CANDIDATE is not None,
             },
             "public_execution_api_version": PUBLIC_EXECUTION_API_VERSION,
             "canonical_execution": {
-                "service": "wnhf.execution_execute",
+                "service": f"{DOMAIN}.execution_execute",
                 "api_version": CANONICAL_EXECUTION_API_VERSION,
                 "execution_contract": CANONICAL_EXECUTION_CONTRACT_VERSION,
             },
             "legacy_execution": {
-                "service": "wnhf.execute",
+                "service": f"{DOMAIN}.execute",
                 "api_version": LEGACY_PUBLIC_EXECUTION_API_VERSION,
                 "recommended_for_new_automations": False,
             },
@@ -193,12 +194,12 @@ class ReleaseProfile:
                 "minimum_registry_schema": MINIMUM_REGISTRY_SCHEMA_VERSION,
                 "minimum_decision_schema": MINIMUM_DECISION_SCHEMA_VERSION,
                 "minimum_policy_schema": MINIMUM_POLICY_SCHEMA_VERSION,
-                "migration_required": False,
+                "migration_required": True,
             },
             "release_policy": {
                 "public_rc_assigned": cls.CANDIDATE is not None,
                 "rc_label_must_not_be_inferred_from_version": True,
-                "canonical_execution_entry": "wnhf.execution_execute",
+                "canonical_execution_entry": f"{DOMAIN}.execution_execute",
             },
         }
 
@@ -214,9 +215,9 @@ class ReleaseProfile:
             "candidate": cls.CANDIDATE,
             "candidate_assigned": cls.CANDIDATE is not None,
             "policy": {
-                "productive_execution_entry": "wnhf.execution_execute",
+                "productive_execution_entry": f"{DOMAIN}.execution_execute",
                 "canonical_execution_architecture": "stage4.7_semantic",
-                "legacy_execution_entry": "wnhf.execute",
+                "legacy_execution_entry": f"{DOMAIN}.execute",
                 "legacy_execution_for_new_automations": False,
                 "canonical_execution_api_version": CANONICAL_EXECUTION_API_VERSION,
                 "canonical_execution_contract": CANONICAL_EXECUTION_CONTRACT_VERSION,
@@ -227,34 +228,34 @@ class ReleaseProfile:
             "classification_summary": cls._classification_summary(),
             "stable": [
                 {
-                    "service": f"wnhf.{service}",
+                    "service": f"{DOMAIN}.{service}",
                     "classification": "stable_public",
                 }
                 for service in cls.STABLE_PUBLIC_SERVICES
             ],
             "diagnostic": [
                 {
-                    "service": f"wnhf.{service}",
+                    "service": f"{DOMAIN}.{service}",
                     "classification": "diagnostic_public",
                 }
                 for service in cls.DIAGNOSTIC_PUBLIC_SERVICES
             ],
             "maintenance": [
                 {
-                    "service": f"wnhf.{service}",
+                    "service": f"{DOMAIN}.{service}",
                     "classification": "maintenance_public",
                 }
                 for service in cls.MAINTENANCE_SERVICES
             ],
             "legacy_or_development": [
                 {
-                    "service": f"wnhf.{service}",
+                    "service": f"{DOMAIN}.{service}",
                     "classification": "legacy_or_development",
                     "recommended_for_new_automations": False,
                     **(
                         {
                             "legacy_execution_entry": True,
-                            "canonical_execution_entry": "wnhf.execution_execute",
+                            "canonical_execution_entry": f"{DOMAIN}.execution_execute",
                             "migration_note": (
                                 "The legacy service accepts Decision IDs; the canonical "
                                 "Stage-4.7 service accepts semantic action_id/target data. "
@@ -281,7 +282,7 @@ class ReleaseProfile:
             "candidate": cls.CANDIDATE,
             "candidate_assigned": cls.CANDIDATE is not None,
             "compatible": True,
-            "migration_required": False,
+            "migration_required": True,
             "restart_required_after_install": True,
             "configuration": {
                 "registry_preserved": True,
@@ -296,12 +297,16 @@ class ReleaseProfile:
                 "policies": MINIMUM_POLICY_SCHEMA_VERSION,
             },
             "instructions": [
-                "Stop Home Assistant.",
-                "Replace only custom_components/wnhf.",
-                "Do not replace /config/wnhf.",
-                "Remove wnhf __pycache__ directories.",
-                "Start Home Assistant.",
-                "Run wnhf.execution_runtime_health.",
+                "Do not update in place: wnhf to red_queen is a breaking domain migration.",
+                "Use docs/RED_QUEEN_1_2_CUTOVER_CHECKLIST.md in an operator-approved maintenance window.",
+                "Create and restore-test a consistent offline backup, including complete 1.1.0 rollback.",
+                "Stop Home Assistant before changing packages, configuration or .storage.",
+                "Offline-migrate the wnhf config entry and entity/device registry domain identifiers to red_queen.",
+                "Migrate active YAML and Lovelace service references to red_queen.*.",
+                "Install only custom_components/red_queen; never load wnhf and red_queen packages together.",
+                "Preserve /config/wnhf data, historical wnhf Store keys and entity/unique IDs.",
+                "Start Home Assistant; verify red_queen services, dashboards, registry identities and other integrations.",
+                "If any gate fails, stop Home Assistant and restore the coherent 1.1.0 backup.",
             ],
         }
 
@@ -352,7 +357,7 @@ class ReleaseProfile:
                 "qualification_id": "execution.semantic_routing",
                 "status": "implemented",
                 "evidence": (
-                    "wnhf.execution_execute is the canonical Stage-4.7 semantic "
+                    f"{DOMAIN}.execution_execute is the canonical Stage-4.7 semantic "
                     "execution entry point."
                 ),
             },
