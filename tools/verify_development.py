@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Branch-only checks while the immutable stable 1.0.0 verifier is preserved.
 
-Full 1.1 release qualification will replace this development gate before merge.
+This verifies 1.2.0-rc1 metadata; it is NOT a production-release qualification.
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def fail(message: str) -> None:
     ERRORS.append(message)
 
 
-for path in sorted((ROOT / "custom_components" / "wnhf").rglob("*.py")):
+for path in sorted((ROOT / "custom_components" / "red_queen").rglob("*.py")):
     try:
         ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     except (OSError, UnicodeError, SyntaxError) as err:
@@ -33,40 +33,66 @@ for path in sorted((ROOT / "tools").glob("*.py")):
     except (OSError, UnicodeError, SyntaxError) as err:
         fail(f"Tools syntax: {path.relative_to(ROOT)}: {err}")
 
-for path in sorted((ROOT / "custom_components" / "wnhf").rglob("*.json")):
+for path in sorted((ROOT / "custom_components" / "red_queen").rglob("*.json")):
     try:
         json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError) as err:
         fail(f"JSON validation: {path.relative_to(ROOT)}: {err}")
 
-for path in (ROOT / "custom_components" / "wnhf").rglob("*.yaml"):
+for path in (ROOT / "custom_components" / "red_queen").rglob("*.yaml"):
     try:
         yaml.safe_load(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, yaml.YAMLError) as err:
         fail(f"YAML validation: {path.relative_to(ROOT)}: {err}")
 
 manifest = json.loads(
-    (ROOT / "custom_components" / "wnhf" / "manifest.json").read_text()
+    (ROOT / "custom_components" / "red_queen" / "manifest.json").read_text()
 )
-if manifest.get("domain") != "wnhf":
-    fail("Technical domain must remain wnhf")
-if manifest.get("version") != "1.1.0":
-    fail("1.1 RC manifest version must be 1.1.0")
+if manifest.get("domain") != "red_queen":
+    fail("Technical domain must be red_queen")
+if manifest.get("version") != "1.2.0-rc1":
+    fail("1.2 RC manifest version must be 1.2.0-rc1")
 release = json.loads(
-    (ROOT / "custom_components" / "wnhf" / "RELEASE.json").read_text(encoding="utf-8")
+    (ROOT / "custom_components" / "red_queen" / "RELEASE.json").read_text(encoding="utf-8")
 )
 if release.get("version") != manifest.get("version"):
     fail("Manifest and release metadata versions must match")
+if release.get("candidate") != manifest.get("version"):
+    fail("Candidate label must match manifest prerelease version")
+if release.get("technical_domain") != manifest.get("domain"):
+    fail("Release technical domain must match manifest")
+if release.get("canonical_execution_service") != "red_queen.execution_execute":
+    fail("Canonical execution service must use the new domain")
 if (release.get("channel"), release.get("phase"), release.get("candidate_status")) != (
     "candidate", "rc", "development",
 ):
-    fail("1.1.0 remains a development release candidate, not a stable release")
+    fail("1.2.0-rc1 must remain a development release candidate")
 if release.get("home_assistant_service_count") != 73:
-    fail("1.1.0 RC requires 73 exposed Home Assistant services")
-runtime_constants = (ROOT / "custom_components" / "wnhf" / "const.py").read_text(encoding="utf-8")
-if 'VERSION = "1.1.0"' not in runtime_constants:
+    fail("Red Queen RC requires 73 exposed Home Assistant services")
+runtime_constants = (ROOT / "custom_components" / "red_queen" / "const.py").read_text(encoding="utf-8")
+if 'VERSION = "1.2.0-rc1"' not in runtime_constants:
     fail("Runtime and manifest versions must match")
-platform_constants = (ROOT / "custom_components" / "wnhf" / "const.py").read_text(encoding="utf-8")
+for name, expected_value in (
+    ("RELEASE_CHANNEL", "candidate"),
+    ("RELEASE_PHASE", "rc"),
+    ("RELEASE_CANDIDATE", "1.2.0-rc1"),
+):
+    if f'{name} = "{expected_value}"' not in runtime_constants:
+        fail(f"Runtime release contract mismatch: {name}")
+
+profile_source = (
+    ROOT / "custom_components" / "red_queen" / "release_candidate.py"
+).read_text(encoding="utf-8")
+for old_service in (
+    '"service": "wnhf.',
+    '"canonical_execution_entry": "wnhf.',
+    '"productive_execution_entry": "wnhf.',
+    '"legacy_execution_entry": "wnhf.',
+    'f"wnhf.{service}"',
+):
+    if old_service in profile_source:
+        fail(f"Release profile advertises legacy service namespace: {old_service}")
+platform_constants = (ROOT / "custom_components" / "red_queen" / "const.py").read_text(encoding="utf-8")
 for marker in ('"light"', '"select"', '"text"', '"button"'):
     if marker not in platform_constants:
         fail("Smart Living platform marker missing: " + marker)
@@ -80,19 +106,19 @@ required = (
     "light.py",
 )
 for filename in required:
-    if not (ROOT / "custom_components" / "wnhf" / filename).is_file():
+    if not (ROOT / "custom_components" / "red_queen" / filename).is_file():
         fail("Missing Smart Living module: " + filename)
 
 # Smart Living must reuse the already-tested native asyncua DALI sources.
 # Prevent reintroduction of duplicate wnhf_* RGBW proxy entities in HA.
-light_source = (ROOT / "custom_components" / "wnhf" / "light.py").read_text(encoding="utf-8")
+light_source = (ROOT / "custom_components" / "red_queen" / "light.py").read_text(encoding="utf-8")
 light_tree = ast.parse(light_source)
 if any(
     isinstance(node, ast.ClassDef) and node.name == "WNHFSmartRGBWLight"
     for node in light_tree.body
 ):
     fail("Do not register duplicate Smart Living light proxy entities")
-dashboard_bindings = (ROOT / "custom_components" / "wnhf" / "dashboard_binding.py").read_text(encoding="utf-8")
+dashboard_bindings = (ROOT / "custom_components" / "red_queen" / "dashboard_binding.py").read_text(encoding="utf-8")
 for marker in ("allowed_sources", "entry.entity_id in allowed_sources", 'entry.platform != DOMAIN'):
     if marker not in dashboard_bindings:
         fail("Dashboard DALI source allowlist check missing: " + marker)
@@ -105,10 +131,10 @@ if result.returncode != 0:
     fail("Git whitespace: " + result.stdout + result.stderr)
 
 if ERRORS:
-    print("Red Queen 1.1 development verification FAILED")
+    print("Red Queen 1.2 RC development verification FAILED")
     for error in ERRORS:
         print("- " + error)
     sys.exit(1)
 
-print("Red Queen 1.1 development verification PASS")
+print("Red Queen 1.2 RC development verification PASS")
 print("NOTE: This is NOT a stable-release qualification")

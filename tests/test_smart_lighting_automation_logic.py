@@ -6,7 +6,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1] / "custom_components/wnhf"
+ROOT = Path(__file__).resolve().parents[1] / "custom_components/red_queen"
 module_path = ROOT / "smart_living_automation_logic.py"
 spec = importlib.util.spec_from_file_location("rq_automation_logic_test", module_path)
 assert spec is not None and spec.loader is not None
@@ -142,6 +142,73 @@ class RulesTests(unittest.TestCase):
                 logic.parse_automation_rules([rule], SCENES)
         with self.assertRaises(ValueError):
             logic.parse_automation_rules([make_rule(), make_rule()], SCENES)
+
+    def test_restart_reconciliation_is_explicit_off_only_and_night_only(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        zone = ZoneInfo("Europe/Vienna")
+        off = logic.parse_automation_rules([
+            make_rule(
+                id="night_off", enabled=True, action="off",
+                trigger={"type": "time", "at": "23:00"},
+                reconcile_missed_off=True,
+            ),
+        ], SCENES)["night_off"]
+        yes = lambda when, sun: logic.should_reconcile_missed_off(
+            off, local_now=datetime.fromisoformat(when).replace(tzinfo=zone),
+            sun_state=sun,
+        )
+        self.assertTrue(yes("2026-11-09T23:30:00", "below_horizon"))
+        self.assertTrue(yes("2026-11-10T02:30:00", "below_horizon"))
+        self.assertTrue(yes("2026-03-29T03:30:00", "below_horizon"))
+        self.assertFalse(yes("2026-11-09T22:00:00", "below_horizon"))
+        self.assertFalse(yes("2026-11-10T06:30:00", "above_horizon"))
+        self.assertFalse(yes("2026-11-10T12:30:00", "below_horizon"))
+        self.assertFalse(yes("2026-11-09T23:30:00", "unavailable"))
+        off["enabled"] = False
+        self.assertFalse(yes("2026-11-09T23:30:00", "below_horizon"))
+
+    def test_handover_interlock_for_exact_fallback_automations(self):
+        from types import SimpleNamespace
+        target = "light.hof_vorplatz_red_queen_strasse_up_down"
+        status = lambda name, state: SimpleNamespace(
+            state=state, attributes={"friendly_name": name},
+        )
+        sunset = "Red Queen – Außenbeleuchtung Sonnenuntergang EIN"
+        night = "Red Queen – Außenbeleuchtung 23 Uhr AUS"
+        with self.subTest("active on"):
+            self.assertTrue(logic.active_outdoor_fallback(
+                [status(sunset, "on")], [target],
+            ))
+        with self.subTest("ambiguous unknown fail closed"):
+            self.assertTrue(logic.active_outdoor_fallback(
+                [status(night, "unavailable")], [target],
+            ))
+        with self.subTest("both disabled"):
+            self.assertFalse(logic.active_outdoor_fallback(
+                [status(sunset, "off"), status(night, "off")], [target],
+            ))
+        with self.subTest("other scenes unaffected"):
+            self.assertFalse(logic.active_outdoor_fallback(
+                [status(night, "on")], ["light.dali_eg_buro_rgbw"],
+            ))
+        with self.subTest("unrecognized alias"):
+            self.assertFalse(logic.active_outdoor_fallback(
+                [status("A manually renamed automation", "on")], [target],
+            ))
+
+    def test_missed_off_rejects_on_and_morning_rules(self):
+        cases = [
+            make_rule(reconcile_missed_off=True),
+            make_rule(reconcile_missed_off="yes"),
+            make_rule(action="off", reconcile_missed_off=True,
+                      trigger={"type":"time", "at":"07:00"}),
+            make_rule(action="off", reconcile_missed_off=True,
+                      trigger={"type":"sun", "event":"sunset"}),
+        ]
+        for item in cases:
+            with self.subTest(item=item), self.assertRaises(ValueError):
+                logic.parse_automation_rules([item], SCENES)
 
     def test_runtime_contract_is_opt_in_and_unsubscribes(self):
         runtime = ast.parse(

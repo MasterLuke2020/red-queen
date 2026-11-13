@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Red Queen 1.1.0 candidate: GitHub CI-only isolated Home Assistant smoke.
+# Red Queen 1.2.0-rc1 candidate: GitHub CI-only isolated Home Assistant smoke.
 # Completely synthetic empty registries; no PLC, Sonos, tokens or production data.
 set -Eeuo pipefail
 umask 077
@@ -21,7 +21,7 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$WORKDIR/config/custom_components" "$WORKDIR/config/wnhf/house/registry"
-cp -a "$ROOT/custom_components/wnhf" "$WORKDIR/config/custom_components/wnhf"
+cp -a "$ROOT/custom_components/red_queen" "$WORKDIR/config/custom_components/red_queen"
 # Execute native Configurator step definitions against the real HA selector APIs.
 cp "$ROOT/tools/rq12_ci_editor_flow.py" "$WORKDIR/config/rq12_ci_editor_flow.py"
 cp "$ROOT/tools/rq12_ci_scheduler_flow.py" "$WORKDIR/config/rq12_ci_scheduler_flow.py"
@@ -33,11 +33,11 @@ homeassistant:
 http: {}
 frontend: {}
 lovelace: {}
-wnhf: {}
+red_queen: {}
 logger:
   default: warning
   logs:
-    custom_components.wnhf: info
+    custom_components.red_queen: info
 YAML
 cat > "$WORKDIR/config/wnhf/house/registry/rooms.yaml" <<'YAML'
 building:
@@ -63,12 +63,12 @@ STAGE_STARTED=1
 STARTED=0
 for _attempt in $(seq 1 100); do
   LOGS="$(docker logs "$NAME" 2>&1 || true)"
-  if grep -Fq 'Red Queen 1.1.0 started via config entry' <<< "$LOGS"; then
+  if grep -Fq 'Red Queen 1.2.0-rc1 started via config entry' <<< "$LOGS"; then
     STARTED=1
     break
   fi
   if [[ -f "$WORKDIR/config/home-assistant.log" ]] &&
-     sudo grep -Fq 'Red Queen 1.1.0 started via config entry' \
+     sudo grep -Fq 'Red Queen 1.2.0-rc1 started via config entry' \
        "$WORKDIR/config/home-assistant.log"; then
     STARTED=1
     break
@@ -107,16 +107,16 @@ import sys
 
 config = Path(sys.argv[1])
 manifest = json.loads(
-    (config / "custom_components/wnhf/manifest.json").read_text(encoding="utf-8")
+    (config / "custom_components/red_queen/manifest.json").read_text(encoding="utf-8")
 )
-assert manifest["version"] == "1.1.0", manifest["version"]
+assert manifest["version"] == "1.2.0-rc1", manifest["version"]
 registry_path = config / ".storage/core.entity_registry"
 assert registry_path.is_file(), "CI entity registry was not persisted"
 registered = json.loads(registry_path.read_text(encoding="utf-8"))
 entities = registered["data"]["entities"]
 unique = {
     entity.get("unique_id") for entity in entities
-    if entity.get("platform") == "wnhf"
+    if entity.get("platform") == "red_queen"
 }
 required = {
     "wnhf_smart_living_house_mode",
@@ -128,12 +128,12 @@ required = {
 missing = sorted(required - unique)
 dupes = [
     e.get("entity_id") for e in entities
-    if e.get("platform") == "wnhf"
+    if e.get("platform") == "red_queen"
     and str(e.get("unique_id", "")).startswith("wnhf_rgbw_")
 ]
 assert not missing, f"Missing Smart Living entities: {missing}"
 assert not dupes, f"Duplicate native RGBW entities: {dupes}"
-print("PASS: isolated synthetic HA 2026.9.2 started RC 1.1.0")
+print("PASS: isolated synthetic HA 2026.9.2 started RC 1.2.0-rc1")
 print("PASS: all 5 Smart Living entities were registered")
 print("PASS: zero duplicate RGBW proxies")
 print("PASS: no network, live data or hardware available")

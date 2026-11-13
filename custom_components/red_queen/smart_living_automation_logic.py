@@ -6,6 +6,7 @@ all new rules default to disabled and have home/quiet safety defaults.
 from __future__ import annotations
 
 import re
+from datetime import datetime
 from typing import Any
 
 _ID = re.compile(r"[a-z][a-z0-9_]{0,63}\Z")
@@ -14,7 +15,7 @@ _MODES = frozenset({"home", "away", "vacation"})
 _TRIGGER_ENTITY = re.compile(r"(?:binary_sensor|input_boolean)\.[a-z0-9_]+\Z")
 _ALLOWED_KEYS = frozenset({
     "id", "name", "enabled", "scene_id", "action", "trigger",
-    "allowed_modes", "allow_quiet",
+    "allowed_modes", "allow_quiet", "reconcile_missed_off",
 })
 
 
@@ -100,10 +101,22 @@ def parse_automation_rules(
         quiet = item.get("allow_quiet", False)
         if type(quiet) is not bool:
             raise ValueError("allow_quiet must be boolean")
+        reconcile_off = item.get("reconcile_missed_off", False)
+        if type(reconcile_off) is not bool:
+            raise ValueError("reconcile_missed_off must be boolean")
+        # Night-time recovery is deliberately restricted to explicitly opted
+        # in, evening-clock OFF rules. Never catch up an ON command or a
+        # morning/daytime OFF rule from a previous date.
+        if reconcile_off and (
+            action != "off" or normalized["type"] != "time"
+            or int(normalized["at"][:2]) < 18
+        ):
+            raise ValueError("reconcile_missed_off requires evening time OFF")
         result[rule_id] = {
             "id": rule_id, "name": name.strip(), "enabled": enabled,
             "scene_id": scene_id, "action": action, "trigger": normalized,
             "allowed_modes": tuple(modes), "allow_quiet": quiet,
+            "reconcile_missed_off": reconcile_off,
         }
     return result
 
@@ -132,3 +145,72 @@ def automation_permission(
         if quiet_state != "on":
             return False, "quiet_sensor_unavailable"
     return True, "scheduled_on_allowed"
+
+
+
+# HA 1.1-compatible handover automations that the operator reported ACTIVE.
+# Recognition is intentionally limited to exact alias names and known scene
+# targets; other automations cannot be reliably detected from their names.
+FALLBACK_OUTDOOR_TARGETS = frozenset({
+    "light.wnhf_garage_aussen_up_down",
+    "light.hof_vorplatz_red_queen_strasse_up_down",
+    "light.wnhf_hof_up_down",
+})
+FALLBACK_AUTOMATION_ALIASES = frozenset({
+    "Red Queen – Außenbeleuchtung Sonnenuntergang EIN",
+    "Red Queen – Außenbeleuchtung bei Sonnenuntergang EIN",
+    "Red Queen – Außenbeleuchtung 23 Uhr AUS",
+})
+
+
+def active_outdoor_fallback(
+    automation_states: Any, targets: Any,
+) -> bool:
+    """Guard native scene dispatch while a known HA fallback is still enabled.
+
+    Run this on every native dispatch, not just at integration start. An
+    unavailable/unknown matched automation also blocks native operation.
+    Unrelated scene targets are unaffected. Renamed or differently written
+    user automations are deliberately *not* assumed safe; the operator must
+    verify and deactivate them during the handover checklist.
+    """
+    if not set(targets).intersection(FALLBACK_OUTDOOR_TARGETS):
+        return False
+    for item in automation_states:
+        attrs = getattr(item, "attributes", None)
+        friendly = attrs.get("friendly_name") if isinstance(attrs, dict) else None
+        if friendly in FALLBACK_AUTOMATION_ALIASES and (
+            getattr(item, "state", None) != "off"
+        ):
+            return True
+    return False
+
+
+def should_reconcile_missed_off(
+    rule: dict[str, Any], *, local_now: datetime, sun_state: str | None,
+) -> bool:
+    """Allow only opted-in targeted night OFF; never replay ON at startup.
+
+    No persistent timestamp is required: the recovery is idempotent because
+    the scheduler skips already-off entities. HA must provide an aware local
+    datetime and an explicitly below-horizon sun sensor. This purposefully
+    does not reissue daytime OFF or ON commands.
+    """
+    if not rule.get("enabled") or not rule.get("reconcile_missed_off", False):
+        return False
+    trigger = rule.get("trigger", {})
+    if rule.get("action") != "off" or trigger.get("type") != "time":
+        return False
+    if sun_state != "below_horizon":
+        return False
+    if local_now.tzinfo is None or local_now.utcoffset() is None:
+        return False
+    at = trigger.get("at")
+    if not isinstance(at, str) or not _HHMM.fullmatch(at):
+        return False
+    hour, minute = map(int, at.split(":"))
+    if hour < 18:
+        return False
+    cutoff = hour * 60 + minute
+    current = local_now.hour * 60 + local_now.minute
+    return current >= cutoff or current < 12 * 60

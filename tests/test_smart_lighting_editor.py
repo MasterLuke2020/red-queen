@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1] / "custom_components/wnhf"
+ROOT = Path(__file__).resolve().parents[1] / "custom_components/red_queen"
 
 
 def load_pure_module(filename: str, name: str):
@@ -96,12 +96,25 @@ class SmartLightingEditorTests(unittest.TestCase):
         parsed_rule = auto.parse_automation_rules([RULE], parsed_scene)
         unparsed = helpers["rules_to_raw"](parsed_rule)
         self.assertEqual(unparsed, [{**RULE, "allowed_modes": ["home"],
-                                     "allow_quiet": False}])
+                                     "allow_quiet": False,
+                                     "reconcile_missed_off": False}])
         new_scene, new_rule = helpers["validate_editor_document"](
             [SCENE], unparsed, {LIGHT},
         )
         self.assertEqual(new_scene, parsed_scene)
         self.assertEqual(new_rule, parsed_rule)
+
+    def test_explicit_missed_off_setting_survives_gui_round_trip(self):
+        scene = logic.parse_scenes([SCENE])
+        rule = {**RULE, "enabled": True, "reconcile_missed_off": True}
+        parsed = auto.parse_automation_rules([rule], scene)
+        serialized = helpers["rules_to_raw"](parsed)
+        self.assertTrue(serialized[0]["reconcile_missed_off"])
+        new_scenes, reparsed = helpers["validate_editor_document"](
+            [SCENE], serialized, {LIGHT},
+        )
+        self.assertEqual(scene, new_scenes)
+        self.assertEqual(parsed, reparsed)
 
     def test_keep_saved_scenes_readable_if_source_disappears(self):
         # On HA startup the scene is kept for repair; its enabled schedule is
@@ -145,6 +158,15 @@ class SmartLightingEditorTests(unittest.TestCase):
         self.assertEqual(ui["_scene_light_settings"](source), {
             "state": "off",
         })
+
+    def test_onoff_light_scene_carries_no_color_or_brightness(self):
+        self.assertEqual(ui["_scene_light_settings"]({
+            "state": "on",
+        }), {"state": "on"})
+        self.assertEqual(ui["_scene_light_settings"]({
+            "state": "off", "brightness": 200,
+            "color_mode": "rgbw", "red": 0, "green": 0, "blue": 0, "white": 255,
+        }), {"state": "off"})
 
     def test_time_selector_and_sunset_form_round_trip(self):
         self.assertEqual(ui["_trigger_from_editor"](

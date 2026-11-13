@@ -12,8 +12,8 @@ from types import SimpleNamespace
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-PROVIDER = ROOT / "custom_components/wnhf/providers/notifications.py"
-LOGIC = ROOT / "custom_components/wnhf/smart_living_logic.py"
+PROVIDER = ROOT / "custom_components/red_queen/providers/notifications.py"
+LOGIC = ROOT / "custom_components/red_queen/smart_living_logic.py"
 
 spec = importlib.util.spec_from_file_location("redqueen_route_logic", LOGIC)
 assert spec and spec.loader
@@ -33,7 +33,7 @@ def load_real_route_plan():
     # Execute only its unchanged method AST with inert fake HA state objects.
     namespace = {
         "NotificationRoute": object, "Any": object,
-        "DOMAIN": "wnhf", "DATA_SMART_LIVING": "smart_living",
+        "DOMAIN": "red_queen", "DATA_SMART_LIVING": "smart_living",
         "route_voice_decision": logic.route_voice_decision,
     }
     module = ast.fix_missing_locations(
@@ -73,7 +73,7 @@ def scenario(
     })
     runtime = SimpleNamespace(mode=mode, quiet=quiet)
     fake = SimpleNamespace(hass=SimpleNamespace(
-        data={"wnhf": {"smart_living": runtime}},
+        data={"red_queen": {"smart_living": runtime}},
         states=states,
     ))
     return route_plan(fake, route, source=source,

@@ -18,6 +18,7 @@ from homeassistant.util import slugify
 from .const import DOMAIN
 from .smart_living_runtime import DATA_SMART_LIVING
 from .smart_living_editor import validate_editor_document
+from .smart_lighting_sources import scene_form_features
 
 
 def _select(options: list[dict[str, str]], *, multiple: bool = False):
@@ -55,14 +56,15 @@ def _rule_options(rules: list[dict[str, Any]]) -> list[dict[str, str]]:
 def _scene_light_settings(
     data: dict[str, Any], *, semantic: bool = False,
 ) -> dict[str, Any]:
+    """Serialize only fields exposed by the selected HA light capability."""
     if data["state"] == "off":
         return {"state": "off"}
     if semantic:
-        # The canonical PLC light adapter supports only ON and OFF.
-        # Ignore graphical RGB/brightness fields, never pass them to PLC.
         return {"state": "on"}
-    settings = {"state": "on", "brightness": int(data["brightness"])}
-    mode = data["color_mode"]
+    settings: dict[str, Any] = {"state": "on"}
+    if "brightness" in data:
+        settings["brightness"] = int(data["brightness"])
+    mode = data.get("color_mode")
     if mode == "rgbw":
         settings["rgbw_color"] = [
             int(data["red"]), int(data["green"]),
@@ -104,7 +106,7 @@ class SmartLightingOptionsMixin:
         runtime = self._sl_runtime()
         await runtime.editor.async_save(
             document["scenes"], document["automations"],
-            set(runtime.scene_targets),
+            set(runtime.editor_selectable_targets),
         )
         # Reuse OptionsFlowWithReload: this closes the dialogue and triggers
         # a managed integration reload, not a Home Assistant restart.
@@ -126,55 +128,99 @@ class SmartLightingOptionsMixin:
             description_placeholders={"count": str(len(doc["scenes"]))},
         )
 
-    def _scene_form(self, *, step_id: str, existing: dict | None = None,
-                    errors: dict | None = None):
-        sources = self._sl_runtime().scene_targets
+    def _scene_light_features(self, entity_id: str) -> dict[str, bool]:
+        runtime = self._sl_runtime()
+        if entity_id in runtime.semantic_targets:
+            return scene_form_features({}, semantic=True)
+        state = self.hass.states.get(entity_id)
+        return scene_form_features(
+            getattr(state, "attributes", {}) if state else {},
+        )
+
+    def _sl_light_settings(self, user_input: dict[str, Any]) -> dict[str, Any]:
+        entity_id = user_input["entity_id"]
+        runtime = self._sl_runtime()
+        if entity_id not in runtime.editor_selectable_targets:
+            raise ValueError("Unapproved light source")
+        semantic = entity_id in runtime.semantic_targets
+        features = self._scene_light_features(entity_id)
+        if "brightness" in user_input and not features["brightness"]:
+            raise ValueError("Brightness unsupported by source")
+        mode = user_input.get("color_mode")
+        if mode == "rgb" and not features["rgb"]:
+            raise ValueError("RGB unsupported by source")
+        if mode == "rgbw" and not features["rgbw"]:
+            raise ValueError("RGBW unsupported by source")
+        if mode not in {None, "brightness", "rgb", "rgbw"}:
+            raise ValueError("Unsupported color mode")
+        # Never trust hidden/unused controls to authorize additional service
+        # attributes. The runtime validates the HA state again at dispatch.
+        return _scene_light_settings(user_input, semantic=semantic)
+
+    def _scene_choose_source(self, *, step_id: str):
+        sources = self._sl_runtime().editor_selectable_targets
         if not sources:
             return self.async_abort(reason="smart_lighting_no_sources")
-        if existing is None:
-            default_light = next(iter(sources))
-            defaults = {"state": "on", "brightness": 200,
-                        "color_mode": "brightness",
-                        "red": 0, "green": 0, "blue": 0, "white": 255}
-        else:
-            default_light = existing["entity_id"]
-            attributes = existing["settings"]
-            mode = "rgbw" if "rgbw_color" in attributes else (
-                "rgb" if "rgb_color" in attributes else "brightness"
-            )
-            channels = list(attributes.get("rgbw_color") or (
-                list(attributes.get("rgb_color") or [0, 0, 0]) + [0]
-            ))
-            defaults = {
-                "state": attributes.get("state", "on"),
-                "brightness": attributes.get("brightness", 200),
-                "color_mode": mode,
-                "red": channels[0], "green": channels[1],
-                "blue": channels[2], "white": channels[3],
-            }
         return self.async_show_form(
             step_id=step_id,
             data_schema=vol.Schema({
-                vol.Required("entity_id", default=default_light):
-                    _select(
-                        _entity_options(sources) if existing is None else
-                        _entity_options({default_light: sources[default_light]})
-                    ),
-                vol.Required("state", default=defaults["state"]):
-                    _fixed_options(["on", "off"]),
-                vol.Required("brightness", default=defaults["brightness"]):
-                    vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-                vol.Required("color_mode", default=defaults["color_mode"]):
-                    _fixed_options(["brightness", "rgb", "rgbw"]),
-                vol.Required("red", default=defaults["red"]):
-                    vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-                vol.Required("green", default=defaults["green"]):
-                    vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-                vol.Required("blue", default=defaults["blue"]):
-                    vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-                vol.Required("white", default=defaults["white"]):
-                    vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-            }), errors=errors or {},
+                vol.Required("entity_id"):
+                    _select(_entity_options(sources)),
+            }),
+        )
+
+    def _scene_form(self, *, step_id: str, existing: dict | None = None,
+                    errors: dict | None = None):
+        sources = self._sl_runtime().editor_selectable_targets
+        if existing is None:
+            return self._scene_choose_source(step_id=step_id)
+        entity_id = existing["entity_id"]
+        if entity_id not in sources:
+            return self.async_abort(reason="smart_lighting_source_unavailable")
+        attributes = existing["settings"]
+        modes = self._scene_light_features(entity_id)
+        requested = (
+            "rgbw" if "rgbw_color" in attributes else
+            "rgb" if "rgb_color" in attributes else "brightness"
+        )
+        supported = ["brightness"]
+        if modes["rgb"]:
+            supported.append("rgb")
+        if modes["rgbw"]:
+            supported.append("rgbw")
+        # Older settings remain readable if the source's capabilities
+        # temporarily shrink, but unsupported data is never dispatched.
+        selected = requested if requested in supported else "brightness"
+        channels = list(attributes.get("rgbw_color") or (
+            list(attributes.get("rgb_color") or [0, 0, 0]) + [0]
+        ))
+        fields: dict[Any, Any] = {
+            vol.Required("entity_id", default=entity_id):
+                _select(_entity_options({entity_id: sources[entity_id]})),
+            vol.Required("state", default=attributes.get("state", "on")):
+                _fixed_options(["on", "off"]),
+        }
+        if modes["brightness"]:
+            fields[vol.Required(
+                "brightness", default=attributes.get("brightness", 200),
+            )] = vol.All(vol.Coerce(int), vol.Range(min=0, max=255))
+        if modes["rgb"]:
+            fields[vol.Required("color_mode", default=selected)] = (
+                _fixed_options(supported)
+            )
+            for component, value in (
+                ("red", channels[0]), ("green", channels[1]),
+                ("blue", channels[2]),
+            ):
+                fields[vol.Required(component, default=value)] = (
+                    vol.All(vol.Coerce(int), vol.Range(min=0, max=255))
+                )
+            if modes["rgbw"]:
+                fields[vol.Required("white", default=channels[3])] = (
+                    vol.All(vol.Coerce(int), vol.Range(min=0, max=255))
+                )
+        return self.async_show_form(
+            step_id=step_id, data_schema=vol.Schema(fields), errors=errors or {},
         )
 
     async def async_step_smart_scene_add(self, user_input=None):
@@ -201,26 +247,31 @@ class SmartLightingOptionsMixin:
     async def async_step_smart_scene_first_light(self, user_input=None):
         if not hasattr(self, "_sl_scene_new"):
             return self.async_abort(reason="smart_lighting_state_lost")
+        if user_input is not None and set(user_input) == {"entity_id"}:
+            entity_id = user_input["entity_id"]
+            if entity_id not in self._sl_runtime().editor_selectable_targets:
+                return self._scene_choose_source(step_id="smart_scene_first_light")
+            return self._scene_form(
+                step_id="smart_scene_first_light",
+                existing={"entity_id": entity_id, "settings": {"state": "on"}},
+            )
         if user_input is not None:
-            doc = self._sl_document()
-            doc["scenes"].append({
-                **self._sl_scene_new,
-                "lights": {
-                    user_input["entity_id"]: _scene_light_settings(
-                        user_input, semantic=(
-                            user_input["entity_id"] in self._sl_runtime().semantic_targets
-                        ),
-                    )
-                },
-            })
             try:
+                settings = self._sl_light_settings(user_input)
+                doc = self._sl_document()
+                doc["scenes"].append({
+                    **self._sl_scene_new,
+                    "lights": {user_input["entity_id"]: settings},
+                })
                 return await self._sl_commit(doc)
             except (ValueError, OSError):
                 return self._scene_form(
                     step_id="smart_scene_first_light",
+                    existing={"entity_id": user_input["entity_id"],
+                              "settings": {"state": "on"}},
                     errors={"base": "smart_lighting_save_failed"},
                 )
-        return self._scene_form(step_id="smart_scene_first_light")
+        return self._scene_choose_source(step_id="smart_scene_first_light")
 
     async def async_step_smart_scene_pick(self, user_input=None):
         doc = self._sl_document()
@@ -287,27 +338,30 @@ class SmartLightingOptionsMixin:
         scene = self._sl_scene(doc)
         if scene is None:
             return self.async_abort(reason="smart_lighting_state_lost")
-        if user_input is not None and user_input["entity_id"] in scene["lights"]:
+        if user_input is not None and set(user_input) == {"entity_id"}:
+            entity_id = user_input["entity_id"]
+            if (entity_id in scene["lights"] or
+                    entity_id not in self._sl_runtime().editor_selectable_targets):
+                return self._scene_choose_source(step_id="smart_scene_target")
             return self._scene_form(
                 step_id="smart_scene_target",
-                errors={"entity_id": "smart_lighting_target_exists"},
+                existing={"entity_id": entity_id, "settings": {"state": "on"}},
             )
         if user_input is not None:
-            scene["lights"][user_input["entity_id"]] = (
-                _scene_light_settings(
-                    user_input, semantic=(
-                        user_input["entity_id"] in self._sl_runtime().semantic_targets
-                    ),
-                )
-            )
             try:
+                entity_id = user_input["entity_id"]
+                if entity_id in scene["lights"]:
+                    raise ValueError("Scene source already exists")
+                scene["lights"][entity_id] = self._sl_light_settings(user_input)
                 return await self._sl_commit(doc)
             except (ValueError, OSError):
                 return self._scene_form(
                     step_id="smart_scene_target",
+                    existing={"entity_id": user_input["entity_id"],
+                              "settings": {"state": "on"}},
                     errors={"base": "smart_lighting_save_failed"},
                 )
-        return self._scene_form(step_id="smart_scene_target")
+        return self._scene_choose_source(step_id="smart_scene_target")
 
     async def async_step_smart_scene_target_pick(self, user_input=None):
         doc = self._sl_document()
@@ -339,14 +393,15 @@ class SmartLightingOptionsMixin:
             if user_input["entity_id"] != entity_id:
                 errors["entity_id"] = "smart_lighting_target_missing"
             else:
-                scene["lights"][entity_id] = _scene_light_settings(
-                    user_input,
-                    semantic=entity_id in self._sl_runtime().semantic_targets,
-                )
                 try:
-                    return await self._sl_commit(doc)
-                except (ValueError, OSError):
+                    scene["lights"][entity_id] = self._sl_light_settings(user_input)
+                except ValueError:
                     errors["base"] = "smart_lighting_save_failed"
+                else:
+                    try:
+                        return await self._sl_commit(doc)
+                    except (ValueError, OSError):
+                        errors["base"] = "smart_lighting_save_failed"
         return self._scene_form(
             step_id="smart_scene_target_edit",
             existing=existing,

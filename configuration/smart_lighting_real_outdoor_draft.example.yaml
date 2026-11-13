@@ -1,3 +1,5 @@
+# Optional für 1.2: manual_pause_entity_id: input_boolean.red_queen_automatik_pause
+# Ist dieser Helfer ON oder nicht verfügbar, bleiben automatische EIN-Befehle gesperrt.
 # Red Queen 1.2 – Muster für die tatsächlich vorhandenen Außenlichter
 # Read-only-Registry-Inventur vom 09.11.2026. NUR BEISPIEL, NICHT produktiv!
 #
@@ -6,10 +8,10 @@
 # Das Beispiel ist bewusst deaktiviert und schaltet nichts automatisch.
 # Ausschließlich drei Kreise: Garage Außen Up/Down, Straße Up/Down, Hof Up/Down.
 # Vorplatz Wand, Hof Wand, Garage innen, Terrasse u. a. sind ausgeschlossen.
-# WICHTIG: Im Registry-Inventar stehen zwei Straßen-IDs: 
-# light.hof_vorplatz_red_queen_strasse_up_down und light.wnhf_strasse_up_down.
-# Das Beispiel nutzt die bereits zuvor ausgewählte erste Entität; vor
-# Aktivierung muss geprüft werden, welche die tatsächliche Straße steuert.
+# Am 09.11.2026 vom Betreiber bestätigt: Die Straße Up/Down ist
+# light.hof_vorplatz_red_queen_strasse_up_down.
+# light.wnhf_strasse_up_down ist 'unavailable' und bleibt ausgeschlossen.
+# Garage Außen und Hof Up/Down vor Aktivierung ebenfalls physisch prüfen.
 #
 # Wenn bereits eine 'scenes:'-Liste besteht: Szene in die Liste aufnehmen,
 # NICHT eine zweite 'scenes:'-Wurzel anlegen.
@@ -48,3 +50,4 @@ automations:
     trigger:
       type: time
       at: "23:00"
+    reconcile_missed_off: false  # nach Staging-Abnahme explizit einschalten

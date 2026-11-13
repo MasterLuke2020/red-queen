@@ -27,6 +27,7 @@ from .smart_living_messages import SmartMessageComposer
 from .smart_living_automation_logic import parse_automation_rules
 from .smart_living_automation import SmartLightingScheduler
 from .smart_lighting_semantic import resolve_semantic_light_bindings
+from .smart_lighting_sources import eligible_ha_light_sources
 from .native_execution import async_execute_canonical
 from .const import DATA_ENGINE, DOMAIN
 from .smart_living_editor import (
@@ -53,7 +54,11 @@ class SmartLivingRuntime:
         self.auto_away = False
         self.away_entity_id = "binary_sensor.datawebstateabwesenheit"
         self.quiet_entity_id = "binary_sensor.wnhf_quiet_mode_active"
+        self.manual_pause_entity_id: str | None = None
         self.rgbw_targets: dict[str, str] = {}
+        # GUI-picked generic lights are scene-only: never silently extend
+        # the old whole-house RGBW-off allowlist.
+        self.scene_external_targets: dict[str, str] = {}
         # Independent allowlist: native Red Queen ON/OFF lights mapped only
         # via registry Unique IDs, never via another light service proxy.
         self.semantic_targets: dict[str, str] = {}
@@ -75,15 +80,23 @@ class SmartLivingRuntime:
         self.auto_away = config["auto_away"]
         self.away_entity_id = config["away_entity_id"]
         self.quiet_entity_id = config["quiet_entity_id"]
+        self.manual_pause_entity_id = config["manual_pause_entity_id"]
         self.composer.route_id = config["message_route_id"]
-        self._discover_targets(config["rgbw_entity_ids"], config["discover_dali"])
+        # Read the resident's selected GUI lights before building the source
+        # allowlist. No unselected HA light may ever be dispatched automatically.
+        stored = await self.editor.async_load()
+        scene_selected = {
+            entity_id
+            for item in stored.get("scenes", []) if isinstance(item, dict)
+            for entity_id in item.get("lights", {})
+        } if stored is not None else set()
+        self._discover_targets(
+            config["rgbw_entity_ids"], config["discover_dali"], scene_selected,
+        )
         self._discover_semantic_targets()
         self.scenes = config["scenes"]
         self.selected_scene = next(iter(self.scenes), None)
         self.automation_rules = config["automations"]
-        # The GUI store takes precedence ONLY after an explicit edit. Keep
-        # existing manual YAML as an untouched recovery baseline.
-        stored = await self.editor.async_load()
         if stored is not None:
             try:
                 self.scenes, self.automation_rules = validate_editor_document(
@@ -132,6 +145,7 @@ class SmartLivingRuntime:
                 "quiet_entity_id", "binary_sensor.wnhf_quiet_mode_active"
             ),
             "discover_dali": raw.get("discover_dali", True),
+            "manual_pause_entity_id": raw.get("manual_pause_entity_id"),
             "rgbw_entity_ids": raw.get("rgbw_entity_ids", []),
             "message_route_id": raw.get("message_route_id", "notification.route.house"),
             "scenes": raw.get("scenes", []),
@@ -158,6 +172,14 @@ class SmartLivingRuntime:
             r"^notification\.route\.[a-z0-9_]+$", config["message_route_id"]
         ):
             raise HomeAssistantError("message_route_id must be a semantic route ID")
+        pause = config["manual_pause_entity_id"]
+        if pause is not None and (
+            not isinstance(pause, str)
+            or not re.fullmatch(r"^input_boolean\.[a-z0-9_]+$", pause)
+        ):
+            raise HomeAssistantError(
+                "manual_pause_entity_id must be an input_boolean or omitted"
+            )
         for key in ("away_entity_id", "quiet_entity_id"):
             value = config[key]
             if not isinstance(value, str) or not re.fullmatch(
@@ -166,9 +188,14 @@ class SmartLivingRuntime:
                 raise HomeAssistantError(key + " must be a binary_sensor entity ID")
         return config
 
-    def _discover_targets(self, explicit: list[str], discover_dali: bool) -> None:
+    def _discover_targets(
+        self, explicit: list[str], discover_dali: bool,
+        scene_selected: set[str] | None = None,
+    ) -> None:
         registry = er.async_get(self.hass)
         discovered = {}
+        scene_external = {}
+        scene_selected = scene_selected or set()
         for entry in registry.entities.values():
             entity_id = entry.entity_id
             if not entity_id.startswith("light.") or entry.disabled_by is not None:
@@ -178,15 +205,27 @@ class SmartLivingRuntime:
                 and AUTO_DALI_RE.fullmatch(entity_id) is not None
             )
             if auto or entity_id in explicit:
-                if entry.platform == "wnhf":
+                if entry.platform in {"wnhf", DOMAIN}:
                     raise HomeAssistantError("Recursive Red Queen light binding rejected")
                 discovered[entity_id] = entity_id.removeprefix("light.").replace("_", " ").title()
+            # Persisted GUI scene light IDs are explicit opt-ins, NOT an
+            # invitation to discover every light in the house.
+            if entity_id in scene_selected and entity_id not in discovered:
+                candidates = eligible_ha_light_sources(
+                    [entry], self.hass.states.get,
+                    integration_domain=DOMAIN,
+                    integration_entry_id=self.hass.data.get(DOMAIN, {}).get(
+                        "config_entry_id"
+                    ),
+                )
+                scene_external.update(candidates)
         missing = sorted(set(explicit) - set(discovered))
         if missing:
             raise HomeAssistantError(
                 "Smart Living light bindings missing/disabled: " + ", ".join(missing)
             )
         self.rgbw_targets = dict(sorted(discovered.items()))
+        self.scene_external_targets = dict(sorted(scene_external.items()))
 
     def _discover_semantic_targets(self) -> None:
         """Use native unique IDs to map existing Red Queen entities to objects."""
@@ -203,10 +242,27 @@ class SmartLivingRuntime:
         )
 
     @property
+    def editor_candidates(self) -> dict[str, str]:
+        """Preview eligible HA lights of any brand for explicit selection."""
+        registry = er.async_get(self.hass)
+        return eligible_ha_light_sources(
+            registry.entities.values(), self.hass.states.get,
+            integration_domain=DOMAIN,
+            integration_entry_id=self.hass.data.get(DOMAIN, {}).get(
+                "config_entry_id"
+            ),
+        )
+
+    @property
+    def editor_selectable_targets(self) -> dict[str, str]:
+        return {**self.scene_targets, **self.editor_candidates}
+
+    @property
     def scene_targets(self) -> dict[str, str]:
-        """HA light IDs allowed in configured scenes (native + semantic)."""
+        """Only resident-approved scene lights, plus native semantic lights."""
         return {
             **self.rgbw_targets,
+            **self.scene_external_targets,
             **{
                 entity_id: f"Red Queen – {object_id}"
                 for entity_id, object_id in self.semantic_targets.items()
@@ -226,7 +282,8 @@ class SmartLivingRuntime:
                     "Red Queen semantic light supports on/off only: " + entity_id
                 )
             return {}
-        if entity_id not in self.rgbw_targets:
+        if (entity_id not in self.rgbw_targets and
+                entity_id not in self.scene_external_targets):
             raise HomeAssistantError("Scene light source not allowlisted")
         if service == "turn_off":
             return {}
@@ -279,6 +336,10 @@ class SmartLivingRuntime:
             "rgbw_targets": [
                 {"entity_id": key, "name": name}
                 for key, name in self.rgbw_targets.items()
+            ],
+            "scene_external_targets": [
+                {"entity_id": key, "name": name}
+                for key, name in self.scene_external_targets.items()
             ],
             "semantic_targets": [
                 {"entity_id": key, "object_id": value}

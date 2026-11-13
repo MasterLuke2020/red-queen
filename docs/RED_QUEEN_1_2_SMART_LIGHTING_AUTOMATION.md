@@ -135,12 +135,14 @@ other exterior candidate is a disabled Tapo camera floodlight. There are
    sun/time/binary state rule create/edit/enable/disable/delete. The editor is
    **not yet production-released**; GUI ergonomics, rollback UI, and real-world
    tests remain to be completed.
-3. **Recovery after missed OFF is not yet implemented.** If HA is offline at
-   23:00, the off callback is missed. Add explicit persisted reconciliation
-   and user-selectable policy before production rollout.
-4. Manual override persistence is not yet implemented. No automatic ON
-   replay occurs at restart, but a future distinct sensor/sun trigger could
-   issue a new ON action after the resident manually switched a light off.
+3. **Night OFF recovery is now opt-in.** Enabled evening-time OFF rules
+   may set `reconcile_missed_off: true`. Only a targeted OFF is retried
+   after HA has started, with an explicit below-horizon sun state and local
+   night window. This policy still requires staging and physical testing.
+4. **Manual override is now explicit via an optional HA toggle.**
+   `manual_pause_entity_id` blocks automatic ON while active or unavailable,
+   without disabling OFF. Automatic detection of physical/manual switches
+   and persistent per-light holdoffs are not implemented.
 5. Only on/off state events from `binary_sensor` and `input_boolean` are
    supported in this slice. Numeric lux thresholds and more trigger types
    belong to the next step.
@@ -152,8 +154,9 @@ other exterior candidate is a disabled Tapo camera floodlight. There are
    physically confirmed output. It cannot diagnose MiBoxer controller
    peculiarities.
 8. Per-scene batch actions are sequential and **not atomic**. Per-light errors
-   are logged and shown in the audit. Multiple independent rules may still
-   target the same source; cross-rule priority/arbiter is a follow-up.
+   are logged and shown in the audit. Rule execution is now serialized
+   to avoid simultaneous conflicting dispatches. Full cross-rule priority,
+   manual-switch detection and timeout handling remain future work.
 9. Timezone and DST follow Home Assistant's configured local time, but
    edge-case transitions require staging integration tests with the target
    Home Assistant version before release.
@@ -164,9 +167,10 @@ other exterior candidate is a disabled Tapo camera floodlight. There are
   `tests/test_smart_lighting_automation_logic.py`.
 - Static CI, hassfest, and isolated Home Assistant synthetic boot run on
   the feature branch.
-- Next required tests: real HA staging with synthetic sunset/time callbacks,
-  real state transitions and force reload/unload without orphaned listeners;
-  DST boundaries, missing sensors, missed off and manual override.
+- Synthetic HA now tests sunset/time/state events, late-night OFF recovery,
+  daylight suppression and explicit manual pause, including unload/reload.
+- Next required tests: site-derived HA staging, hardware feedback, DST edge
+  cases, stopped/restarted HA, backup restoration and real manual overrides.
 - Only after these pass should a guarded, rollback-capable 1.2 release be
   considered. Do not merge blindly into 1.1.0 production.
 
@@ -178,3 +182,70 @@ other exterior candidate is a disabled Tapo camera floodlight. There are
 - Rule editor with schedules, conditions, diagnostic status and disable switch.
 - New source adapter for Red Queen semantic/PLC lights to reach exterior
   lights even if not represented as native DALI RGBW sources.
+
+
+## 1.2 opt-in night OFF recovery and manual ON pause (development)
+
+The native scheduler offers two independent safeguards, disabled by default:
+
+- \`reconcile_missed_off: true\` is accepted **only** for enabled,
+  evening-local-time (\`18:00..23:59\`) \`action: off\` rules. After HA startup
+  (also after integration reload), it issues a **targeted OFF only** if the
+  HA sun state is explicitly \`below_horizon\` and the local clock is past
+  the cutoff, or before 12:00 the next morning. It never replays a scheduled
+  ON. If \`sun.sun\` is missing or unknown, no recovery is attempted. The
+  option defaults to \`false\` and is preserved by GUI serialization.
+- \`manual_pause_entity_id: input_boolean.red_queen_automatik_pause\` is an
+  optional top-level Smart Living YAML setting. Create the toggle manually
+  as a HA Helper; **ON** pauses every scheduled ON, while scheduled OFF
+  remains active. Unknown/unavailable helper state blocks ON (fail-closed).
+  If no helper is configured, current default behavior is preserved. This
+  is an explicit manual override, *not* automatic inference from wall switch
+  state changes; physical/manual override detection remains future work.
+
+The scheduler serializes all rule dispatches and suppresses duplicate
+concurrent executions of the same rule, avoiding interleaved commands to
+the same PLC light. As with existing sequential per-scene dispatch, an
+accepted HA call is not proof of physical state.
+
+**No native rule is enabled merely by this code change.** If HA-native
+transition automations for the same three outdoor lights are already
+active, keep native Red Queen ON/OFF rules disabled until the transition
+automations have been explicitly deactivated and the release is approved.
+
+
+## Native / Home Assistant exterior handover interlock (2026-11-09)
+
+The user reports the two **existing HA-native fallback automations are ACTIVE**:
+
+- "Red Queen – Außenbeleuchtung Sonnenuntergang EIN" (also recognizes
+  "... bei Sonnenuntergang EIN")
+- "Red Queen – Außenbeleuchtung 23 Uhr AUS"
+
+The Red Queen 1.2 scheduler checks the Home Assistant automation state
+registry **on each native rule dispatch**. When a matching known HA fallback
+automation has state ON or an uncertain/unavailable state, it suppresses any
+Red Queen scene overlapping the three specifically confirmed exterior light
+entity IDs; other rooms/scenes are unaffected. It never disables the user's
+existing automations. The block reason is
+\`ha_outdoor_fallback_still_active\` in the scheduler audit.
+
+**Limitation:** Automations renamed by the user or configured with other
+aliases cannot be reliably recognized from the HA friendly name alone.
+This is a defense-in-depth interlock, **not** a substitute for physical
+handover acceptance. The operator MUST manually disable both old HA
+automations before enabling the new Red Queen native rules; thereafter,
+confirm the reported automation states are OFF. No automatic switch-over
+or production activation occurs in this branch.
+
+
+## Vendor-neutral Home Assistant lighting (new in this branch)
+
+Native RGBW and dimming scenes now select **direct Home Assistant light
+sources by advertised capability, not by manufacturer**. This supports
+Shelly RGBW, MQTT/Zigbee, WLED and other HA lights as well as DALI, provided
+HA exposes the relevant `supported_color_modes`. The GUI first selects the
+light, then shows only the supported ON/OFF, brightness, RGB or RGBW fields.
+Previously selected external scene lights persist through a managed reload.
+They never silently join the legacy global RGBW all-off list. See
+`docs/RED_QUEEN_1_2_VENDOR_NEUTRAL_LIGHTS.md` for limits and tests.

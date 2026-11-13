@@ -7,10 +7,13 @@ from __future__ import annotations
 
 from collections import deque
 from datetime import UTC, datetime, timedelta
+import asyncio
 import logging
 from typing import Any
 
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.start import async_at_started
+from homeassistant.util import dt as dt_util
 from homeassistant.helpers.event import (
     async_track_sunrise,
     async_track_sunset,
@@ -18,7 +21,10 @@ from homeassistant.helpers.event import (
     async_track_state_change_event,
 )
 
-from .smart_living_automation_logic import automation_permission
+from .smart_living_automation_logic import (
+    automation_permission, should_reconcile_missed_off,
+    active_outdoor_fallback,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,6 +39,10 @@ class SmartLightingScheduler:
         self.audit: deque[dict[str, Any]] = deque(maxlen=100)
         self._listeners: list[Any] = []
         self._running_rules: set[str] = set()
+        # Serialize all rules to avoid overlapping ON/OFF dispatches from
+        # distinct rules touching the same WAGO/HA physical source.
+        self._dispatch_lock = asyncio.Lock()
+        self._queued_rules: set[str] = set()
         self.blocked_rules: dict[str, str] = {}
         self._started = False
 
@@ -109,6 +119,18 @@ class SmartLightingScheduler:
                         offset=timedelta(minutes=trigger["offset_minutes"]),
                     )
                 self._listeners.append(unsubscribe)
+            if any(
+                rule["enabled"] and rule.get("reconcile_missed_off", False)
+                and rule["id"] not in self.blocked_rules
+                for rule in rules.values()
+            ):
+                # Also invokes callback immediately when HA is already running
+                # (e.g., integration reloaded). Off-only, never an ON replay.
+                @callback
+                def on_started(_hass: HomeAssistant) -> None:
+                    self._reconcile_night_off()
+
+                self._listeners.append(async_at_started(self.hass, on_started))
         except Exception:
             self.async_stop()
             raise
@@ -121,7 +143,40 @@ class SmartLightingScheduler:
                 f"Red Queen Smart Lighting rule {rule_id}",
             )
 
+    def _reconcile_night_off(self) -> None:
+        if not self._started:
+            return
+        sun = self.hass.states.get("sun.sun")
+        sun_state = sun.state if sun is not None else None
+        local_now = dt_util.now()
+        for rule in self.rules.values():
+            if rule["id"] in self.blocked_rules:
+                continue
+            if should_reconcile_missed_off(
+                rule, local_now=local_now, sun_state=sun_state,
+            ):
+                self._queue(rule["id"])
+
     def _permission(self, rule: dict[str, Any]) -> tuple[bool, str]:
+        # Operator confirmed both HA 1.1-compatible fallback automations
+        # active. Interlock only overlapping outdoor scenes. Never toggle
+        # an existing HA automation without explicit operator action.
+        if rule["scene_id"] in self.runtime.scenes:
+            targets = self.runtime.scenes[rule["scene_id"]]["lights"]
+            if active_outdoor_fallback(
+                self.hass.states.async_all("automation"), targets,
+            ):
+                return False, "ha_outdoor_fallback_still_active"
+        # A manually operated HA input_boolean pauses automatic ON only.
+        # Unknown/unavailable helper state fails closed. Targeted OFF is
+        # still allowed, including the opt-in missed-night recovery.
+        pause_entity_id = getattr(self.runtime, "manual_pause_entity_id", None)
+        if rule["action"] == "on" and pause_entity_id is not None:
+            pause = self.hass.states.get(pause_entity_id)
+            if pause is None or pause.state not in {"on", "off"}:
+                return False, "manual_pause_unavailable"
+            if pause.state == "on":
+                return False, "manual_pause_active"
         state = self.hass.states.get(self.runtime.quiet_entity_id)
         return automation_permission(
             rule, self.runtime.mode, self.runtime.quiet,
@@ -134,6 +189,7 @@ class SmartLightingScheduler:
         for unsubscribe in self._listeners:
             unsubscribe()
         self._listeners.clear()
+        # Queued tasks check _started again before any dispatch.
 
     def snapshot(self) -> dict[str, Any]:
         return {
@@ -148,15 +204,30 @@ class SmartLightingScheduler:
                     "trigger": dict(rule["trigger"]),
                     "allowed_modes": list(rule["allowed_modes"]),
                     "allow_quiet": rule["allow_quiet"],
+                    "reconcile_missed_off": rule.get("reconcile_missed_off", False),
                 }
                 for rule in self.rules.values()
             ],
             "listener_count": len(self._listeners),
+            "manual_pause_entity_id": getattr(
+                self.runtime, "manual_pause_entity_id", None
+            ),
             "blocked_rules": dict(self.blocked_rules),
             "recent": list(self.audit),
         }
 
     async def async_fire(self, rule_id: str) -> dict[str, Any]:
+        """Serialize light rules, suppressing duplicate events per rule."""
+        if rule_id in self._queued_rules:
+            return {"status": "already_running", "rule_id": rule_id}
+        self._queued_rules.add(rule_id)
+        try:
+            async with self._dispatch_lock:
+                return await self._async_fire_serial(rule_id)
+        finally:
+            self._queued_rules.discard(rule_id)
+
+    async def _async_fire_serial(self, rule_id: str) -> dict[str, Any]:
         """Handle a real HA event, never from initial setup or scene selection.
 
         Re-evaluate mode/quiet before every individual HA call, skip disabled

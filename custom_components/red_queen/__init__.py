@@ -1,4 +1,4 @@
-"""Red Queen integration (technical domain: wnhf)."""
+"""Red Queen integration (technical domain: red_queen)."""
 
 from __future__ import annotations
 

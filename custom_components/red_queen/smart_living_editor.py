@@ -45,6 +45,7 @@ def rules_to_raw(rules: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
             "trigger": dict(rule["trigger"]),
             "allowed_modes": list(rule["allowed_modes"]),
             "allow_quiet": rule["allow_quiet"],
+            "reconcile_missed_off": rule.get("reconcile_missed_off", False),
         }
         for rule in rules.values()
     ]

@@ -20,7 +20,7 @@ jobs:
       - name: Verify frozen stable 1.0 source
         if: github.ref == 'refs/heads/main'
         run: python tools/verify_repository.py
-      - name: Verify 1.1 development source
+      - name: Verify development source after 1.2 domain migration
         if: github.ref != 'refs/heads/main'
         run: python tools/verify_development.py
       - name: Unit test 1.1.0 inventory

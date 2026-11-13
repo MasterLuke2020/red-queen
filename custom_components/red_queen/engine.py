@@ -3660,7 +3660,7 @@ class WNHFEngine:
                     {}
                     if self.last_canonical_execution is None
                     else {
-                        "entry": "wnhf.execution_execute",
+                        "entry": f"{DOMAIN}.execution_execute",
                         "execution_id": self.last_canonical_execution.get("execution_id"),
                         "action_id": (self.last_canonical_execution.get("request") or {}).get("action_id"),
                         "state": self.last_canonical_execution.get("state"),
